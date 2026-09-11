@@ -1,0 +1,13 @@
+node_modules
+assets
+artifacts
+test-results
+graphify-out
+.git
+.omc
+dist
+dist-server
+playwright-report
+docs
+claudedocs
+*.tsbuildinfo

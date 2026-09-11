@@ -182,7 +182,7 @@ export class ApiError extends Error {
 export type Connection =
   "connecting" | "connected" | "reconnecting" | "offline";
 export interface GameService {
-  readonly mode: "mock" | "supabase";
+  readonly mode: "mock" | "supabase" | "server";
   capabilities(): Promise<z.infer<typeof CapabilitiesSchema>>;
   createRoom(input: CreateRoom): Promise<z.infer<typeof EntrySchema>>;
   joinRoom(input: JoinRoom): Promise<z.infer<typeof EntrySchema>>;

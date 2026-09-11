@@ -1,9 +1,11 @@
 import { MockService } from "./mock.ts";
+import { ServerService } from "./server.ts";
 import { SupabaseService } from "./supabase.ts";
 import type { GameService } from "../../shared/contracts.ts";
 export function makeService(): GameService {
   const mode = import.meta.env.VITE_BACKEND_MODE || "mock";
   if (mode === "mock") return new MockService();
+  if (mode === "server") return new ServerService();
   if (mode !== "supabase")
     throw new Error(`지원하지 않는 백엔드 모드: ${mode}`);
   return new SupabaseService(

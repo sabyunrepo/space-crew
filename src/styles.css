@@ -665,38 +665,9 @@ footer {
   max-width: 1400px;
   margin: auto;
   padding: 28px 48px 65px;
-}
-.room-heading {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-.room-heading h1 {
-  font-size: 27px;
-  margin: 6px 0 12px;
-}
-.room-heading p {
-  font-size: 11px;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0;
-}
-.phase-chip {
-  background: #d4ec9c12;
-  border: 1px solid #d4ec9c22;
-  color: var(--accent);
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-}
-.room-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  min-height: 0;
 }
 .connection {
   display: flex;
@@ -704,16 +675,290 @@ footer {
   gap: 6px;
   font-size: 10px;
   color: #abb795;
+  white-space: nowrap;
 }
 .connection.offline,
 .connection.reconnecting {
   color: #e6ba7c;
 }
-.game-layout {
-  display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
-  gap: 22px;
-  align-items: start;
+
+/* ===== BGA식 게임 테이블 ===== */
+.game-table {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #111a25;
+  overflow: hidden;
+}
+.game-table--lobby {
+  overflow: visible;
+}
+/* 로비·브리핑·탐사 완료는 문서형 스크롤 허용, 그 외 진행 단계는 100dvh 안에서
+   페이지 스크롤 없이 조작 가능해야 한다(app-shell에 붙는 클래스). */
+.app-shell.gameplay-fixed {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.app-shell.gameplay-fixed .site-header {
+  flex: 0 0 auto;
+}
+.app-shell.gameplay-fixed .demo-banner,
+.app-shell.gameplay-fixed footer {
+  display: none;
+}
+.app-shell.gameplay-fixed .room-view {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 10px 10px 0;
+}
+.app-shell.gameplay-fixed .game-table {
+  height: 100%;
+}
+
+/* --- 상태 표시줄 --- */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #0e1521;
+  flex: 0 0 auto;
+}
+.status-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.status-back:hover {
+  background: #ffffff08;
+}
+.status-message {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.status-message strong {
+  font-size: 10px;
+  color: #7d8c9b;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status-message span {
+  font-size: 13px;
+  color: #eef0e9;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.status-invite {
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.status-primary {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* --- 게임 테이블 본문(미션/중앙/플레이어) --- */
+.game-table-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px 14px;
+  overflow: hidden;
+}
+.game-table--lobby .game-table-body {
+  overflow: visible;
+  min-height: auto;
+}
+.game-table-body .crew-panel {
+  order: 1;
+  flex: 0 0 auto;
+}
+.game-table-body .game-table-center {
+  order: 2;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.game-table--lobby .game-table-center {
+  overflow: visible;
+}
+.game-table-body .mission-panel {
+  order: 3;
+  flex: 0 0 auto;
+  position: relative;
+}
+
+/* --- 미션 띠 --- */
+.mission-panel-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 14px;
+  background: #121b26;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-align: left;
+  color: #c7d0cf;
+}
+.mission-panel-strip .eyebrow {
+  margin: 0 !important;
+  flex-shrink: 0;
+}
+.mission-panel-strip strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mission-panel-strip .attempt {
+  flex-shrink: 0;
+}
+.mission-progress {
+  font-size: 10px;
+  color: #a3b08c;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.mission-panel-caret {
+  transition: transform 0.2s;
+  color: #92a887;
+  flex-shrink: 0;
+}
+.mission-panel.open .mission-panel-caret {
+  transform: rotate(180deg);
+}
+.mission-panel-label {
+  font-size: 10px;
+  color: #92a887;
+  flex-shrink: 0;
+}
+/* 펼쳐진 목표 목록은 같은 자리 아래로 "오버레이"되어 TrickArea를 밀어내지 않는다. */
+.mission-panel-body {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #16202c;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  max-height: 42vh;
+  overflow: auto;
+  z-index: 30;
+  box-shadow: 0 20px 50px #000a;
+}
+.mission-panel-summary {
+  font-size: 12px;
+  color: #c0c9cf;
+  margin: 0 0 8px;
+}
+.mission-panel-hint {
+  font-size: 11px;
+  color: var(--accent);
+  margin: 8px 0 0;
+}
+
+/* --- 트릭 선택 대기(임무 선택 단계) --- */
+.trick-waiting {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #92a887;
+  min-height: 160px;
+}
+.trick-waiting .table-label {
+  margin: 0;
+}
+
+/* --- 손패 고정 독 --- */
+.hand-dock {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--line);
+  background: #0c141f;
+  padding: 8px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hand-dock-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.hand-dock-head h3 {
+  font-size: 12px;
+  margin: 0;
+}
+.hand-dock-head h3 span {
+  font-size: 10px;
+  color: #a3b08c;
+  margin-left: 6px;
+  font-weight: 400;
+}
+.hand-comm-toggle,
+.hand-comm-cancel {
+  min-height: 40px;
+  font-size: 11px;
+  padding: 0 12px;
+}
+.hand-hint {
+  margin: 0;
+  font-size: 11px;
+  color: #e6ba7c;
+  background: #2a2015;
+  border: 1px solid #6b532c;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.hand-controls-hint {
+  margin: 0;
+  font-size: 11px;
+  color: #9caeaf;
+  text-align: center;
+  padding: 10px 0;
 }
 .crew-panel {
   background: #121b26;
@@ -877,50 +1122,18 @@ footer {
   margin-top: 18px;
   font-size: 10px !important;
 }
-.mission-strip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  padding: 25px 26px 18px;
-}
-.mission-strip .eyebrow {
-  font-size: 9px !important;
-  margin: 0 0 10px;
-}
-.mission-strip h2 {
-  font-size: 21px;
-  margin: 0;
-}
 .attempt {
   font-size: 10px;
   color: var(--muted);
 }
-.mission-objective {
-  padding: 14px 26px;
-  background: #d4ec9c06;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-.mission-objective > span {
-  font-size: 9px;
-  color: #bacc9b;
-}
-.mission-objective p {
-  font-size: 12px;
-  margin: 5px 0 0;
-  color: #c0c9cf;
-}
-.mission-objective small {
-  display: inline-block;
-  font-size: 10px;
-  color: #bbaa83;
-  margin-right: 10px;
-}
 .briefing {
-  padding: 30px;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
   text-align: center;
-  border-bottom: 1px solid var(--line);
 }
 .briefing > svg {
   color: var(--accent);
@@ -933,30 +1146,8 @@ footer {
   font-size: 11px;
   color: var(--muted);
 }
-.section-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 17px;
-}
-.section-title h3 {
-  font-size: 13px;
-  margin: 0;
-}
-.section-title h3 span {
-  font-size: 10px;
-  margin-left: 5px;
-  color: #a3b08c;
-  font-weight: 400;
-}
-.section-title > span {
-  font-size: 10px;
-  color: #8c9d92;
-}
 .target-area {
-  padding: 22px 26px;
-  border-bottom: 1px solid var(--line);
+  padding: 0;
 }
 .target-list {
   display: flex;
@@ -999,11 +1190,16 @@ footer {
 }
 .table-surface {
   position: relative;
-  padding: 24px 20px;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  padding: 16px 20px;
   text-align: center;
   background: radial-gradient(ellipse, #25443c45, transparent 70%);
   isolation: isolate;
-  min-height: 290px;
+  overflow: auto;
 }
 .table-orbit {
   position: absolute;
@@ -1080,31 +1276,41 @@ footer {
 }
 .demo-step {
   display: flex !important;
-  margin: 12px auto 24px;
-}
-.hand-section {
-  padding: 24px 26px;
-  background: #0c141f;
-  border-top: 1px solid var(--line);
+  margin: 12px auto 0;
+  flex-shrink: 0;
 }
 .hand-cards {
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 18px 2px 17px;
-  scrollbar-width: thin;
-  scrollbar-color: #485945 transparent;
-  min-height: 193px;
+  align-items: flex-end;
+  overflow: visible;
+  padding: 18px 2px 6px;
+  min-height: 165px;
 }
 .hand-cards .card {
   width: 100px;
 }
-.hand-cards .card:hover:not(:disabled) {
+.hand-card {
+  transition:
+    transform 0.15s,
+    border-color 0.2s,
+    filter 0.15s;
+}
+.hand-card:hover:not(.card--illegal):not(.card--waiting) {
   transform: translateY(-8px);
 }
-.hand-cards .card.selected:hover {
+.hand-card.selected:hover {
   transform: translateY(-13px);
+}
+.card--illegal {
+  filter: grayscale(1) brightness(0.55);
+  cursor: not-allowed;
+}
+.card--waiting {
+  cursor: not-allowed;
+}
+.card--illegal:hover,
+.card--waiting:hover {
+  transform: none !important;
 }
 .hand-controls {
   display: flex;
@@ -1290,12 +1496,8 @@ dialog::backdrop {
   .room-view {
     padding: 25px 25px 50px;
   }
-  .game-layout {
-    grid-template-columns: 210px minmax(0, 1fr);
-    gap: 15px;
-  }
-  .crew-panel {
-    padding: 19px 12px;
+  .app-shell.gameplay-fixed .room-view {
+    padding: 10px 10px 0;
   }
   .played-cards {
     gap: 11px;
@@ -1304,21 +1506,116 @@ dialog::backdrop {
   .card-placeholder {
     width: 72px;
   }
-  .target-area,
-  .hand-section {
-    padding: 20px;
-  }
   .target {
     min-width: 145px;
   }
-  .mission-strip {
-    padding: 22px 20px;
+}
+/* ≥1024px: BGA 데스크톱 그리드(상단 미션 띠 + 중앙 트릭, 우측 플레이어 열) */
+@media (min-width: 1024px) {
+  .game-table-body {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "mission players" "center players";
+    gap: 16px;
+    padding: 16px 22px;
   }
-  .mission-objective {
-    padding: 14px 20px;
+  .game-table--lobby .game-table-body {
+    grid-template-areas: "center players";
+    grid-template-rows: 1fr;
+  }
+  .game-table-body .mission-panel {
+    grid-area: mission;
+    order: initial;
+  }
+  .game-table-body .game-table-center {
+    grid-area: center;
+    order: initial;
+  }
+  .game-table-body .crew-panel {
+    grid-area: players;
+    order: initial;
+    overflow-y: auto;
+  }
+}
+/* <1024px(모바일+태블릿): 플레이어 패널을 상단 가로 칩 스트립으로 축약 */
+@media (max-width: 1023px) {
+  .crew-panel {
+    padding: 10px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .crew-panel .panel-heading,
+  .crew-footer {
+    display: none;
+  }
+  .crew-member {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    flex: 1 0 auto;
+    min-width: 92px;
+    align-items: flex-start;
+    padding: 10px 8px 8px;
+    gap: 6px;
+    flex-direction: column;
+  }
+  .crew-member.on-turn {
+    padding: 10px 8px 8px;
+  }
+  .avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    font-size: 11px;
+  }
+  .member-details strong {
+    font-size: 10px;
+  }
+  .member-details > span {
+    font-size: 8px;
+  }
+  .member-details strong small {
+    font-size: 8px;
+    margin-left: 4px;
+  }
+  .crew-member > svg {
+    position: absolute;
+    right: 7px;
+    top: 20px;
+    width: 13px;
+  }
+  .bot-tag {
+    top: 3px;
+    right: 6px;
+    font-size: 6px;
+  }
+  .communication {
+    font-size: 8px;
+  }
+  .communication small {
+    font-size: 7px;
+  }
+  .mission-panel.open .mission-panel-body {
+    position: fixed;
+    top: auto;
+    left: 10px;
+    right: 10px;
+    bottom: 8px;
+    z-index: 40;
+    max-height: 55dvh;
+    box-shadow: 0 -10px 40px #000a;
   }
 }
 @media (max-width: 760px) {
+  .status-message strong {
+    display: none;
+  }
+  .status-bar {
+    min-height: 50px;
+    padding: 6px 10px;
+    gap: 6px;
+  }
   .site-header {
     height: 76px;
     padding: 0 22px;
@@ -1505,66 +1802,6 @@ dialog::backdrop {
   .connection {
     font-size: 8px;
   }
-  .game-layout {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-  .crew-panel {
-    padding: 13px 12px;
-    display: flex;
-    gap: 7px;
-    overflow-x: auto;
-  }
-  .crew-panel .panel-heading,
-  .crew-footer {
-    display: none;
-  }
-  .crew-member {
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    flex: 1;
-    min-width: 100px;
-    align-items: flex-start;
-    padding: 15px 8px 10px;
-    gap: 7px;
-    flex-direction: column;
-  }
-  .crew-member.on-turn {
-    padding: 15px 8px 10px;
-  }
-  .avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    font-size: 11px;
-  }
-  .member-details strong {
-    font-size: 10px;
-  }
-  .member-details > span {
-    font-size: 8px;
-  }
-  .member-details strong small {
-    font-size: 8px;
-    margin-left: 4px;
-  }
-  .crew-member > svg {
-    position: absolute;
-    right: 7px;
-    top: 24px;
-    width: 13px;
-  }
-  .bot-tag {
-    top: 4px;
-    right: 7px;
-    font-size: 6px;
-  }
-  .communication {
-    font-size: 8px;
-  }
-  .communication small {
-    font-size: 7px;
-  }
   .lobby-stage {
     padding: 35px 19px;
   }
@@ -1586,27 +1823,9 @@ dialog::backdrop {
     font-size: 11px;
     padding: 12px;
   }
-  .mission-strip {
-    padding: 20px 17px 16px;
-    align-items: flex-start;
-  }
-  .mission-strip h2 {
-    font-size: 18px;
-  }
   .attempt {
     font-size: 8px;
     white-space: nowrap;
-    margin-top: 4px;
-  }
-  .mission-objective {
-    padding: 12px 17px;
-  }
-  .mission-objective p {
-    font-size: 11px;
-  }
-  .target-area,
-  .hand-section {
-    padding: 18px 15px;
   }
   .target-list {
     gap: 8px;
@@ -1630,12 +1849,6 @@ dialog::backdrop {
   }
   .target > div:not(.card) {
     gap: 5px;
-  }
-  .section-title > span {
-    font-size: 8px;
-  }
-  .section-title h3 {
-    font-size: 12px;
   }
   .table-surface {
     padding: 20px 10px;
@@ -1662,12 +1875,14 @@ dialog::backdrop {
     line-height: 1.7;
     margin-bottom: 19px;
   }
+  .hand-dock {
+    padding: 6px 8px 10px;
+  }
   .hand-cards .card {
-    width: 92px;
+    width: 78px;
   }
   .hand-cards {
-    gap: 7px;
-    min-height: 170px;
+    min-height: 148px;
   }
   .hand-controls > span {
     font-size: 9px;

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "npm run assets && tsc -b && vite build",
+    "build:server": "vite build --ssr server/index.ts --outDir dist-server",
+    "start": "node dist-server/index.js",
     "preview": "vite preview --host 0.0.0.0",
     "assets": "node tools/prepare-web-assets.mjs",
     "test": "vitest run",
@@ -22,6 +24,7 @@
     "lucide-react": "1.43.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "ws": "8.21.3",
     "zod": "4.5.4"
   },
   "devDependencies": {
@@ -30,6 +33,7 @@
     "@types/node": "26.5.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
+    "@types/ws": "8.18.1",
     "@vitejs/plugin-react": "6.1.1",
     "sharp": "0.35.4",
     "supabase": "2.117.0",

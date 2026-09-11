@@ -8,10 +8,22 @@ async function step(page: Page, button: Locator) {
   await expect(room).toHaveAttribute("aria-busy", "false");
   await expect(page.getByRole("alert")).toHaveCount(0);
 }
-async function choose(page: Page, index: number) {
+/**
+ * 손패 카드는 겹쳐 배치되어 다음 카드가 이전 카드의 오른쪽 위로 겹친다.
+ * 항상 노출되는 왼쪽 가장자리를 눌러야 실제 사용자처럼 올바른 카드를 클릭한다.
+ */
+async function tapCard(card: Locator) {
+  const box = await card.boundingBox();
+  if (!box) throw new Error("card not visible");
+  await card.click({ position: { x: 6, y: box.height / 2 } });
+}
+/** 규칙상 낼 수 없는(aria-disabled) 카드는 건너뛰고, 그 외에는 선택한다. */
+async function choose(page: Page, index: number): Promise<boolean> {
   const card = page.locator(".hand-cards button").nth(index);
-  if ((await card.getAttribute("aria-pressed")) !== "true") await card.click();
+  if ((await card.getAttribute("aria-disabled")) === "true") return false;
+  if ((await card.getAttribute("aria-pressed")) !== "true") await tapCard(card);
   await expect(card).toHaveAttribute("aria-pressed", "true");
+  return true;
 }
 const scenarios = [3, 4, 5]
   .flatMap((capacity) =>
@@ -109,7 +121,7 @@ for (const { capacity, mission, seed, expectedSuccess } of scenarios) {
       i < 4 && !(await page.locator(".table-surface").count());
       i++
     ) {
-      const own = page.locator(".target-list button:not([disabled])");
+      const own = page.locator(".target-list button:not([aria-disabled='true'])");
       await step(
         page,
         (await own.count())
@@ -119,18 +131,22 @@ for (const { capacity, mission, seed, expectedSuccess } of scenarios) {
     }
     await expect(page.locator(".table-surface")).toBeVisible();
     // Any crew member may communicate before the leading card, including off-turn.
+    // The table UI requires entering the explicit "교신하기" mode first, which greys
+    // out rockets/no-marker cards; any card still enabled there can be broadcast.
     let communicated = false;
-    for (
-      let i = 0;
-      i < (await page.locator(".hand-cards button").count());
-      i++
-    ) {
-      await choose(page, i);
-      const signal = page.locator(".communication-options button");
-      if (await signal.count()) {
-        await step(page, signal.first());
-        communicated = true;
-        break;
+    const commToggle = page.getByRole("button", { name: "교신하기" });
+    if (await commToggle.isVisible()) {
+      await commToggle.click();
+      const selectable = page.locator(
+        ".hand-cards button:not([aria-disabled='true'])",
+      );
+      if (await selectable.count()) {
+        await tapCard(selectable.first());
+        const signal = page.locator(".communication-options button");
+        if (await signal.count()) {
+          await step(page, signal.first());
+          communicated = true;
+        }
       }
     }
     expect(communicated).toBe(true);
@@ -160,7 +176,7 @@ for (const { capacity, mission, seed, expectedSuccess } of scenarios) {
         index < (await page.locator(".hand-cards button").count());
         index++
       ) {
-        await choose(page, index);
+        if (!(await choose(page, index))) continue;
         const submit = page.getByRole("button", { name: "선택한 카드 내기" });
         if (await submit.isEnabled()) {
           await step(page, submit);
@@ -194,14 +210,14 @@ for (const { capacity, mission, seed, expectedSuccess } of scenarios) {
     });
     if (await retry.isVisible()) {
       await step(page, retry);
-      await expect(page.locator(".mission-strip")).toContainText(
+      await expect(page.locator(".mission-panel-strip")).toContainText(
         `MISSION ${String(mission).padStart(2, "0")}`,
       );
       await expect(page.locator(".attempt")).toContainText("2번째 시도");
       await expect(page.locator(".crew-member .communication")).toHaveCount(0);
     } else if (mission < 4) {
       await step(page, nextMission);
-      await expect(page.locator(".mission-strip")).toContainText(
+      await expect(page.locator(".mission-panel-strip")).toContainText(
         `MISSION ${String(mission + 1).padStart(2, "0")}`,
       );
     } else await expect(nextMission).toBeDisabled();

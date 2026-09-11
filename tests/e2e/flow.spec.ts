@@ -10,6 +10,13 @@ test("create, invite, resume and play a mission with private hand controls", asy
     await expect(room).not.toHaveAttribute("data-revision", revision!);
     await expect(room).toHaveAttribute("aria-busy", "false");
   };
+  // 손패 카드는 겹쳐 배치되어 다음 카드가 오른쪽 위로 겹친다. 항상 노출되는
+  // 왼쪽 가장자리를 눌러야 실제 사용자처럼 올바른 카드를 클릭한다.
+  const tapCard = async (card: Locator) => {
+    const box = await card.boundingBox();
+    if (!box) throw new Error("card not visible");
+    await card.click({ position: { x: 6, y: box.height / 2 } });
+  };
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
@@ -63,8 +70,8 @@ test("create, invite, resume and play a mission with private hand controls", asy
   for (let i = 0; i < 2; i++)
     await step(page.getByRole("button", { name: "데모 대원 진행" }));
   for (let i = 0; i < 8; i++) {
-    if (await page.locator(".target-list button:not([disabled])").count())
-      await step(page.locator(".target-list button:not([disabled])").first());
+    if (await page.locator(".target-list button:not([aria-disabled='true'])").count())
+      await step(page.locator(".target-list button:not([aria-disabled='true'])").first());
     else if (
       await page.getByRole("button", { name: "데모 대원 진행" }).isVisible()
     )
@@ -87,8 +94,11 @@ test("create, invite, resume and play a mission with private hand controls", asy
     const cards = page.locator(".hand-cards button");
     let played = false;
     for (let i = 0; i < (await cards.count()); i++) {
+      // 규칙상 낼 수 없는(aria-disabled) 카드는 선택되지 않으므로 건너뛴다.
+      if ((await cards.nth(i).getAttribute("aria-disabled")) === "true")
+        continue;
       if ((await cards.nth(i).getAttribute("aria-pressed")) !== "true")
-        await cards.nth(i).click();
+        await tapCard(cards.nth(i));
       await expect(cards.nth(i)).toHaveAttribute("aria-pressed", "true");
       const submit = page.getByRole("button", { name: "선택한 카드 내기" });
       if (await submit.isEnabled()) {
