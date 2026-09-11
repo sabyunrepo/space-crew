@@ -35,8 +35,10 @@ async function main() {
       console.error("[crew] 오래된 방 정리 실패", error);
     });
 
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`[crew] listening on 0.0.0.0:${PORT} (DATA_DIR=${DATA_DIR})`);
+  // 호스트를 지정하지 않으면 IPv4·IPv6 모두 수신한다. Alpine은 localhost를 ::1로
+  // 해석하므로 0.0.0.0 전용이면 Coolify 헬스 체크(wget localhost)가 거부된다.
+  server.listen(PORT, () => {
+    console.log(`[crew] listening on :${PORT} (DATA_DIR=${DATA_DIR})`);
   });
 
   function shutdown() {
