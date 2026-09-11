@@ -1,0 +1,30 @@
+[
+  {
+    "key": "yellow-spongebob-6",
+    "status": "generated",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-cd5eeec6-abb3-4dfb-ad65-f2ce91b7220f.png",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v2/playing/yellow-spongebob-6.png"
+  },
+  {
+    "key": "yellow-spongebob-7",
+    "status": "error",
+    "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 0e53a1e7-9aeb-4704-ba58-b6d7a9190796.\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"other\\\"\\n      ]\\n    }\\n  }\\n}\")"
+  },
+  {
+    "key": "yellow-spongebob-9",
+    "status": "error",
+    "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 555c2f06-8fed-49e3-9de7-121b5f440b82.\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"other\\\"\\n      ]\\n    }\\n  }\\n}\")"
+  },
+  {
+    "key": "yellow-spongebob-3",
+    "status": "generated",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-8991b30b-e549-41eb-9396-9e997d5fde58.png",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v2/playing/yellow-spongebob-3.png"
+  },
+  {
+    "key": "yellow-spongebob-5",
+    "status": "generated",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-a4095744-411e-439f-a1cd-44cbbf922717.png",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v2/playing/yellow-spongebob-5.png"
+  }
+]

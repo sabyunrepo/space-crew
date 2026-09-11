@@ -1,0 +1,13 @@
+project_id = "mission-crew"
+[api]
+enabled = true
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+[auth]
+enabled = true
+enable_anonymous_sign_ins = true
+[functions.crew-api]
+enabled = true
+verify_jwt = true
+import_map = "./functions/deno.json"
+entrypoint = "./functions/crew-api/index.ts"

@@ -1,0 +1,526 @@
+[
+  {
+    "id": 1,
+    "title": "첫 번째 신호",
+    "summary": "대원들이 나누어 맡은 목표 1개를 담당자가 획득하세요.",
+    "taskCount": 1,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": true
+  },
+  {
+    "id": 2,
+    "title": "둘이 만드는 궤도",
+    "summary": "대원들이 나누어 맡은 목표 2개를 담당자가 획득하세요.",
+    "taskCount": 2,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": true
+  },
+  {
+    "id": 3,
+    "title": "차례대로, 침착하게",
+    "summary": "대원들이 나누어 맡은 목표 2개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 2,
+    "modifiers": [
+      "지정 순서"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": true
+  },
+  {
+    "id": 4,
+    "title": "작은 팀의 큰 도약",
+    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요.",
+    "taskCount": 3,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": true
+  },
+  {
+    "id": 5,
+    "title": "조용한 동행",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 지정 대원은 트릭을 얻지 않아야 합니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 6,
+    "title": "흐릿한 교신",
+    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요.",
+    "taskCount": 3,
+    "modifiers": [
+      "상대 순서",
+      "정보 축소 통신"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 7,
+    "title": "마지막 한 조각",
+    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요.",
+    "taskCount": 3,
+    "modifiers": [
+      "마지막 목표"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 8,
+    "title": "정해진 순서",
+    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 3,
+    "modifiers": [
+      "지정 순서"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 9,
+    "title": "작은 카드의 반전",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 일반1 카드로 트릭을 한 번 이겨야 합니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 10,
+    "title": "더 먼 우주로",
+    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요.",
+    "taskCount": 4,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 11,
+    "title": "심우주 탐사 11",
+    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요. 지휘관 외 지정 대원은 통신할 수 없습니다. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 4,
+    "modifiers": [
+      "지정 순서"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 12,
+    "title": "심우주 탐사 12",
+    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요. 첫 트릭 뒤 오른쪽 대원에게서 무작위 카드를 받습니다.",
+    "taskCount": 4,
+    "modifiers": [
+      "마지막 목표"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 13,
+    "title": "심우주 탐사 13",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 로켓마다 트릭을 이겨야 합니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 14,
+    "title": "심우주 탐사 14",
+    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요.",
+    "taskCount": 4,
+    "modifiers": [
+      "상대 순서",
+      "정보 축소 통신"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 15,
+    "title": "심우주 탐사 15",
+    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 4,
+    "modifiers": [
+      "지정 순서"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 16,
+    "title": "심우주 탐사 16",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 일반9 카드로 트릭을 이기면 안 됩니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 17,
+    "title": "심우주 탐사 17",
+    "summary": "대원들이 나누어 맡은 목표 2개를 담당자가 획득하세요. 일반9 카드로 트릭을 이기면 안 됩니다.",
+    "taskCount": 2,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 18,
+    "title": "심우주 탐사 18",
+    "summary": "대원들이 나누어 맡은 목표 5개를 담당자가 획득하세요.",
+    "taskCount": 5,
+    "modifiers": [
+      "2트릭부터 통신"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 19,
+    "title": "심우주 탐사 19",
+    "summary": "대원들이 나누어 맡은 목표 5개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 5,
+    "modifiers": [
+      "지정 순서",
+      "3트릭부터 통신"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 20,
+    "title": "심우주 탐사 20",
+    "summary": "대원들이 나누어 맡은 목표 2개를 담당자가 획득하세요.",
+    "taskCount": 2,
+    "modifiers": [
+      "지휘관 결정"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 21,
+    "title": "심우주 탐사 21",
+    "summary": "대원들이 나누어 맡은 목표 5개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 5,
+    "modifiers": [
+      "지정 순서",
+      "정보 축소 통신"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 22,
+    "title": "심우주 탐사 22",
+    "summary": "대원들이 나누어 맡은 목표 5개를 담당자가 획득하세요.",
+    "taskCount": 5,
+    "modifiers": [
+      "상대 순서"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 23,
+    "title": "심우주 탐사 23",
+    "summary": "대원들이 나누어 맡은 목표 5개를 담당자가 획득하세요. 임무를 나누기 전 순서 토큰을 교환합니다. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 5,
+    "modifiers": [
+      "지정 순서"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 24,
+    "title": "심우주 탐사 24",
+    "summary": "대원들이 나누어 맡은 목표 6개를 담당자가 획득하세요.",
+    "taskCount": 6,
+    "modifiers": [
+      "지휘관 분배"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 25,
+    "title": "심우주 탐사 25",
+    "summary": "대원들이 나누어 맡은 목표 6개를 담당자가 획득하세요.",
+    "taskCount": 6,
+    "modifiers": [
+      "상대 순서",
+      "정보 축소 통신"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 26,
+    "title": "심우주 탐사 26",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 일반1 카드로 트릭을 두 번 이겨야 합니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 27,
+    "title": "심우주 탐사 27",
+    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요.",
+    "taskCount": 3,
+    "modifiers": [
+      "지휘관 결정"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 28,
+    "title": "심우주 탐사 28",
+    "summary": "대원들이 나누어 맡은 목표 6개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 6,
+    "modifiers": [
+      "지정 순서",
+      "마지막 목표",
+      "3트릭부터 통신"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 29,
+    "title": "심우주 탐사 29",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 항상 대원별 승수 차이를1 이내로 유지합니다.",
+    "taskCount": 0,
+    "modifiers": [
+      "정보 축소 통신"
+    ],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 30,
+    "title": "심우주 탐사 30",
+    "summary": "대원들이 나누어 맡은 목표 6개를 담당자가 획득하세요.",
+    "taskCount": 6,
+    "modifiers": [
+      "상대 순서",
+      "2트릭부터 통신"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 31,
+    "title": "심우주 탐사 31",
+    "summary": "대원들이 나누어 맡은 목표 6개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 6,
+    "modifiers": [
+      "지정 순서"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 32,
+    "title": "심우주 탐사 32",
+    "summary": "대원들이 나누어 맡은 목표 7개를 담당자가 획득하세요.",
+    "taskCount": 7,
+    "modifiers": [
+      "지휘관 분배"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 33,
+    "title": "심우주 탐사 33",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 지정 대원은 로켓 없이 정확히 한 번 이깁니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 34,
+    "title": "심우주 탐사 34",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 지휘관은 첫·마지막 트릭을 이기고 승수 차이는1 이내로 유지합니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 35,
+    "title": "심우주 탐사 35",
+    "summary": "대원들이 나누어 맡은 목표 7개를 담당자가 획득하세요.",
+    "taskCount": 7,
+    "modifiers": [
+      "상대 순서"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 36,
+    "title": "심우주 탐사 36",
+    "summary": "대원들이 나누어 맡은 목표 7개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 7,
+    "modifiers": [
+      "지정 순서",
+      "지휘관 분배"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 37,
+    "title": "심우주 탐사 37",
+    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요.",
+    "taskCount": 4,
+    "modifiers": [
+      "지휘관 결정"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 38,
+    "title": "심우주 탐사 38",
+    "summary": "대원들이 나누어 맡은 목표 8개를 담당자가 획득하세요.",
+    "taskCount": 8,
+    "modifiers": [
+      "3트릭부터 통신"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 39,
+    "title": "심우주 탐사 39",
+    "summary": "대원들이 나누어 맡은 목표 8개를 담당자가 획득하세요.",
+    "taskCount": 8,
+    "modifiers": [
+      "상대 순서",
+      "정보 축소 통신"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 40,
+    "title": "심우주 탐사 40",
+    "summary": "대원들이 나누어 맡은 목표 8개를 담당자가 획득하세요. 순서 토큰을 빈 목표로 옮깁니다. 목표의 지정 순서를 지켜야 합니다.",
+    "taskCount": 8,
+    "modifiers": [
+      "지정 순서"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 41,
+    "title": "심우주 탐사 41",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 지정 대원은 일반 카드로 첫·마지막 트릭만 이깁니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 42,
+    "title": "심우주 탐사 42",
+    "summary": "대원들이 나누어 맡은 목표 9개를 담당자가 획득하세요.",
+    "taskCount": 9,
+    "modifiers": [],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 43,
+    "title": "심우주 탐사 43",
+    "summary": "대원들이 나누어 맡은 목표 9개를 담당자가 획득하세요.",
+    "taskCount": 9,
+    "modifiers": [
+      "지휘관 분배"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 44,
+    "title": "심우주 탐사 44",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 로켓1→2→3→4 순서로 트릭을 이깁니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 45,
+    "title": "심우주 탐사 45",
+    "summary": "대원들이 나누어 맡은 목표 9개를 담당자가 획득하세요.",
+    "taskCount": 9,
+    "modifiers": [
+      "상대 순서"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 46,
+    "title": "심우주 탐사 46",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 검정9 보유자의 왼쪽 대원이 검정 카드를 전부 얻습니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  },
+  {
+    "id": 47,
+    "title": "심우주 탐사 47",
+    "summary": "대원들이 나누어 맡은 목표 10개를 담당자가 획득하세요.",
+    "taskCount": 10,
+    "modifiers": [],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 48,
+    "title": "심우주 탐사 48",
+    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요. 마지막 목표는 마지막 트릭에서 얻습니다.",
+    "taskCount": 3,
+    "modifiers": [
+      "마지막 목표"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 49,
+    "title": "심우주 탐사 49",
+    "summary": "대원들이 나누어 맡은 목표 10개를 담당자가 획득하세요.",
+    "taskCount": 10,
+    "modifiers": [
+      "상대 순서"
+    ],
+    "fivePlayerTransfer": true,
+    "playable": false
+  },
+  {
+    "id": 50,
+    "title": "심우주 탐사 50",
+    "summary": "특별한 트릭 조건을 함께 달성하세요. 한 명은 첫4트릭만, 다른 한 명은 마지막만, 나머지 대원은 중간 트릭을 담당합니다.",
+    "taskCount": 0,
+    "modifiers": [],
+    "fivePlayerTransfer": false,
+    "playable": false
+  }
+]

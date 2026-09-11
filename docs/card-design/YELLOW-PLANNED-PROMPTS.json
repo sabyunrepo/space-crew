@@ -1,0 +1,30 @@
+{
+  "reason": "SCENE-PLAN의 고유 자세와 시점을 반영한 미완성 카드 생성",
+  "tasks": [
+    {
+      "key": "yellow-spongebob-3",
+      "rank": 3,
+      "prompt": "One illustrated SpongeBob SquarePants astronaut playing card, rank3. Draw this planned composition: Inside a zero-gravity storage room with violet indirect lighting, SpongeBob curls his knees toward his chest while floating in the center and stretches one arm far to the upper left with a magnetic wand to retrieve a loose silver bolt. Wide diagonal view, full body, scattered floating fasteners form an arc, face excitedly watching the bolt. Match the attached approved card's character, white-and-yellow spacesuit, sun symbols, yellow border and cel-shaded style. Preserve identity and frame only, use the new pose and background described. Exact Korean nameplate \"스폰지밥\". Top-left numeral3, bottom-right same numeral3 rotated180.  Portrait1024x1536, one flat complete card. No extra lettering."
+    },
+    {
+      "key": "yellow-spongebob-5",
+      "rank": 5,
+      "prompt": "One illustrated SpongeBob SquarePants astronaut playing card, rank5. Draw this planned composition: Inside an enormous circular observation window facing an orange ringed planet, SpongeBob stands at full height on the left, gripping a rail with one hand while extending a long window-cleaning squeegee across the upper right with the other. Camera outside the window looking inward at him and the window frame, mild reflections, energetic stretched silhouette. Match the attached approved card's character, white-and-yellow spacesuit, sun symbols, yellow border and cel-shaded style. Preserve identity and frame only, use the new pose and background described. Exact Korean nameplate \"스폰지밥\". Top-left numeral5, bottom-right same numeral5 rotated180.  Portrait1024x1536, one flat complete card. No extra lettering."
+    },
+    {
+      "key": "yellow-spongebob-6",
+      "rank": 6,
+      "prompt": "One illustrated SpongeBob SquarePants astronaut playing card, rank6. Draw this planned composition: On a dark lunar plain, SpongeBob squats in front of a moon rover to adjust its headlight with a small screwdriver. Camera very low beside the front tire, face on the right looking down at the lamp, the white beam illuminates lunar dust, distant tiny blue base lights. Full squat and wheel visible. Match the attached approved card's character, white-and-yellow spacesuit, sun symbols, yellow border and cel-shaded style. Preserve identity and frame only, use the new pose and background described. Exact Korean nameplate \"스폰지밥\". Top-left numeral6, bottom-right same numeral6 rotated180. Place a clear short underline below each numeral, rotating the bottom-right numeral and underline together. Portrait1024x1536, one flat complete card. No extra lettering."
+    },
+    {
+      "key": "yellow-spongebob-7",
+      "rank": 7,
+      "prompt": "One illustrated SpongeBob SquarePants astronaut playing card, rank7. Draw this planned composition: In a cargo bay beside a red workbench, SpongeBob sits on the floor facing the viewer, holding a small rounded wheeled maintenance robot across his lap and inserting a rectangular battery in its open compartment. View from45 degrees above, full seated triangular silhouette, geometric cargo racks, no humanoid extra character. Match the attached approved card's character, white-and-yellow spacesuit, sun symbols, yellow border and cel-shaded style. Preserve identity and frame only, use the new pose and background described. Exact Korean nameplate \"스폰지밥\". Top-left numeral7, bottom-right same numeral7 rotated180.  Portrait1024x1536, one flat complete card. No extra lettering."
+    },
+    {
+      "key": "yellow-spongebob-9",
+      "rank": 9,
+      "prompt": "One illustrated SpongeBob SquarePants astronaut playing card, rank9. Draw this planned composition: In a gold-lit arched power chamber, SpongeBob stands on the far right after a completed reactor inspection, holding a tablet low in his left hand and giving a thumbs-up with his right. Frontal low-angle full-body view, huge round golden reactor on the left, proud feet-apart stance. Match the attached approved card's character, white-and-yellow spacesuit, sun symbols, yellow border and cel-shaded style. Preserve identity and frame only, use the new pose and background described. Exact Korean nameplate \"스폰지밥\". Top-left numeral9, bottom-right same numeral9 rotated180. Place a clear short underline below each numeral, rotating the bottom-right numeral and underline together. Portrait1024x1536, one flat complete card. No extra lettering."
+    }
+  ]
+}

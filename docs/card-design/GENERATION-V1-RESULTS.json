@@ -1,0 +1,205 @@
+[
+  {
+    "key": "blue-hangyodon-2",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/blue-hangyodon-2.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-7d6b16de-32e3-409f-a0c1-a1720a1b2c1b.png",
+    "status": "generated"
+  },
+  {
+    "key": "white-rocket-3",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/white-rocket-3.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-b531e30f-8722-43dd-bcae-6c8c201843e0.png",
+    "status": "generated"
+  },
+  {
+    "key": "yellow-spongebob-2",
+    "status": "error",
+    "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 357ab0a0-80d5-4e48-b7e6-ecd6847addb5.\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"other\\\"\\n      ]\\n    }\\n  }\\n}\")"
+  },
+  {
+    "key": "yellow-spongebob-3",
+    "status": "error",
+    "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID d0689a5f-7422-4686-b304-a037f7719375.\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"other\\\"\\n      ]\\n    }\\n  }\\n}\")"
+  },
+  {
+    "key": "white-rocket-2",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/white-rocket-2.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-a379bfdf-ccd6-4e97-b648-4b51409816ce.png",
+    "status": "generated"
+  },
+  {
+    "key": "black-tamama-3",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/black-tamama-3.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-64f7b2a6-4ae7-436a-96a9-be9915eb37ff.png",
+    "status": "generated"
+  },
+  {
+    "key": "blue-hangyodon-4",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/blue-hangyodon-4.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-ff875f0a-0b77-48f1-829a-f91562a5da00.png",
+    "status": "generated"
+  },
+  {
+    "key": "green-gecko-4",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/green-gecko-4.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-13ba9e58-20a2-45f4-b62b-7a9e9d7b8c69.png",
+    "status": "generated"
+  },
+  {
+    "key": "black-tamama-4",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/black-tamama-4.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-36175737-b0a1-4e6e-b562-c321f20651b1.png",
+    "status": "generated"
+  },
+  {
+    "key": "white-rocket-4",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/white-rocket-4.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-40ed8afd-5953-4ed6-a250-a89dfd42a86e.png",
+    "status": "generated"
+  },
+  {
+    "key": "yellow-spongebob-4",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/yellow-spongebob-4.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-8508be17-36c8-421d-9635-94bce4b67ef2.png",
+    "status": "generated"
+  },
+  {
+    "key": "blue-hangyodon-5",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/blue-hangyodon-5.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-b65bec9a-bfa4-4b3c-a250-59ffb9741a3a.png",
+    "status": "generated"
+  },
+  {
+    "key": "blue-hangyodon-3",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/blue-hangyodon-3.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-304516c3-4a39-4fb9-87a0-9d4e26852756.png",
+    "status": "generated"
+  },
+  {
+    "key": "green-gecko-2",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/green-gecko-2.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-ae2e32bb-b399-4c15-bc1e-9e8f3f00e48b.png",
+    "status": "generated"
+  },
+  {
+    "key": "black-tamama-2",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/black-tamama-2.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-2cb410a8-3f42-43cb-8b34-aa249b3eccc5.png",
+    "status": "generated"
+  },
+  {
+    "key": "yellow-spongebob-5",
+    "status": "error",
+    "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 4c060867-2c6c-43ea-a954-1fda04588d91.\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"other\\\"\\n      ]\\n    }\\n  }\\n}\")"
+  },
+  {
+    "key": "green-gecko-5",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/green-gecko-5.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-1d7a32d1-42a5-4b52-9d66-4b7ab616e2ad.png",
+    "status": "generated"
+  },
+  {
+    "key": "green-gecko-6",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/green-gecko-6.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-04175a00-952b-4ded-9f0d-5ecb4ec4f4cc.png",
+    "status": "generated"
+  },
+  {
+    "key": "green-gecko-3",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/green-gecko-3.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-2c24b95d-b5eb-4f38-8936-0508839e4df9.png",
+    "status": "generated"
+  },
+  {
+    "key": "yellow-spongebob-6",
+    "status": "error",
+    "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 433bef2f-8644-421d-a524-f299be012122.\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"other\\\"\\n      ]\\n    }\\n  }\\n}\")"
+  },
+  {
+    "key": "blue-hangyodon-6",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/blue-hangyodon-6.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-9e858490-d91e-4473-aabf-9d74fc6c87bc.png",
+    "status": "generated"
+  },
+  {
+    "key": "black-tamama-7",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/black-tamama-7.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-2b9f5243-a954-493d-ab20-a398a81c37b8.png",
+    "status": "generated"
+  },
+  {
+    "key": "green-gecko-7",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/green-gecko-7.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-8e2b1287-0186-4de2-be73-775efd4ed5a8.png",
+    "status": "generated"
+  },
+  {
+    "key": "black-tamama-5",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/black-tamama-5.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-b2540dbf-2913-4f05-8303-5881e4a485a4.png",
+    "status": "generated"
+  },
+  {
+    "key": "yellow-spongebob-7",
+    "status": "error",
+    "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID e3e1dac4-df88-4eef-92e3-a09bf4c2768b.\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"other\\\"\\n      ]\\n    }\\n  }\\n}\")"
+  },
+  {
+    "key": "blue-hangyodon-7",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/blue-hangyodon-7.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-aefdb6cc-0845-4877-8119-430c92dc9d72.png",
+    "status": "generated"
+  },
+  {
+    "key": "black-tamama-8",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/black-tamama-8.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-34f36984-7135-4b8b-9c43-e1372168ed77.png",
+    "status": "generated"
+  },
+  {
+    "key": "yellow-spongebob-8",
+    "status": "error",
+    "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 11cc15ea-8284-48e7-8aa0-3accc04215c8.\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"other\\\"\\n      ]\\n    }\\n  }\\n}\")"
+  },
+  {
+    "key": "black-tamama-6",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/black-tamama-6.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-f4bd3694-f225-486a-9411-9ccb122d72f2.png",
+    "status": "generated"
+  },
+  {
+    "key": "black-tamama-9",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/black-tamama-9.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-f9733c98-6ed9-4bc5-bda6-fd6d0d26a14b.png",
+    "status": "generated"
+  },
+  {
+    "key": "green-gecko-9",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/green-gecko-9.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-068fc1b0-f2cf-4ca7-ab53-1499e2133e76.png",
+    "status": "generated"
+  },
+  {
+    "key": "yellow-spongebob-9",
+    "status": "error",
+    "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID d92b4429-4738-447e-b725-17b4c2b964a3.\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"other\\\"\\n      ]\\n    }\\n  }\\n}\")"
+  },
+  {
+    "key": "blue-hangyodon-8",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/blue-hangyodon-8.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-415475d6-1a7d-4a9e-8265-1133638bc434.png",
+    "status": "generated"
+  },
+  {
+    "key": "green-gecko-8",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/green-gecko-8.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-12650984-3009-441b-a4e0-de1b691d37cb.png",
+    "status": "generated"
+  },
+  {
+    "key": "blue-hangyodon-9",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v1/playing/blue-hangyodon-9.png",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-52abf515-4327-4ea5-aa55-af6fc409335e.png",
+    "status": "generated"
+  }
+]

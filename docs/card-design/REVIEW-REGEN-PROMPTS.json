@@ -1,0 +1,85 @@
+{
+  "reason": "사용자 검수 요청: 숫자별 포즈와 구도까지 독립적으로 재설계",
+  "tasks": [
+    {
+      "suit": "blue-hangyodon",
+      "rank": 3,
+      "name": "한교동",
+      "key": "blue-hangyodon-3",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/blue-hangyodon-1.png",
+      "prompt": "Redesign the CENTRAL ILLUSTRATION of one playing card because the previous set reused poses too much. Use attached card ONLY for Hangyodon's character identity, spacesuit materials, illustration quality and outer card frame. Create a genuinely new composition with substantially different silhouette, face angle, body position, camera angle and setting. Do not copy the reference central pose. New art direction: Wide low-angle view from the base of a large satellite dish. Hangyodon STANDS upright on the lower RIGHT platform in side profile facing LEFT, both boots planted, holding a calibration tablet with one hand and turning a handwheel with the other. Dish fills left upper half, purple nebula background. Clear full-body vertical silhouette, face visible in profile. No floating diagonal wrench pose.\nPreserve the ocean blue, water drop suit frame and corner symbols. Exact upper-left rank 3; bottom-right SAME 3 rotated 180 degrees. Underline ranks 6 and 9. Exact bottom Korean nameplate \"한교동\". Face and identity recognizable at mobile size. Beautiful detailed cute cel-shaded space illustration, portrait 1024x1536 full card."
+    },
+    {
+      "suit": "blue-hangyodon",
+      "rank": 7,
+      "name": "한교동",
+      "key": "blue-hangyodon-7",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/blue-hangyodon-1.png",
+      "prompt": "Redesign the CENTRAL ILLUSTRATION of one playing card because the previous set reused poses too much. Use attached card ONLY for Hangyodon's character identity, spacesuit materials, illustration quality and outer card frame. Create a genuinely new composition with substantially different silhouette, face angle, body position, camera angle and setting. Do not copy the reference central pose. New art direction: Top-down view of solar array installation. Hangyodon lies belly-down horizontally across a broad blue solar panel running lower-left to upper-right, securing a bracket with a small electric driver, legs stretched behind. Character face in upper RIGHT quadrant, looking toward the lower left; planet is a narrow orange arc. Distinct overhead shot. No standing or floating upright pose.\nPreserve the ocean blue, water drop suit frame and corner symbols. Exact upper-left rank 7; bottom-right SAME 7 rotated 180 degrees. Underline ranks 6 and 9. Exact bottom Korean nameplate \"한교동\". Face and identity recognizable at mobile size. Beautiful detailed cute cel-shaded space illustration, portrait 1024x1536 full card."
+    },
+    {
+      "suit": "green-komodo",
+      "rank": 2,
+      "name": "코모도",
+      "key": "green-komodo-2",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/green-gecko-1.png",
+      "prompt": "Redesign the CENTRAL ILLUSTRATION of one playing card because the previous set reused poses too much. Use attached card ONLY for the approved cute green spotted gecko's character identity, spacesuit materials, illustration quality and outer card frame. Create a genuinely new composition with substantially different silhouette, face angle, body position, camera angle and setting. Do not copy the reference central pose. New art direction: Full-body side view: Komodo STANDS on tiptoe on the RIGHT facing LEFT, stretching both hands above his head to turn a large overhead irrigation wheel in a lush hanging greenhouse. Tall slender body silhouette, face looking UP in profile, plants cascading diagonally from upper left. No kneeling pose, no face tilted toward viewer.\nPreserve the green, leaf suit frame and corner symbols. Exact upper-left rank 2; bottom-right SAME 2 rotated 180 degrees. Underline ranks 6 and 9. Exact bottom Korean nameplate \"코모도\". Face and identity recognizable at mobile size. Beautiful detailed cute cel-shaded space illustration, portrait 1024x1536 full card."
+    },
+    {
+      "suit": "green-komodo",
+      "rank": 3,
+      "name": "코모도",
+      "key": "green-komodo-3",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/green-gecko-1.png",
+      "prompt": "Redesign the CENTRAL ILLUSTRATION of one playing card because the previous set reused poses too much. Use attached card ONLY for the approved cute green spotted gecko's character identity, spacesuit materials, illustration quality and outer card frame. Create a genuinely new composition with substantially different silhouette, face angle, body position, camera angle and setting. Do not copy the reference central pose. New art direction: Dramatic low camera from inside a moon crater. Komodo carefully rappels down a vertical rock wall on a safety rope, feet braced sideways against the LEFT cliff, body on a diagonal, looking downward at a glowing crystal held in a sample bag. Full body, distant lander tiny high above, purple sky. Face in upper RIGHT. No kneeling on flat ground.\nPreserve the green, leaf suit frame and corner symbols. Exact upper-left rank 3; bottom-right SAME 3 rotated 180 degrees. Underline ranks 6 and 9. Exact bottom Korean nameplate \"코모도\". Face and identity recognizable at mobile size. Beautiful detailed cute cel-shaded space illustration, portrait 1024x1536 full card."
+    },
+    {
+      "suit": "green-komodo",
+      "rank": 4,
+      "name": "코모도",
+      "key": "green-komodo-4",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/green-gecko-1.png",
+      "prompt": "Redesign the CENTRAL ILLUSTRATION of one playing card because the previous set reused poses too much. Use attached card ONLY for the approved cute green spotted gecko's character identity, spacesuit materials, illustration quality and outer card frame. Create a genuinely new composition with substantially different silhouette, face angle, body position, camera angle and setting. Do not copy the reference central pose. New art direction: Komodo FLOATS horizontally LEFTWARD in zero gravity through a round life-support service tunnel. He cradles a large cylindrical white air filter against his chest, both legs trailing right and curly tail visible. View looking down the tunnel, face left in profile, concentric rings and mint lighting. No kneeling figure by a wall panel.\nPreserve the green, leaf suit frame and corner symbols. Exact upper-left rank 4; bottom-right SAME 4 rotated 180 degrees. Underline ranks 6 and 9. Exact bottom Korean nameplate \"코모도\". Face and identity recognizable at mobile size. Beautiful detailed cute cel-shaded space illustration, portrait 1024x1536 full card."
+    },
+    {
+      "suit": "green-komodo",
+      "rank": 5,
+      "name": "코모도",
+      "key": "green-komodo-5",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/green-gecko-1.png",
+      "prompt": "Redesign the CENTRAL ILLUSTRATION of one playing card because the previous set reused poses too much. Use attached card ONLY for the approved cute green spotted gecko's character identity, spacesuit materials, illustration quality and outer card frame. Create a genuinely new composition with substantially different silhouette, face angle, body position, camera angle and setting. Do not copy the reference central pose. New art direction: View from floor level: Komodo lies on his BACK on a wheeled mechanic creeper underneath a raised exploration rover, feet closest to viewer at bottom left, face visible in center looking UP, both hands reaching overhead to tighten a chassis bolt. Rover undercarriage forms a dark arch, warm workshop lights. No seated figure beside wheel.\nPreserve the green, leaf suit frame and corner symbols. Exact upper-left rank 5; bottom-right SAME 5 rotated 180 degrees. Underline ranks 6 and 9. Exact bottom Korean nameplate \"코모도\". Face and identity recognizable at mobile size. Beautiful detailed cute cel-shaded space illustration, portrait 1024x1536 full card."
+    },
+    {
+      "suit": "green-komodo",
+      "rank": 6,
+      "name": "코모도",
+      "key": "green-komodo-6",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/green-gecko-1.png",
+      "prompt": "Redesign the CENTRAL ILLUSTRATION of one playing card because the previous set reused poses too much. Use attached card ONLY for the approved cute green spotted gecko's character identity, spacesuit materials, illustration quality and outer card frame. Create a genuinely new composition with substantially different silhouette, face angle, body position, camera angle and setting. Do not copy the reference central pose. New art direction: Close-up lab scene at eye level. Komodo's face fills the RIGHT half in left-facing profile as he peers into a microscope on the LEFT; one gloved hand adjusts the focusing wheel. A petri dish with one vivid leaf on the foreground bench, soft pale green science lab, no planet window. Crop chest-up; face intent and mouth closed. No kneeling or handheld magnifier.\nPreserve the green, leaf suit frame and corner symbols. Exact upper-left rank 6; bottom-right SAME 6 rotated 180 degrees. Underline ranks 6 and 9. Exact bottom Korean nameplate \"코모도\". Face and identity recognizable at mobile size. Beautiful detailed cute cel-shaded space illustration, portrait 1024x1536 full card."
+    },
+    {
+      "suit": "green-komodo",
+      "rank": 7,
+      "name": "코모도",
+      "key": "green-komodo-7",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/green-gecko-1.png",
+      "prompt": "Redesign the CENTRAL ILLUSTRATION of one playing card because the previous set reused poses too much. Use attached card ONLY for the approved cute green spotted gecko's character identity, spacesuit materials, illustration quality and outer card frame. Create a genuinely new composition with substantially different silhouette, face angle, body position, camera angle and setting. Do not copy the reference central pose. New art direction: Wide rear three-quarter view. Komodo STANDS on the LEFT atop a red desert ridge, planting a tall weather sensor mast on the RIGHT, one boot on its base and both hands pushing the pole upright. Head turned so cheek and one large eye visible. Long shadow, dramatic orange sunset, wind ribbons. Full standing silhouette, camera behind shoulder. No kneeling facing viewer.\nPreserve the green, leaf suit frame and corner symbols. Exact upper-left rank 7; bottom-right SAME 7 rotated 180 degrees. Underline ranks 6 and 9. Exact bottom Korean nameplate \"코모도\". Face and identity recognizable at mobile size. Beautiful detailed cute cel-shaded space illustration, portrait 1024x1536 full card."
+    },
+    {
+      "suit": "black-tamama",
+      "rank": 2,
+      "name": "타마마",
+      "key": "black-tamama-2",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/black-tamama-1.png",
+      "prompt": "Redesign the CENTRAL ILLUSTRATION of one playing card because the previous set reused poses too much. Use attached card ONLY for Tamama from Keroro's character identity, spacesuit materials, illustration quality and outer card frame. Create a genuinely new composition with substantially different silhouette, face angle, body position, camera angle and setting. Do not copy the reference central pose. New art direction: Low-angle full-body front view: Tamama STANDS carrying a large blue energy coupling cylinder horizontally against his chest, walking toward the viewer through a cargo airlock. One boot steps forward, cheerful focused face, circular airlock behind, no wall repair, no kneeling, no toolbox in foreground.\nPreserve the black, ivory crescent suit frame and corner symbols. Exact upper-left rank 2; bottom-right SAME 2 rotated 180 degrees. Underline ranks 6 and 9. Exact bottom Korean nameplate \"타마마\". Face and identity recognizable at mobile size. Beautiful detailed cute cel-shaded space illustration, portrait 1024x1536 full card."
+    },
+    {
+      "suit": "black-tamama",
+      "rank": 8,
+      "name": "타마마",
+      "key": "black-tamama-8",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/black-tamama-1.png",
+      "prompt": "Redesign the CENTRAL ILLUSTRATION of one playing card because the previous set reused poses too much. Use attached card ONLY for Tamama from Keroro's character identity, spacesuit materials, illustration quality and outer card frame. Create a genuinely new composition with substantially different silhouette, face angle, body position, camera angle and setting. Do not copy the reference central pose. New art direction: Side profile wide view: Tamama is FLOATING upside-down in zero gravity, boots attached to an overhead rail, his head on the lower RIGHT and hands working on a ceiling communications control box on the LEFT. Bundled colored cables form an S curve, dark violet station interior. Face clearly visible, playful concentrated expression. No kneeling upright wall repair.\nPreserve the black, ivory crescent suit frame and corner symbols. Exact upper-left rank 8; bottom-right SAME 8 rotated 180 degrees. Underline ranks 6 and 9. Exact bottom Korean nameplate \"타마마\". Face and identity recognizable at mobile size. Beautiful detailed cute cel-shaded space illustration, portrait 1024x1536 full card."
+    }
+  ]
+}

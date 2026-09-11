@@ -1,0 +1,4 @@
+{
+  "imports": { "zod": "npm:zod@4.5.4" },
+  "compilerOptions": { "strict": true }
+}

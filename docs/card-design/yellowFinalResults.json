@@ -1,0 +1,13 @@
+[
+  {
+    "key": "yellow-spongebob-7",
+    "status": "error",
+    "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID d7a99c00-91e5-44c5-a340-469cb4383cff.\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"other\\\"\\n      ]\\n    }\\n  }\\n}\")"
+  },
+  {
+    "key": "yellow-spongebob-9",
+    "status": "generated",
+    "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-19750449-bfc4-42a6-aafb-780621108161.png",
+    "path": "/Users/byeonsanghun/goinfre/mission/assets/cards/deck/v2/playing/yellow-spongebob-9.png"
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "status": "generated_and_reviewed",
+  "generator": "built-in image_gen",
+  "prompt": "YELLOW-7-V3-PROMPT.md, 재시도 계획",
+  "source": "/Users/byeonsanghun/.codex/generated_images/01a083ed-880f-7b20-bdfc-570b6f4e33be/exec-e1eee125-35bc-459e-83a3-d955ceace344.png",
+  "file": "assets/cards/deck/v3/playing/yellow-spongebob-7.png",
+  "review": {
+    "rank": 7,
+    "korean_label": "스폰지밥",
+    "scene": "정비 의자에 앉아 작업대 위 바퀴 로봇 배터리 교체",
+    "distinct_composition": true
+  }
+}

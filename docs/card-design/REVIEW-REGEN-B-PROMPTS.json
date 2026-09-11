@@ -1,0 +1,60 @@
+{
+  "tasks": [
+    {
+      "key": "blue-hangyodon-2",
+      "suit": "blue-hangyodon",
+      "rank": 2,
+      "name": "한교동",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/blue-hangyodon-1.png",
+      "prompt": "Create ONE revised illustrated playing card. Reference is for Hangyodon's identity, spacesuit and outer frame only. Repaint the whole central image in a NEW camera angle, body silhouette, pose and background; previous deck repeated the same central pose. Art direction: Hangyodon sits cross-legged facing the viewer on the floor in a circular pump room, coiling a thick blue coolant hose into a neat ring around his lap. He looks down with concentration. Camera directly overhead at 45 degrees, symmetrical curved pipes behind, no planet window. Hands low in center; clear seated triangular silhouette, no diagonal floating repair pose.\nKeep blue water drop suit frame and symbols. Rank 2 upright top-left and same 2 rotated180 bottom-right; underline6/9. Exact Korean bottom name \"한교동\". Cute detailed cel-shaded illustration. Whole flat portrait card 1024x1536. Preserve character identity but do not reuse reference pose."
+    },
+    {
+      "key": "blue-hangyodon-8",
+      "suit": "blue-hangyodon",
+      "rank": 8,
+      "name": "한교동",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/blue-hangyodon-1.png",
+      "prompt": "Create ONE revised illustrated playing card. Reference is for Hangyodon's identity, spacesuit and outer frame only. Repaint the whole central image in a NEW camera angle, body silhouette, pose and background; previous deck repeated the same central pose. Art direction: Wide warehouse composition: Hangyodon in LEFT-FACING PROFILE drives a small standing cargo tug, both hands on steering bars, dragging a stack of strapped supply crates. Subject on right, crates on left, glowing floor tracks lead deep into orange-lit cargo bay. Full body and vehicle visible; upright posture, no floating or reaching toward a wall.\nKeep blue water drop suit frame and symbols. Rank 8 upright top-left and same 8 rotated180 bottom-right; underline6/9. Exact Korean bottom name \"한교동\". Cute detailed cel-shaded illustration. Whole flat portrait card 1024x1536. Preserve character identity but do not reuse reference pose."
+    },
+    {
+      "key": "black-tamama-3",
+      "suit": "black-tamama",
+      "rank": 3,
+      "name": "타마마",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/black-tamama-1.png",
+      "prompt": "Create ONE revised illustrated playing card. Reference is for Tamama from Keroro's identity, spacesuit and outer frame only. Repaint the whole central image in a NEW camera angle, body silhouette, pose and background; previous deck repeated the same central pose. Art direction: Extreme medium close-up at eye level: Tamama's face in LEFT profile occupies upper left, looking intently through a blue translucent diagnostic visor toward a small fuel cell mounted on a lab test rig on the lower right. One gloved hand holds a wired test probe, other turns a dial. Crop shoulders-up, soft amber lab lighting, no kneeling, no wall batteries.\nKeep ivory crescent, black suit frame and symbols. Rank 3 upright top-left and same 3 rotated180 bottom-right; underline6/9. Exact Korean bottom name \"타마마\". Cute detailed cel-shaded illustration. Whole flat portrait card 1024x1536. Preserve character identity but do not reuse reference pose."
+    },
+    {
+      "key": "black-tamama-6",
+      "suit": "black-tamama",
+      "rank": 6,
+      "name": "타마마",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/black-tamama-1.png",
+      "prompt": "Create ONE revised illustrated playing card. Reference is for Tamama from Keroro's identity, spacesuit and outer frame only. Repaint the whole central image in a NEW camera angle, body silhouette, pose and background; previous deck repeated the same central pose. Art direction: Tamama sits on a tall swivel stool on the RIGHT facing left, legs dangling, comparing two tiny fuse modules held at eye level above a workbench covered with neatly organized multicolored fuses. High-angle view, face looking thoughtfully left with pursed mouth. Magenta diagnostic lamp lights the bench. No floor kneeling or cylindrical blue wall battery.\nKeep ivory crescent, black suit frame and symbols. Rank 6 upright top-left and same 6 rotated180 bottom-right; underline6/9. Exact Korean bottom name \"타마마\". Cute detailed cel-shaded illustration. Whole flat portrait card 1024x1536. Preserve character identity but do not reuse reference pose."
+    },
+    {
+      "key": "black-tamama-9",
+      "suit": "black-tamama",
+      "rank": 9,
+      "name": "타마마",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/black-tamama-1.png",
+      "prompt": "Create ONE revised illustrated playing card. Reference is for Tamama from Keroro's identity, spacesuit and outer frame only. Repaint the whole central image in a NEW camera angle, body silhouette, pose and background; previous deck repeated the same central pose. Art direction: Heroic full-body wide shot from below: Tamama stands on a high catwalk on the LEFT holding an open inspection tablet, with one arm raised giving a thumbs-up toward a huge spherical engine core suspended in rings on the RIGHT. Proud upright stance, feet apart, head facing viewer, electric cyan rimlight and dramatic dark chamber. No kneeling beside wall panel.\nKeep ivory crescent, black suit frame and symbols. Rank 9 upright top-left and same 9 rotated180 bottom-right; underline6/9. Exact Korean bottom name \"타마마\". Cute detailed cel-shaded illustration. Whole flat portrait card 1024x1536. Preserve character identity but do not reuse reference pose."
+    },
+    {
+      "key": "green-komodo-8",
+      "suit": "green-komodo",
+      "rank": 8,
+      "name": "코모도",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/green-gecko-1.png",
+      "prompt": "Create ONE revised illustrated playing card. Reference is for the approved cute green spotted gecko's identity, spacesuit and outer frame only. Repaint the whole central image in a NEW camera angle, body silhouette, pose and background; previous deck repeated the same central pose. Art direction: Top-down overhead view of a greenhouse worktable. Komodo sits at the BOTTOM of the scene viewed from above and behind, turning his head up enough for his large eyes to be recognizable, using tweezers to sort tiny seeds into a geometric grid of seedling trays. Curly tail loops around the chair, yellow grow lamp casts soft circular light. Table fills most of image. No kneeling side view beside tall plants.\nKeep green leaf suit frame and symbols. Rank 8 upright top-left and same 8 rotated180 bottom-right; underline6/9. Exact Korean bottom name \"코모도\". Cute detailed cel-shaded illustration. Whole flat portrait card 1024x1536. Preserve character identity but do not reuse reference pose."
+    },
+    {
+      "key": "green-komodo-9",
+      "suit": "green-komodo",
+      "rank": 9,
+      "name": "코모도",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/green-gecko-1.png",
+      "prompt": "Create ONE revised illustrated playing card. Reference is for the approved cute green spotted gecko's identity, spacesuit and outer frame only. Repaint the whole central image in a NEW camera angle, body silhouette, pose and background; previous deck repeated the same central pose. Art direction: Centered frontal cockpit view. Komodo sits upright in a rounded command chair, both arms stretched sideways operating two joysticks controlling greenhouse robot arms. Face straight ahead with big joyful smile, no head tilt. Broad panoramic window behind shows a flourishing orbital garden with pink blossoms and Earth at dawn. Full seated body, curved control desks left and right, no kneeling repair pose.\nKeep green leaf suit frame and symbols. Rank 9 upright top-left and same 9 rotated180 bottom-right; underline6/9. Exact Korean bottom name \"코모도\". Cute detailed cel-shaded illustration. Whole flat portrait card 1024x1536. Preserve character identity but do not reuse reference pose."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "tasks": [
+    {
+      "key": "yellow-spongebob-4",
+      "rank": 4,
+      "scene": "SpongeBob in left-facing side profile, leaning forward toward a circuit board on a standalone electronics bench. Camera at circuit-board level, close side shot with his face on the right and soldering iron and tweezers in the foreground on the left. Small white spotlight, dark navy laboratory behind. Distinct from the reference's three-quarter frontal smiling console repair.",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/yellow-spongebob-1.png",
+      "prompt": "Create one new SpongeBob SquarePants astronaut playing card, using attached reference for character identity, spacesuit and yellow sun-symbol card frame only. Draw a NEW composition following this exact scene plan: SpongeBob in left-facing side profile, leaning forward toward a circuit board on a standalone electronics bench. Camera at circuit-board level, close side shot with his face on the right and soldering iron and tweezers in the foreground on the left. Small white spotlight, dark navy laboratory behind. Distinct from the reference's three-quarter frontal smiling console repair. Cheerful everyday space maintenance illustration, detailed cel shading. Change posture and camera angle substantially from reference. Rank 4 at upper-left and same rank rotated180 at lower-right.  Exact Korean bottom nameplate \"스폰지밥\". Full portrait card1024x1536. No additional writing in background."
+    },
+    {
+      "key": "yellow-spongebob-8",
+      "rank": 8,
+      "scene": "SpongeBob wearing a safety harness attached to a communications tower outside a spacecraft, hugging the pole with one arm while connecting a cable with the other. Top-down view along the tower into starry blue space, full body on the lower left, antenna trusses crisscrossing the upper right.",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/yellow-spongebob-1.png",
+      "prompt": "Create one new SpongeBob SquarePants astronaut playing card, using attached reference for character identity, spacesuit and yellow sun-symbol card frame only. Draw a NEW composition following this exact scene plan: SpongeBob wearing a safety harness attached to a communications tower outside a spacecraft, hugging the pole with one arm while connecting a cable with the other. Top-down view along the tower into starry blue space, full body on the lower left, antenna trusses crisscrossing the upper right. Cheerful everyday space maintenance illustration, detailed cel shading. Change posture and camera angle substantially from reference. Rank 8 at upper-left and same rank rotated180 at lower-right.  Exact Korean bottom nameplate \"스폰지밥\". Full portrait card1024x1536. No additional writing in background."
+    },
+    {
+      "key": "yellow-spongebob-9",
+      "rank": 9,
+      "scene": "SpongeBob standing on the right in a gold-lit arched power chamber, completing the final reactor inspection with a tablet held low in one hand and the other giving a thumbs-up. Full-body frontal low-angle shot, large round golden core on the left, feet planted apart.",
+      "reference": "/Users/byeonsanghun/goinfre/mission/assets/cards/previews/v1/yellow-spongebob-1.png",
+      "prompt": "Create one new SpongeBob SquarePants astronaut playing card, using attached reference for character identity, spacesuit and yellow sun-symbol card frame only. Draw a NEW composition following this exact scene plan: SpongeBob standing on the right in a gold-lit arched power chamber, completing the final reactor inspection with a tablet held low in one hand and the other giving a thumbs-up. Full-body frontal low-angle shot, large round golden core on the left, feet planted apart. Cheerful everyday space maintenance illustration, detailed cel shading. Change posture and camera angle substantially from reference. Rank 9 at upper-left and same rank rotated180 at lower-right. Underline both9 indices. Exact Korean bottom nameplate \"스폰지밥\". Full portrait card1024x1536. No additional writing in background."
+    }
+  ]
+}

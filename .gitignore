@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env*
+!.env.example
+playwright-report/
+test-results/
+*.tsbuildinfo
+supabase/.temp/
+public/cards/
+# 대용량 원본·산출물 (공개 저장소 제외)
+assets/
+artifacts/
+graphify-out/
+.omc/
