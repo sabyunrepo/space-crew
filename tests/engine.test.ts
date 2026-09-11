@@ -173,6 +173,28 @@ describe("authoritative demo rules", () => {
       "campaign_complete",
     );
   });
+  it("allows any room member (not just the host) to advance_trick", () => {
+    let state = playing();
+    while (state.phase !== "trick_result") {
+      state = applyCommand(state, state.turnPlayerId!, {
+        type: "play_card",
+        cardId: legalCards(state, state.turnPlayerId!)[0],
+      });
+    }
+    const nonHost = state.players.find((p) => p.id !== host)!.id;
+    const advanced = applyCommand(state, nonHost, { type: "advance_trick" });
+    expect(advanced.phase).toBe("playing");
+  });
+  it("moves sequential mode to campaign_complete when the next mission is not playable", () => {
+    const input = room();
+    input.settings.startMission = 4;
+    let state = start(input);
+    expect(state.missionId).toBe(4);
+    state.phase = "success";
+    const next = applyCommand(state, host, { type: "next_mission" });
+    expect(next.phase).toBe("campaign_complete");
+    expect(next.resultReason).toContain("모두 마쳤습니다");
+  });
   it("plays a full legal attempt to a terminal result without consuming the 3-player extra card", () => {
     let state = playing();
     let count = 0;

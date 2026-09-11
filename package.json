@@ -12,6 +12,7 @@
     "assets": "node tools/prepare-web-assets.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:server": "playwright test --config=playwright.server.config.ts",
     "typecheck": "tsc -b",
     "contracts": "node tools/sync-edge-contracts.mjs && tsx tools/export-openapi.ts",
     "predev": "npm run assets"

@@ -64,7 +64,7 @@ export function StatusBar({
             onClick={onInvite}
           >
             <Copy size={14} />
-            초대 링크
+            <span className="status-invite-label">초대 링크</span>
           </button>
         )}
         {action && (

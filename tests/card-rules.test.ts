@@ -119,10 +119,10 @@ describe("handAvailability", () => {
     const result = handAvailability(snapshot, "communicate");
     const rocket = result.find((c) => c.cardId === "rocket-1")!;
     expect(rocket.enabled).toBe(false);
-    expect(rocket.reason).toBe("교신할 수 없는 카드예요");
+    expect(rocket.reason).toBe("로켓 카드는 교신할 수 없어요");
   });
 
-  test("communicate mode: a card with no marker (neither highest nor lowest) is disabled", () => {
+  test("communicate mode: a middle-rank card (neither highest, lowest, nor only) is disabled — same judgement as the engine's communicationMarkers", () => {
     const snapshot = fixture({
       me: {
         playerId: "me",
@@ -136,7 +136,30 @@ describe("handAvailability", () => {
     expect(result.find((c) => c.cardId === "blue-7")!.enabled).toBe(true);
     const middle = result.find((c) => c.cardId === "blue-5")!;
     expect(middle.enabled).toBe(false);
-    expect(middle.reason).toBe("교신할 수 없는 카드예요");
+    expect(middle.reason).toBe(
+      "이 색에서 가장 높거나 낮거나 유일한 카드만 교신할 수 있어요",
+    );
+  });
+
+  test("communicate mode: with four cards of one color, both middle ranks are disabled and only the extremes are enabled", () => {
+    const snapshot = fixture({
+      me: {
+        playerId: "me",
+        hand: ["green-2", "green-4", "green-6", "green-8"] as CardId[],
+        legalCardIds: ["green-2", "green-4", "green-6", "green-8"] as CardId[],
+        canCommunicate: true,
+      },
+    });
+    const result = handAvailability(snapshot, "communicate");
+    expect(result.find((c) => c.cardId === "green-2")!.enabled).toBe(true);
+    expect(result.find((c) => c.cardId === "green-8")!.enabled).toBe(true);
+    for (const cardId of ["green-4", "green-6"] as CardId[]) {
+      const middle = result.find((c) => c.cardId === cardId)!;
+      expect(middle.enabled).toBe(false);
+      expect(middle.reason).toBe(
+        "이 색에서 가장 높거나 낮거나 유일한 카드만 교신할 수 있어요",
+      );
+    }
   });
 
   test("view mode: everything enabled regardless of turn or legality", () => {

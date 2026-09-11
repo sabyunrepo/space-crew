@@ -18,6 +18,32 @@ function roomFile(dataDir: string, roomId: string): string {
   return join(roomsDir(dataDir), `${roomId}.json`);
 }
 
+export async function roomFileExists(
+  dataDir: string,
+  roomId: string,
+): Promise<boolean> {
+  try {
+    await stat(roomFile(dataDir, roomId));
+    return true;
+  } catch (error) {
+    if (isEnoent(error)) return false;
+    throw error;
+  }
+}
+
+/**
+ * Probes that DATA_DIR/rooms is writable by writing and deleting a temp
+ * file. Call once at startup so a misconfigured volume fails fast with a
+ * clear log instead of surfacing as opaque 500s on the first room write.
+ */
+export async function verifyWritable(dataDir: string): Promise<void> {
+  const dir = roomsDir(dataDir);
+  await mkdir(dir, { recursive: true });
+  const probe = join(dir, `.write-check.${process.pid}.${Date.now()}.tmp`);
+  await writeFile(probe, "ok", "utf8");
+  await rm(probe, { force: true });
+}
+
 export async function readRoomFile<T>(
   dataDir: string,
   roomId: string,
@@ -40,8 +66,13 @@ export async function writeRoomFile(
   await mkdir(dir, { recursive: true });
   const target = roomFile(dataDir, roomId);
   const tmp = join(dir, `.${roomId}.${process.pid}.${Date.now()}.tmp`);
-  await writeFile(tmp, JSON.stringify(data), "utf8");
-  await rename(tmp, target);
+  try {
+    await writeFile(tmp, JSON.stringify(data), "utf8");
+    await rename(tmp, target);
+  } catch (error) {
+    await rm(tmp, { force: true }).catch(() => {});
+    throw error;
+  }
 }
 
 export async function listRoomIds(dataDir: string): Promise<string[]> {

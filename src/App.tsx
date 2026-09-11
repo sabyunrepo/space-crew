@@ -42,6 +42,7 @@ import {
 import missions from "../shared/missions.json";
 import { makeService } from "./services/index.ts";
 import { GameTable } from "./components/table/GameTable.tsx";
+import { GuidePage } from "./pages/GuidePage.tsx";
 /** service.mode는 향후 "server"도 값으로 가질 수 있어 문자열 비교로 안전하게 처리한다. */
 function modeLabel(mode: string | undefined) {
   if (mode === "mock") return "LOCAL DEMO";
@@ -140,9 +141,8 @@ export function App() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [connection, setConnection] = useState<Connection>("connecting");
-  const [modal, setModal] = useState<"missions" | "rules" | "cards" | null>(
-    null,
-  );
+  const [modal, setModal] = useState<"missions" | "cards" | null>(null);
+  const guideReturnPath = useRef("/");
   const [settings, setSettings] = useState<RoomSettings>(defaultSettings);
   const [nickname, setNickname] = useState(
     () => localStorage.getItem("crew.nickname") || "별빛",
@@ -335,6 +335,14 @@ export function App() {
       snapshot.phase,
     )
   );
+  if (path === "/guide")
+    return (
+      <GuidePage
+        onBack={() =>
+          navigate(guideReturnPath.current === "/guide" ? "/" : guideReturnPath.current)
+        }
+      />
+    );
   return (
     <div className={`app-shell ${fixedLayout ? "gameplay-fixed" : ""}`}>
       <header className="site-header">
@@ -351,7 +359,12 @@ export function App() {
           </span>
         </button>
         <nav>
-          <button onClick={() => setModal("rules")}>
+          <button
+            onClick={() => {
+              guideReturnPath.current = path;
+              navigate("/guide");
+            }}
+          >
             <BookOpen size={16} />
             <span>플레이 가이드</span>
           </button>
@@ -791,45 +804,6 @@ export function App() {
               </div>
               <span>공통 뒷면</span>
             </div>
-          </div>
-        </Modal>
-      )}
-      {modal === "rules" && (
-        <Modal title="우주 탐사를 시작하는 방법" onClose={() => setModal(null)}>
-          <div className="rules">
-            <p>
-              3~5명이 함께 목표를 완수하는 협력 트릭테이킹 게임입니다. 일반
-              카드는 네 색의 1~9, 로켓은 1~4입니다.
-            </p>
-            <h3>1. 각자의 목표를 정해요</h3>
-            <p>
-              로켓 4를 가진 사령관부터 목표 카드를 하나씩 선택합니다. 내 목표
-              카드가 포함된 트릭을 내가 획득해야 합니다. 순서 표시가 있다면 그
-              순서도 지켜야 해요.
-            </p>
-            <h3>2. 선도 색을 따라 한 장씩 내요</h3>
-            <p>
-              첫 카드의 색을 갖고 있다면 반드시 같은 색을 냅니다. 없다면 다른
-              색이나 로켓을 낼 수 있어요. 로켓 중 가장 높은 카드, 로켓이 없다면
-              선도 색 중 가장 높은 카드가 트릭을 가져갑니다.
-            </p>
-            <h3>3. 한 번만 교신할 수 있어요</h3>
-            <p>
-              임무당 한 번, 트릭 시작 전에 일반 카드 한 장을 공개합니다. 해당 색
-              중 가장 높음·가장 낮음·유일함을 정확하게 표시해야 해요. 로켓은
-              교신할 수 없습니다. 교신 카드는 손패에 남습니다.
-            </p>
-            <h3>4. 실패해도 함께 다시 도전해요</h3>
-            <p>
-              목표 카드를 다른 사람이 가져가거나 순서를 어기면 실패합니다.
-              재도전은 같은 미션을 새로 섞어 시작합니다. 랜덤 탐사도 성공한
-              뒤에만 새 미션을 추첨합니다.
-            </p>
-            <p className="helper">
-              3인 게임은 14·13·13장으로 나누고 마지막 남은 한 장은 사용하지
-              않습니다. 특수 교신·특수 승리 조건은 각 미션 규칙을 따릅니다. 이
-              프론트 데모는 미션 1~4의 기본 규칙을 구현합니다.
-            </p>
           </div>
         </Modal>
       )}

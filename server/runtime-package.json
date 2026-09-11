@@ -1,0 +1,9 @@
+{
+  "name": "mission-crew-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ws": "8.21.3",
+    "zod": "4.5.4"
+  }
+}

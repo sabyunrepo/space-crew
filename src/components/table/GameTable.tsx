@@ -35,6 +35,7 @@ const markerLabels = {
 function statusMessage(
   snapshot: Snapshot,
   mineId: string | undefined,
+  serviceMode: GameService["mode"],
 ): string {
   const nickOf = (id: string | null) =>
     snapshot.players.find((p) => p.id === id)?.nickname ?? "";
@@ -53,10 +54,17 @@ function statusMessage(
       return snapshot.turnPlayerId === mineId
         ? "당신의 차례입니다 · 카드를 내세요"
         : `${nickOf(snapshot.turnPlayerId)} 대원의 차례입니다`;
-    case "trick_result":
-      return snapshot.lastTrick
+    case "trick_result": {
+      const base = snapshot.lastTrick
         ? `${nickOf(snapshot.lastTrick.winnerId)} 대원이 이번 트릭을 가져갔습니다`
         : "트릭을 정리하는 중입니다";
+      // 서버 모드는 트릭 결과를 잠시 보여준 뒤 자동으로 다음 트릭을
+      // 진행한다(server/rooms.ts) — 아무도 누르지 않아도 넘어간다는 것을
+      // 안내한다.
+      return serviceMode === "server"
+        ? `${base} · 잠시 후 자동으로 다음 트릭`
+        : base;
+    }
     case "success":
       return "임무 성공! 모든 목표를 완수했습니다";
     case "failure":
@@ -147,7 +155,10 @@ export function GameTable({
           disabled: locked,
           onClick: () => onSend({ type: "briefing_ready" }),
         };
-  else if (snapshot.phase === "trick_result" && isHost)
+  else if (
+    snapshot.phase === "trick_result" &&
+    (isHost || serviceMode === "server")
+  )
     action = {
       label: "다음 트릭",
       icon: <ArrowRight size={16} />,
@@ -196,7 +207,7 @@ export function GameTable({
     <div className={`game-table ${lobby ? "game-table--lobby" : ""}`}>
       <StatusBar
         title={snapshot.settings.name}
-        message={statusMessage(snapshot, mine?.id)}
+        message={statusMessage(snapshot, mine?.id, serviceMode)}
         onBack={onBack}
         action={action}
         connection={connection}
@@ -248,7 +259,8 @@ export function GameTable({
                   <Check size={17} />
                   {mine?.ready ? "준비 취소" : "탑승 준비 완료"}
                 </button>
-                {onFillDemoCrew &&
+                {isHost &&
+                  onFillDemoCrew &&
                   snapshot.players.length < snapshot.settings.capacity && (
                     <button
                       className="secondary"

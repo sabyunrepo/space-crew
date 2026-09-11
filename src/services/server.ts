@@ -17,11 +17,9 @@ const BASE_BACKOFF_MS = 500;
 
 const tokenKey = (roomId: string) => TOKEN_PREFIX + roomId;
 
-function wsUrl(roomId: string, token: string): string {
+function wsUrl(roomId: string): string {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${location.host}/ws?roomId=${encodeURIComponent(
-    roomId,
-  )}&token=${encodeURIComponent(token)}`;
+  return `${protocol}//${location.host}/ws?roomId=${encodeURIComponent(roomId)}`;
 }
 
 const CreateOrJoinResponseSchema = z.object({
@@ -58,33 +56,57 @@ export class ServerService implements GameService {
     schema: z.ZodType<T>,
     options: { method?: string; body?: unknown; token?: string } = {},
   ): Promise<T> {
+    let response: Response;
     try {
       const headers: Record<string, string> = {};
       if (options.body !== undefined) headers["Content-Type"] = "application/json";
       if (options.token) headers.Authorization = `Bearer ${options.token}`;
-      const response = await fetch("/api" + path, {
+      response = await fetch("/api" + path, {
         method: options.method ?? (options.body === undefined ? "GET" : "POST"),
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
         signal: AbortSignal.timeout(15000),
       });
-      const result = await response.json();
-      if (!response.ok)
-        throw new ApiError(
-          result.error?.code ?? "SERVER_ERROR",
-          result.error?.message ?? "서버 요청에 실패했습니다.",
-          response.status,
-          result.error?.currentRevision,
-        );
-      return schema.parse(result);
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
+    } catch {
+      // The request never reached (or returned from) the server at all.
       throw new ApiError(
         "CONNECTION_FAILED",
         "서버 응답을 확인할 수 없습니다. 연결을 확인한 뒤 같은 요청을 다시 전송해 주세요.",
         0,
       );
     }
+    let result: unknown;
+    try {
+      result = await response.json();
+    } catch {
+      // L6: the server answered but the body isn't even JSON - distinct
+      // from a dropped connection, so it shouldn't look retriable the same way.
+      throw new ApiError(
+        "INVALID_RESPONSE",
+        "서버 응답 형식이 올바르지 않습니다.",
+        502,
+      );
+    }
+    if (!response.ok) {
+      const error = (result as { error?: Record<string, unknown> } | null)?.error;
+      throw new ApiError(
+        typeof error?.code === "string" ? error.code : "SERVER_ERROR",
+        typeof error?.message === "string" ? error.message : "서버 요청에 실패했습니다.",
+        response.status,
+        typeof error?.currentRevision === "number" ? error.currentRevision : undefined,
+      );
+    }
+    const parsed = schema.safeParse(result);
+    if (!parsed.success)
+      // L6: a 200 whose body doesn't match the contract is a server-side
+      // bug, not a network failure - surface it distinctly (502) instead of
+      // the misleading "offline" CONNECTION_FAILED/status-0.
+      throw new ApiError(
+        "INVALID_RESPONSE",
+        "서버 응답 형식이 올바르지 않습니다.",
+        502,
+      );
+    return parsed.data;
   }
 
   async capabilities() {
@@ -168,15 +190,19 @@ export class ServerService implements GameService {
         return;
       }
       onConnection(attempt === 0 ? "connecting" : "reconnecting");
-      const ws = new WebSocket(wsUrl(roomId, token));
+      const ws = new WebSocket(wsUrl(roomId));
       socket = ws;
       ws.addEventListener("open", () => {
-        if (stopped) return;
+        if (stopped || socket !== ws) return;
         attempt = 0;
         onConnection("connected");
+        // M4: the server never trusts a token in the URL/query string - the
+        // first message on the socket authenticates it.
+        ws.send(JSON.stringify({ type: "auth", token }));
         pullLatest();
       });
       ws.addEventListener("message", (event) => {
+        if (stopped || socket !== ws) return;
         try {
           const data = JSON.parse(String(event.data));
           if (data?.type === "revision" && typeof data.revision === "number")
@@ -185,14 +211,23 @@ export class ServerService implements GameService {
           // ignore malformed frames
         }
       });
-      ws.addEventListener("close", () => {
-        socket = null;
+      ws.addEventListener("close", (event) => {
+        if (socket === ws) socket = null;
         if (stopped) return;
+        // M6: the server closes with 4401 when the token is rejected (or
+        // never arrives in time). Retrying the same token would just loop
+        // forever, so stop and let the caller re-authenticate (e.g. re-join).
+        if ((event as CloseEvent).code === 4401) {
+          onConnection("offline");
+          return;
+        }
         onConnection("reconnecting");
         attempt += 1;
         reconnectTimer = setTimeout(connect, backoffMs());
       });
-      ws.addEventListener("error", () => ws.close());
+      ws.addEventListener("error", () => {
+        if (socket === ws) ws.close();
+      });
     };
 
     const onVisibility = () => {
@@ -201,9 +236,14 @@ export class ServerService implements GameService {
         pullLatest();
         return;
       }
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      attempt = 0;
-      connect();
+      // M5: only (re)connect when there is truly no socket in flight - a
+      // CONNECTING/CLOSING socket already has (or will get) a close handler
+      // that reconnects; opening a second one here would leak a duplicate.
+      if (!socket || socket.readyState === WebSocket.CLOSED) {
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        attempt = 0;
+        connect();
+      }
     };
     document.addEventListener("visibilitychange", onVisibility);
 

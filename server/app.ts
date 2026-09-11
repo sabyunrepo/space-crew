@@ -1,7 +1,6 @@
 import { createServer, type IncomingMessage, type Server } from "node:http";
-import { createReadStream } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
-import { extname, join, normalize, resolve, sep } from "node:path";
+import { extname, normalize, resolve, sep } from "node:path";
 import { WebSocket, WebSocketServer } from "ws";
 import { z } from "zod";
 import {
@@ -15,9 +14,19 @@ import {
 } from "../shared/contracts.ts";
 import missions from "../shared/missions.json" with { type: "json" };
 import { RoomStore } from "./rooms.ts";
+import { IpRateLimiter } from "./rate-limit.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const WS_MAX_PAYLOAD_BYTES = 4096;
+const DEFAULT_AUTH_TIMEOUT_MS = 5000;
+const DEFAULT_HEARTBEAT_INTERVAL_MS = 30_000;
+/** Room creation / join: 10 req/min per IP, burst 5. */
+const ROOM_RATE_LIMIT_CAPACITY = 5;
+const ROOM_RATE_LIMIT_PER_MINUTE = 10;
+/** WS auth attempts: 30/min per IP, closed immediately over the limit. */
+const WS_AUTH_RATE_LIMIT_CAPACITY = 30;
+const WS_AUTH_RATE_LIMIT_PER_MINUTE = 30;
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -96,18 +105,56 @@ function bearerToken(req: IncomingMessage): string {
   return match[1];
 }
 
+/** CF-Connecting-IP (Cloudflare Tunnel) -> first X-Forwarded-For hop -> raw
+ * socket address. Used only to key per-IP rate limits, never trusted for
+ * authorization. */
+function clientIp(req: IncomingMessage): string {
+  const cf = req.headers["cf-connecting-ip"];
+  if (typeof cf === "string" && cf) return cf;
+  const xff = req.headers["x-forwarded-for"];
+  if (typeof xff === "string" && xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return req.socket.remoteAddress ?? "unknown";
+}
+
+type WsConnState = {
+  alive: boolean;
+  authenticated: boolean;
+  roomId: string;
+  authTimer: ReturnType<typeof setTimeout> | null;
+};
+
 export function createApp(options: {
   dataDir: string;
   staticDir: string;
   demoDelayMs?: number;
-}): { server: Server; store: RoomStore } {
+  authTimeoutMs?: number;
+  heartbeatIntervalMs?: number;
+}): { server: Server; store: RoomStore; close: () => Promise<void> } {
   const store = new RoomStore({
     dataDir: options.dataDir,
     demoDelayMs: options.demoDelayMs,
   });
   const staticRoot = resolve(options.staticDir);
-  const wss = new WebSocketServer({ noServer: true });
+  const authTimeoutMs = options.authTimeoutMs ?? DEFAULT_AUTH_TIMEOUT_MS;
+  const heartbeatIntervalMs =
+    options.heartbeatIntervalMs ?? DEFAULT_HEARTBEAT_INTERVAL_MS;
+  const wss = new WebSocketServer({
+    noServer: true,
+    maxPayload: WS_MAX_PAYLOAD_BYTES,
+  });
   const roomSockets = new Map<string, Set<WebSocket>>();
+  const wsState = new Map<WebSocket, WsConnState>();
+  const roomRateLimiter = new IpRateLimiter(
+    ROOM_RATE_LIMIT_CAPACITY,
+    ROOM_RATE_LIMIT_PER_MINUTE,
+  );
+  const wsAuthRateLimiter = new IpRateLimiter(
+    WS_AUTH_RATE_LIMIT_CAPACITY,
+    WS_AUTH_RATE_LIMIT_PER_MINUTE,
+  );
 
   store.onRevision((roomId, revision) => {
     const sockets = roomSockets.get(roomId);
@@ -118,15 +165,102 @@ export function createApp(options: {
   });
 
   function registerSocket(roomId: string, socket: WebSocket) {
+    // L4: the auth check (an async store.snapshot call) may finish after the
+    // client has already gone away - never add a non-OPEN socket.
+    if (socket.readyState !== WebSocket.OPEN) return;
     let sockets = roomSockets.get(roomId);
     if (!sockets) {
       sockets = new Set();
       roomSockets.set(roomId, sockets);
     }
     sockets.add(socket);
+    store.connectionOpened(roomId);
     socket.on("close", () => {
       sockets!.delete(socket);
       if (sockets!.size === 0) roomSockets.delete(roomId);
+      store.connectionClosed(roomId);
+    });
+  }
+
+  // M7: heartbeat. A dead peer (network drop, crashed tab) never sends a
+  // FIN, so without this a broken connection lingers in roomSockets forever.
+  const heartbeatTimer: ReturnType<typeof setInterval> | null =
+    heartbeatIntervalMs > 0
+      ? setInterval(() => {
+          for (const ws of wss.clients) {
+            const state = wsState.get(ws);
+            if (!state) continue;
+            if (!state.alive) {
+              ws.terminate();
+              continue;
+            }
+            state.alive = false;
+            ws.ping();
+          }
+        }, heartbeatIntervalMs)
+      : null;
+  if (heartbeatTimer && typeof heartbeatTimer.unref === "function")
+    heartbeatTimer.unref();
+
+  function handleConnection(ws: WebSocket, roomId: string, ip: string) {
+    // C1: an upgraded socket that never gets an error handler can crash the
+    // process on a single malformed frame (e.g. invalid UTF-8 in a text
+    // frame) - the ws Receiver emits 'error' and, unhandled, that's fatal.
+    ws.on("error", () => ws.terminate());
+
+    const state: WsConnState = {
+      alive: true,
+      authenticated: false,
+      roomId,
+      authTimer: null,
+    };
+    wsState.set(ws, state);
+    ws.on("pong", () => {
+      state.alive = true;
+    });
+
+    state.authTimer = setTimeout(() => {
+      if (!state.authenticated) ws.close(4401, "auth timeout");
+    }, authTimeoutMs);
+    if (typeof state.authTimer.unref === "function") state.authTimer.unref();
+
+    ws.on("close", () => {
+      if (state.authTimer) clearTimeout(state.authTimer);
+      wsState.delete(ws);
+    });
+
+    ws.on("message", (data, isBinary) => {
+      if (state.authenticated || isBinary) return; // M4: only one auth message is ever read
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(data.toString());
+      } catch {
+        return; // malformed pre-auth frame: ignore, never crash
+      }
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        (parsed as { type?: unknown }).type !== "auth" ||
+        typeof (parsed as { token?: unknown }).token !== "string"
+      )
+        return;
+      const token = (parsed as { token: string }).token;
+      void (async () => {
+        if (!wsAuthRateLimiter.allow(ip)) {
+          ws.close(4401, "rate limited");
+          return;
+        }
+        try {
+          const snapshot = await store.snapshot(roomId, token);
+          if (state.authTimer) clearTimeout(state.authTimer);
+          state.authenticated = true;
+          if (ws.readyState !== WebSocket.OPEN) return; // L4
+          registerSocket(roomId, ws);
+          ws.send(JSON.stringify({ type: "revision", revision: snapshot.revision }));
+        } catch {
+          ws.close(4401, "unauthorized");
+        }
+      })();
     });
   }
 
@@ -188,6 +322,18 @@ export function createApp(options: {
 
     if (pathname === "/healthz" && req.method === "GET") {
       sendJson(200, { ok: true });
+      return;
+    }
+
+    if (
+      req.method === "POST" &&
+      (pathname === "/api/rooms" || pathname === "/api/join") &&
+      !roomRateLimiter.allow(clientIp(req))
+    ) {
+      sendJson(
+        429,
+        errorBody("RATE_LIMITED", "요청이 너무 많습니다. 잠시 후 다시 시도하세요."),
+      );
       return;
     }
 
@@ -298,6 +444,9 @@ export function createApp(options: {
   }
 
   server.on("upgrade", (req, socket, head) => {
+    // A raw socket that errors before the WS handshake completes (e.g. the
+    // client vanishes mid-handshake) must not crash the process either.
+    socket.on("error", () => {});
     let url: URL;
     try {
       url = new URL(req.url ?? "/", "http://internal");
@@ -310,19 +459,32 @@ export function createApp(options: {
       return;
     }
     const roomId = url.searchParams.get("roomId") ?? "";
-    const token = url.searchParams.get("token") ?? "";
+    if (!UUID.test(roomId)) {
+      socket.destroy();
+      return;
+    }
+    const ip = clientIp(req);
     wss.handleUpgrade(req, socket, head, (ws) => {
-      void (async () => {
-        try {
-          if (!UUID.test(roomId)) throw new Error("invalid room");
-          await store.snapshot(roomId, token);
-          registerSocket(roomId, ws);
-        } catch {
-          ws.close(4401, "unauthorized");
-        }
-      })();
+      handleConnection(ws, roomId, ip);
     });
   });
 
-  return { server, store };
+  function close(): Promise<void> {
+    return new Promise((resolveClose) => {
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
+      store.shutdown();
+      for (const ws of wss.clients) {
+        try {
+          ws.close(1012, "server shutting down");
+        } catch {
+          // ignore - the socket may already be closing
+        }
+      }
+      if (typeof server.closeAllConnections === "function")
+        server.closeAllConnections();
+      server.close(() => resolveClose());
+    });
+  }
+
+  return { server, store, close };
 }

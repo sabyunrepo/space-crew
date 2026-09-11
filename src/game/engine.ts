@@ -315,7 +315,6 @@ export function applyCommand(
       if (state.trick.length === state.players.length) resolve(state);
       break;
     case "advance_trick":
-      host();
       phase("trick_result");
       state.trick = [];
       state.trickNumber += 1;
@@ -329,13 +328,18 @@ export function applyCommand(
     case "next_mission": {
       host();
       phase("success");
-      const remaining = missions
-        .filter((m) => m.playable && !state.drawnMissionIds.includes(m.id))
-        .map((m) => m.id);
-      const id =
-        state.settings.missionMode === "random"
-          ? shuffled(remaining, random)[0]
-          : state.missionId! + 1;
+      let id: number | undefined;
+      if (state.settings.missionMode === "random") {
+        const remaining = missions
+          .filter((m) => m.playable && !state.drawnMissionIds.includes(m.id))
+          .map((m) => m.id);
+        id = shuffled(remaining, random)[0];
+      } else {
+        const next = state.missionId! + 1;
+        id = missions.find((m) => m.id === next && m.playable)
+          ? next
+          : undefined;
+      }
       if (!id || id > 50) {
         state.phase = "campaign_complete";
         state.resultReason = "플레이 가능한 임무를 모두 마쳤습니다.";

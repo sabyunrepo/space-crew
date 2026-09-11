@@ -22,13 +22,21 @@ export function handAvailability(
     return hand.map((cardId) => ({ cardId, enabled: true, reason: null }));
   if (mode === "communicate")
     return hand.map((cardId) => {
-      const enabled =
-        suitOf(cardId) !== "rocket" &&
-        communicationMarkers(hand, cardId).length > 0;
+      if (suitOf(cardId) === "rocket")
+        return {
+          cardId,
+          enabled: false,
+          reason: "로켓 카드는 교신할 수 없어요",
+        };
+      // 엔진의 communicationMarkers와 같은 판정: 같은 색 카드 중 최고·최저·유일이
+      // 아닌 중간 순위 카드는 교신 표식이 없어 교신할 수 없다.
+      const enabled = communicationMarkers(hand, cardId).length > 0;
       return {
         cardId,
         enabled,
-        reason: enabled ? null : "교신할 수 없는 카드예요",
+        reason: enabled
+          ? null
+          : "이 색에서 가장 높거나 낮거나 유일한 카드만 교신할 수 있어요",
       };
     });
   // mode === "play"
