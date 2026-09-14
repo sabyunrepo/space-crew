@@ -69,8 +69,8 @@ for (const theme of ["light", "dark"] as const) test(`${theme} theme covers setu
   if (theme === "light") {
     await contrast(page, ".seat-south .seat-heading strong", ".seat-south");
     await contrast(page, ".central-player-name", ".central-trick");
-    await contrast(page, ".mission-progress", ".mission-always-visible");
-    await contrast(page, ".mission-panel-strip > strong", ".mission-always-visible");
+    await contrast(page, ".mission-progress", ".status-bar");
+    await contrast(page, ".mission-panel-strip .eyebrow", ".status-bar");
     await contrast(page, ".seat-turn-badge", ".seat-turn-badge");
     await contrast(page, ".hand-controls > span", ".hand-dock");
   }

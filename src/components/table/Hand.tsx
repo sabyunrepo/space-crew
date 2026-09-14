@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { CardId } from "../../../shared/contracts.ts";
 import { cardImage, cardLabel } from "../../../shared/cards.ts";
 import { isTurnBlocked, type CardAvailability } from "./cardRules.ts";
@@ -24,7 +24,7 @@ export function Hand({
   const trackRef = useRef<HTMLDivElement>(null);
   const [overlap, setOverlap] = useState(0);
   const count = cards.length;
-  useEffect(() => {
+  useLayoutEffect(() => {
     const track = trackRef.current;
     if (!track) return;
     const recalc = () => {

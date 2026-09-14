@@ -66,3 +66,37 @@ test("combined setup can be closed, reopened and resumed without confirming twic
   expect(box!.y).toBeGreaterThanOrEqual(0);
   expect(box!.y + box!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
 });
+
+test('briefing already uses final viewport geometry and native close can reopen', async ({ page }) => {
+  await launch(page, 22);
+  const modal = page.getByRole('dialog', { name: '목표 카드 선택', exact: true });
+  await expect(modal).toBeVisible();
+  await expect(page.locator('.app-shell')).toHaveClass(/gameplay-fixed/);
+  const geometry = () => page.evaluate(() => ({
+    header: document.querySelector('.site-header')!.getBoundingClientRect().height,
+    handCard: document.querySelector('.hand-card')!.getBoundingClientRect().width,
+    hand: document.querySelector('.hand-dock')!.getBoundingClientRect().height,
+    height: document.querySelector('.game-table')!.getBoundingClientRect().height,
+    overflow: document.documentElement.scrollHeight > innerHeight,
+  }));
+  const before = await geometry(); expect(before.overflow).toBe(false);
+  // Browser-native close must synchronize React state even without our dismiss button.
+  await modal.evaluate(el => (el as HTMLDialogElement).close());
+  await expect(modal).not.toBeVisible();
+  await page.getByRole('button', { name: '임무 준비 열기', exact: true }).click();
+  await expect(modal).toBeVisible();
+  for (let i = 0; i < 4; i++) await step(page, page.getByRole('button', { name: '데모 대원 진행' }));
+  const after = await geometry();
+  expect(after.overflow).toBe(false);
+  expect(after.header).toBe(before.header);
+  expect(after.handCard).toBeCloseTo(before.handCard, 0);
+  expect(after.height).toBe(before.height);
+  // Repeated explicit reopen must keep the same dialog and must not send more ready commands.
+  for (let i = 0; i < 3; i++) {
+    const revision = await page.locator('.room-view').getAttribute('data-revision');
+    await modal.getByRole('button', { name: '테이블 보기' }).click();
+    await page.getByRole('button', { name: '임무 준비 열기', exact: true }).click();
+    await expect(modal).toBeVisible();
+    await expect(page.locator('.room-view')).toHaveAttribute('data-revision', revision!);
+  }
+});

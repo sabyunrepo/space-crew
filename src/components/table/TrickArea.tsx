@@ -8,7 +8,7 @@ import { TaskCard } from "./TaskCard.tsx";
 import { missionRules } from "../../../shared/missionRules.ts";
 import { arrangeSeats } from "./seatLayout.ts";
 
-export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: string }) {
+export function TrickArea({ snapshot, mineId, onCommunicate, communicationActive, locked }: { snapshot: Snapshot; mineId?: string; onCommunicate?(): void; communicationActive?: boolean; locked?: boolean }) {
   const tableRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const table = tableRef.current;
@@ -96,7 +96,7 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
                 <span>{characterFor(p.characterId).name}</span>
               </div>
             </div>
-            <div className="seat-column communication"><span className="seat-column-label">신호</span><CommunicationCard communication={p.communication} blockedReason={blockedReason} /></div>
+            <div className="seat-column communication"><span className="seat-column-label">신호</span>{p.id === mineId && snapshot.me.canCommunicate && onCommunicate ? <button type="button" className="seat-communication-button" aria-label="교신하기" aria-pressed={communicationActive} disabled={locked || !!snapshot.restartVote} onClick={onCommunicate}><CommunicationCard communication={p.communication} blockedReason={blockedReason} /></button> : <CommunicationCard communication={p.communication} blockedReason={blockedReason} />}</div>
           </div>
           {snapshot.phase === "playing" && <p className={`seat-submission ${play ? "submitted" : ""}`}>{play ? "카드 제출 완료 · 중앙에서 확인" : turn ? "카드를 선택해 주세요" : "카드 제출 대기"}</p>}
           <div className="seat-missions" aria-label={`${p.nickname} 미션 카드`}>

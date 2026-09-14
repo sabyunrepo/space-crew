@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowLeft, Copy, Wifi } from "lucide-react";
+import { ArrowLeft, Copy, RotateCcw, Wifi } from "lucide-react";
 import type { Connection, GameService } from "../../../shared/contracts.ts";
 
 /**
@@ -16,6 +16,9 @@ export function StatusBar({
   serviceMode,
   isHost,
   onInvite,
+  mission,
+  onRestart,
+  restartDisabled,
 }: {
   title: string;
   message: string;
@@ -30,6 +33,9 @@ export function StatusBar({
   serviceMode: GameService["mode"];
   isHost: boolean;
   onInvite(): void;
+  mission?: ReactNode;
+  onRestart?(): void;
+  restartDisabled?: boolean;
 }) {
   return (
     <header className="status-bar">
@@ -41,10 +47,11 @@ export function StatusBar({
       >
         <ArrowLeft size={18} />
       </button>
-      <div className="status-message">
+      <div className="status-overview"><div className="status-message">
         <strong>{title}</strong>
         <span>{message}</span>
       </div>
+      {mission}</div>
       <div className="status-actions">
         <span className={`connection ${connection}`}>
           <Wifi size={13} />
@@ -61,12 +68,14 @@ export function StatusBar({
           <button
             type="button"
             className="secondary status-invite"
+            aria-label="초대 링크"
             onClick={onInvite}
           >
             <Copy size={14} />
             <span className="status-invite-label">초대 링크</span>
           </button>
         )}
+        {onRestart && <button type="button" className="secondary status-restart" disabled={restartDisabled} onClick={onRestart}><RotateCcw size={16} />게임 포기 · 재시작</button>}
         {action && (
           <button
             type="button"

@@ -157,3 +157,51 @@ html, body { background-color: var(--theme-page); }
 :root[data-theme="light"] .theme-picker button[aria-pressed="true"] { color: #fff; background: #356331; }
 .site-header nav .theme-picker button svg { display: block; }
 :root[data-theme="light"] :is(.mission-panel-strip > strong, .mission-progress, .mission-history-button, .member-details strong small) { color: #356331; }
+
+/* Mission overview shares the status bar; the board keeps the released space. */
+.status-overview { flex: 1; min-width: 0; }
+.status-overview .status-message { gap: 3px; }
+.status-overview .status-message strong { font-size: 12px; }
+.status-overview .status-message > span { font-size: clamp(13px, .85vw, 18px); }
+.status-bar .status-mission { padding: 0; margin: 4px 0 0; border: 0; border-radius: 0; background: transparent; min-height: 0; }
+.status-mission .mission-panel-strip { gap: 6px 12px; flex-wrap: wrap; }
+.status-mission .mission-panel-strip > span { font-size: clamp(12px, .7vw, 15px); color: var(--theme-secondary); }
+.status-mission .mission-panel-strip .eyebrow, .status-mission .mission-panel-strip .mission-progress { color: var(--theme-selected); font-weight: 700; }
+.status-mission .mission-history-button { min-height: 36px; padding: 6px 10px; font-size: 13px; color: var(--theme-text); background: var(--theme-raised); border: 1px solid var(--theme-border); border-radius: 8px; }
+.status-actions .status-restart { min-height: 44px; padding: 10px 14px; font-size: 13px; white-space: nowrap; }
+.seat-communication-button { display: block; width: 100%; min-height: 44px; padding: 0; background: transparent; border: 0; border-radius: 7px; cursor: pointer; }
+.seat-communication-button .communication-card { margin-inline: auto; }
+.seat-communication-button .signal-back { border: 2px solid var(--theme-selected); background: var(--theme-raised); color: var(--theme-text); }
+.seat-communication-button:hover, .seat-communication-button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--theme-selected); }
+.seat-communication-button:focus-visible { outline: 3px solid var(--theme-selected); outline-offset: 4px; }
+.communication-modal { width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; padding: 24px; border: 1px solid var(--theme-border); border-radius: 18px; background: var(--theme-surface); color: var(--theme-text); }
+.communication-modal::backdrop { background: #0c142c88; }
+.communication-modal .modal-head { gap: 12px; }
+.communication-modal .modal-head h2 { font-size: 20px; }
+.communication-modal .modal-head button { min-height: 44px; }
+.communication-preview { --seat-card: clamp(120px, 23dvh, 210px); display: flex; justify-content: center; margin: 20px 0 12px; }
+.communication-preview .communication-card { width: var(--seat-card); height: calc(var(--seat-card) * 1.5); }
+.communication-card-name { font-size: 18px; font-weight: 700; text-align: center; }
+.communication-meaning { text-align: center; font-size: 16px; font-weight: 700; color: var(--theme-selected); }
+.communication-marker-options { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.communication-marker-options button[aria-pressed="true"] { background: var(--theme-selected); color: var(--theme-selected-text); }
+.communication-modal .helper { color: var(--theme-secondary); font-size: 13px; line-height: 1.6; }
+.communication-modal-actions { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+.communication-modal-actions button { min-height: 48px; font-size: 14px; }
+@media (max-width: 1100px) {
+  .status-bar { flex-wrap: wrap; gap: 6px 10px; }
+  .status-overview { flex-basis: calc(100% - 54px); }
+  .status-actions { margin-left: auto; }
+}
+@media (max-width: 700px) {
+  .status-overview .status-message strong { display: none; }
+  .status-mission .mission-panel-strip { gap: 2px 8px; }
+  .status-mission .mission-panel-strip > span { font-size: 11px; }
+  .status-mission .mission-history-button { min-height: 36px; padding: 4px 8px; font-size: 12px; }
+  .status-actions { gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+  .status-actions .connection { display: none; }
+  .status-actions .status-restart { padding: 6px 10px; font-size: 12px; }
+  .communication-modal { padding: 16px; }
+}
+.communication-preview .signal-token { width: calc(var(--seat-card) * .28); height: calc(var(--seat-card) * .28); font-size: calc(var(--seat-card) * .16); }
+.communication-preview .signal-token svg { width: calc(var(--seat-card) * .16); height: calc(var(--seat-card) * .16); }

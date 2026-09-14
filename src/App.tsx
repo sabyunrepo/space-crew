@@ -336,11 +336,10 @@ export function App() {
     }));
     setModal(null);
   };
-  // 로비·브리핑·탐사 완료는 문서형 스크롤을 허용하고, 실제 진행 단계만
-  // 100dvh 안에서 페이지 스크롤 없이 조작 가능해야 한다.
+  // Start using the final board geometry at briefing, before any ready responses.
   const fixedLayout = !!(
     snapshot &&
-    ["task_selection", "preparation", "playing", "trick_result", "success", "failure"].includes(
+    ["briefing", "task_selection", "preparation", "playing", "trick_result", "success", "failure", "campaign_complete"].includes(
       snapshot.phase,
     )
   );

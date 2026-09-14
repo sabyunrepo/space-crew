@@ -140,7 +140,7 @@ for (const { capacity, mission, seed, expectedSuccess } of scenarios) {
       );
       if (await selectable.count()) {
         await tapCard(selectable.first());
-        const signal = page.locator(".communication-options button");
+        const signal = page.locator(".communication-modal .primary");
         if (await signal.count()) {
           await step(page, signal.first());
           communicated = true;
@@ -149,7 +149,7 @@ for (const { capacity, mission, seed, expectedSuccess } of scenarios) {
     }
     expect(communicated).toBe(true);
     await expect(page.locator(".player-seat .communication-card:not(.available)")).toHaveCount(1);
-    await expect(page.locator(".communication-options button")).toHaveCount(0);
+    await expect(page.locator(".communication-modal .primary")).toHaveCount(0);
     let ownPlays = 0,
       botPlays = 0;
     for (

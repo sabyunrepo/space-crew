@@ -696,8 +696,7 @@ footer {
 .game-table--lobby {
   overflow: visible;
 }
-/* 로비·브리핑·탐사 완료는 문서형 스크롤 허용, 그 외 진행 단계는 100dvh 안에서
-   페이지 스크롤 없이 조작 가능해야 한다(app-shell에 붙는 클래스). */
+/* The lobby scrolls; briefing and subsequent board phases share 100dvh geometry. */
 .app-shell.gameplay-fixed {
   height: 100dvh;
   display: flex;

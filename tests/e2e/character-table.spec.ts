@@ -29,7 +29,7 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   await expect(page.locator(".player-seat[aria-current='true']")).toHaveCount(1);
   await expect(page.locator(".seat-turn-badge")).toBeVisible();
   await expect(page.locator(".seat-south .character-card")).toHaveAttribute("data-character-id", "green-dino");
-  await expect(page.locator(".mission-panel-summary")).toBeVisible();
+  await expect(page.locator(".status-bar .mission-progress")).toBeVisible();
   await expect(page.getByRole("button", { name: "자세히", exact: true })).toHaveCount(0);
   const before = await page.locator(".player-seat").evaluateAll(els => els.map(el => [el.getAttribute("data-player-id"), el.getAttribute("data-position")]));
   await page.reload(); await expect(page.locator(".player-seat")).toHaveCount(capacity);

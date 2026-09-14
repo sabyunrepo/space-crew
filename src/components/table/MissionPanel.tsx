@@ -4,9 +4,9 @@ import { useRef } from "react";
 import type { Mission, Snapshot } from "../../../shared/contracts.ts";
 import { cardImage, cardLabel } from "../../../shared/cards.ts";
 
-/** Mission conditions remain in document flow; assigned goals live at their owner's seat. */
-export function MissionPanel({ snapshot, currentMission, locked, onRestart }: {
-  snapshot: Snapshot; currentMission?: Mission; locked?: boolean; onRestart?(): void;
+/** Compact status summary; full conditions and public roles live in the details dialog. */
+export function MissionPanel({ snapshot, currentMission }: {
+  snapshot: Snapshot; currentMission?: Mission;
 }) {
   const detailsRef = useRef<HTMLDialogElement>(null);
   const rules = missionRules(snapshot.missionId ?? 1);
@@ -32,15 +32,16 @@ export function MissionPanel({ snapshot, currentMission, locked, onRestart }: {
   const role = progress?.selectedPlayerId ? snapshot.missionId === 50
     ? `첫 4트릭: ${nick(progress.selectedPlayerId)} · 마지막 트릭: ${nick(progress.secondaryPlayerId)} · 나머지 대원: 중간 트릭`
     : `담당 대원: ${nick(progress.selectedPlayerId)} · 현재 ${snapshot.players.find(p => p.id === progress.selectedPlayerId)?.tricksWon ?? 0}트릭 획득` : null;
-  return <section className="mission-panel mission-always-visible" aria-label="현재 미션">
+  return <section className="mission-panel mission-always-visible status-mission" aria-label="현재 미션">
     <div className="mission-panel-strip">
       <span className="eyebrow">MISSION {String(snapshot.missionId).padStart(2, "0")}</span>
       <span className="attempt">{snapshot.attemptNumber}번째 시도 · 트릭 {snapshot.trickNumber}</span>
       <span className="mission-progress">{specialProgress ?? `목표 ${done}/${snapshot.tasks.length + (snapshot.hiddenTaskCount ?? 0)}`}</span>
       <button type="button" className="mission-history-button" onClick={() => detailsRef.current?.showModal()}>미션 조건</button>
-      {onRestart && !["success", "failure", "campaign_complete"].includes(snapshot.phase) && <button type="button" className="mission-history-button" disabled={locked || !!snapshot.restartVote} onClick={onRestart}>게임 포기 · 재시작</button>}
       {snapshot.lastTrick && <button type="button" className="mission-history-button" onClick={() => historyRef.current?.showModal()}>지난 트릭</button>}
     </div>
+    <dialog ref={detailsRef} className="mission-history mission-details" aria-label="미션 조건 상세">
+      <div className="modal-head"><h2>{currentMission?.title} · 미션 조건</h2><button type="button" onClick={() => detailsRef.current?.close()}>닫기</button></div>
     <p className="mission-panel-summary">{snapshot.tasks.length || snapshot.hiddenTaskCount ? "각 담당자가 자신의 목표 카드를 획득하세요." : currentMission?.summary}
       {rules.tokens.length > 0 && <span> · {rules.tokens.some(t => t.kind === "absolute") ? "숫자 순서" : rules.tokens.some(t => t.kind === "relative") ? "상대 순서" : "Ω 마지막 목표"} 준수</span>}
       {rules.communication.hidden && <span> · 교신 위치 비공개</span>}
@@ -53,8 +54,6 @@ export function MissionPanel({ snapshot, currentMission, locked, onRestart }: {
     {progress?.silentPlayerId && <p className="mission-panel-hint">교신 금지 대원: {nick(progress.silentPlayerId)}</p>}
     {progress?.blackNineHolderId && <p className="mission-panel-hint">검은 9 보유자: {nick(progress.blackNineHolderId)} · 왼쪽 대원이 검은 카드 9장을 모두 획득</p>}
     {progress?.distressActive && <small className="mission-modifier">구조 신호 활성 · 이번 시도 교환 {progress.distressUsed ? "완료" : "미사용"}</small>}
-    <dialog ref={detailsRef} className="mission-history mission-details" aria-label="미션 조건 상세">
-      <div className="modal-head"><h2>{currentMission?.title} · 미션 조건</h2><button type="button" onClick={() => detailsRef.current?.close()}>닫기</button></div>
       <MissionTaskInfo snapshot={snapshot} />
       <p>{currentMission?.summary}</p>
       {snapshot.rulesetVersion === "crew-p9-50-4" && <p className="helper">이 웹 버전: 목표 색상 분산 추첨 · 진행 중 내 차례 밖에서도 교신 가능 (미션별 제한 유지)</p>}

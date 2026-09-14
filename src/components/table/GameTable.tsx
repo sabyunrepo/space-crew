@@ -3,7 +3,6 @@ import {
   ArrowRight,
   Check,
   ChevronRight,
-  Radio,
   Rocket,
   Users,
   X,
@@ -26,17 +25,12 @@ import { TrickArea } from "./TrickArea.tsx";
 import { Hand } from "./Hand.tsx";
 import { CharacterPicker } from "../CharacterPicker.tsx";
 import { characterFor } from "../../../shared/characters.ts";
-import { CommunicationCard } from "./CommunicationCard.tsx";
+import { CommunicationModal } from "./CommunicationModal.tsx";
+import { missionRules } from "../../../shared/missionRules.ts";
 import { PreparationPanel, preparationTitle } from "./PreparationPanel.tsx";
 import { MissionSetupModal, usesCombinedTaskSetup } from "./MissionSetupModal.tsx";
 import { MissionResultModal } from "./MissionResultModal.tsx";
 import { handAvailability } from "./cardRules.ts";
-
-const markerLabels = {
-  highest: "이 색 중 가장 높음",
-  lowest: "이 색 중 가장 낮음",
-  only: "이 색은 이 카드뿐",
-};
 
 function statusMessage(
   snapshot: Snapshot,
@@ -121,6 +115,7 @@ export function GameTable({
   onFillDemoCrew?(): void;
   onDemoStep?(): void;
 }) {
+  const [setupOpenRequest, setSetupOpenRequest] = useState(0);
   const [dismissedSetup, setDismissedSetup] = useState<string | null>(null);
   const [dismissedResult, setDismissedResult] = useState<string | null>(null);
   const resultActive = ["success", "failure", "campaign_complete"].includes(snapshot.phase);
@@ -138,8 +133,8 @@ export function GameTable({
   const [hint, setHint] = useState("");
   const hintTimer = useRef<number>(undefined);
   useEffect(() => {
-    if (snapshot.phase !== "playing") setCommunicateMode(false);
-  }, [snapshot.phase]);
+    if (snapshot.phase !== "playing" || !snapshot.me.canCommunicate || snapshot.restartVote) setCommunicateMode(false);
+  }, [snapshot.phase, snapshot.me.canCommunicate, snapshot.restartVote]);
   const showHint = (reason: string) => {
     setHint(reason);
     window.clearTimeout(hintTimer.current);
@@ -159,6 +154,7 @@ export function GameTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEntry?.enabled, selected]);
   const markers = selected ? communicationMarkers(snapshot.me.hand, selected) : [];
+  const startCommunication = () => { setSelected(null); setCommunicateMode(true); };
 
   const lobby = snapshot.phase === "lobby";
   const nextPlayable = catalogue.find(
@@ -168,7 +164,7 @@ export function GameTable({
     | { label: string; icon?: ReactNode; onClick(): void; disabled?: boolean }
     | null = null;
   if (setupActive)
-    action = { label: "임무 준비 열기", onClick: () => setDismissedSetup(null) };
+    action = { label: "임무 준비 열기", disabled: !!snapshot.restartVote, onClick: () => { setDismissedSetup(null); setSetupOpenRequest(value => value + 1); } };
   else if (
     snapshot.phase === "trick_result" &&
     (isHost || serviceMode === "server")
@@ -214,12 +210,12 @@ export function GameTable({
         serviceMode={serviceMode}
         isHost={isHost}
         onInvite={onCopyInvite}
+        mission={!lobby && <MissionPanel snapshot={snapshot} currentMission={currentMission} />}
+        onRestart={!lobby && !resultActive ? () => onSend({ type: "request_restart" }) : undefined}
+        restartDisabled={locked || !!snapshot.restartVote}
       />
       <RestartVote snapshot={snapshot} locked={locked} onSend={onSend} footer={snapshot.restartVote ? demoStepButton : undefined} />
       <div className="game-table-body">
-        {!lobby && (
-          <MissionPanel snapshot={snapshot} currentMission={currentMission} locked={locked} onRestart={() => onSend({ type: "request_restart" })} />
-        )}
         {!lobby && snapshot.phase === "preparation" && !setupActive && (
           <PreparationPanel snapshot={snapshot} locked={locked} onSend={onSend} />
         )}
@@ -321,7 +317,7 @@ export function GameTable({
               </p>
             </div>
           ) : (
-            <TrickArea snapshot={snapshot} mineId={mine?.id} />
+            <TrickArea snapshot={snapshot} mineId={mine?.id} onCommunicate={startCommunication} communicationActive={communicateMode} locked={locked} />
           )}
           {!snapshot.restartVote && (!setupActive || !setupOpen) && demoStepButton}
         </div>
@@ -331,8 +327,11 @@ export function GameTable({
         isHost={isHost} locked={locked} canContinue={snapshot.settings.missionMode === "random" || !!nextPlayable}
         error={error} hasPending={hasPending} onDismiss={() => setDismissedResult(resultKey)} onSend={onSend} />}
       {setupActive && <MissionSetupModal snapshot={snapshot} mission={currentMission}
-        open={setupOpen} stepKey={setupKey} locked={locked} error={error} hasPending={hasPending}
+        open={setupOpen} openRequest={setupOpenRequest} stepKey={setupKey} locked={locked} error={error} hasPending={hasPending}
         onDismiss={() => setDismissedSetup(setupKey)} onSend={onSend} footer={setupOpen ? demoStepButton : undefined} />}
+      {communicateMode && selected && markers.length > 0 && snapshot.me.canCommunicate && !snapshot.restartVote && <CommunicationModal key={selected} cardId={selected}
+        markers={missionRules(snapshot.missionId ?? 1).communication.hidden ? ["hidden"] : markers}
+        locked={locked} error={error} hasPending={hasPending} onSend={onSend} onDismiss={() => setSelected(null)} />}
       {!lobby && (
       <div className="hand-dock">
         {hint && (
@@ -344,35 +343,7 @@ export function GameTable({
           <h3>
             내 손패 <span>{snapshot.me.hand.length}장</span>
           </h3>
-          {communicateMode ? (
-            <button
-              type="button"
-              className="secondary hand-comm-cancel"
-              onClick={() => {
-                setCommunicateMode(false);
-                setSelected(null);
-              }}
-            >
-              <X size={14} />
-              교신 취소
-            </button>
-          ) : (
-            snapshot.phase === "playing" &&
-            snapshot.me.canCommunicate && (
-              <button
-                type="button"
-                className="secondary hand-comm-toggle"
-                disabled={locked}
-                onClick={() => {
-                  setSelected(null);
-                  setCommunicateMode(true);
-                }}
-              >
-                <Radio size={14} />
-                교신하기
-              </button>
-            )
-          )}
+          {communicateMode && <button type="button" className="secondary hand-comm-cancel" onClick={() => { setCommunicateMode(false); setSelected(null); }}><X size={14} />교신 취소</button>}
           {isHost &&
             (snapshot.phase === "briefing" || snapshot.phase === "playing") &&
             snapshot.trickNumber === 1 &&
@@ -406,29 +377,7 @@ export function GameTable({
           onBlocked={showHint}
         />
         {communicateMode ? (
-          selected && markers.length > 0 ? (
-            <div className="communication-options">
-              <Radio size={17} />
-              <span>이 카드로 교신할게요</span>
-              {markers.map((marker) => (
-                <button
-                  className="secondary"
-                  disabled={locked}
-                  key={marker}
-                  aria-label={markerLabels[marker]}
-                  onClick={() => {
-                    onSend({ type: "communicate", cardId: selected, marker });
-                    setCommunicateMode(false);
-                  }}
-                >
-                  <CommunicationCard communication={{ cardId: selected, marker, played: false }} />
-                  {markerLabels[marker]}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="hand-controls-hint">교신할 카드를 선택하세요.</p>
-          )
+          <p className="hand-controls-hint" role="status">교신할 카드를 선택하세요. 선택 후 확인 창이 열립니다.</p>
         ) : (
           <div className="hand-controls">
             <span>

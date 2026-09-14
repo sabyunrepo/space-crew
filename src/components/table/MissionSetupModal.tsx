@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { MissionTaskInfo } from "./MissionTaskInfo.tsx";
 import { Check, X } from "lucide-react";
 import type { Command, Mission, Snapshot } from "../../../shared/contracts.ts";
@@ -13,8 +13,8 @@ export function usesCombinedTaskSetup(snapshot: Snapshot) {
 
 /** Only mission instructions and setup actions belong here. Hands and the
  * public assignment overview remain on the board behind the dialog. */
-export function MissionSetupModal({ snapshot, mission, open, stepKey, locked, error, hasPending, onDismiss, onSend, footer }: {
-  snapshot: Snapshot; mission?: Mission; open: boolean; stepKey: string; locked: boolean;
+export function MissionSetupModal({ snapshot, mission, open, openRequest, stepKey, locked, error, hasPending, onDismiss, onSend, footer }: {
+  snapshot: Snapshot; mission?: Mission; open: boolean; openRequest: number; stepKey: string; locked: boolean;
   error?: string; hasPending?: boolean; onDismiss(): void; onSend(command?: Command): void; footer?: ReactNode;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -36,7 +36,7 @@ export function MissionSetupModal({ snapshot, mission, open, stepKey, locked, er
     onSend({ type: "briefing_ready" });
   }, [open, combined, briefing, mine?.briefingReady, locked, error, hasPending, snapshot.roomId, snapshot.attemptId, onSend]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (open) {
@@ -52,14 +52,15 @@ export function MissionSetupModal({ snapshot, mission, open, stepKey, locked, er
       dialog.close();
       dialog.closest(".game-table")?.querySelector<HTMLButtonElement>(".status-primary")?.focus({ preventScroll: true });
     }
-  }, [open, stepKey]);
-  useEffect(() => {
+  }, [open, stepKey, openRequest]);
+  useLayoutEffect(() => {
     const dialog = dialogRef.current;
     return () => { if (dialog?.open) dialog.close(); };
   }, []);
 
   return <dialog ref={dialogRef} className="mission-setup-modal" aria-labelledby="mission-setup-title"
-    onCancel={event => { event.preventDefault(); onDismiss(); }}>
+    onCancel={event => { event.preventDefault(); onDismiss(); }}
+    onClose={() => { if (open && !dialogRef.current?.open) onDismiss(); }}>
     <header className="setup-modal-heading">
       <div><span className="eyebrow">MISSION {String(snapshot.missionId).padStart(2, "0")} · {snapshot.attemptNumber}번째 시도</span>
         <h2 id="mission-setup-title" ref={headingRef} tabIndex={-1}>{title}</h2></div>

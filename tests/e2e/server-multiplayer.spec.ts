@@ -620,7 +620,7 @@ test("cooperative controls: last goal, hover, off-turn signal and unanimous rest
     const page=pages[communicator];
     await page.getByRole('button',{name:'교신하기',exact:true}).click();
     await tapCard(page.locator('.hand-cards button[aria-disabled="false"]').first());
-    await step(page,page.locator('.communication-options button').first());
+    await step(page,page.locator('.communication-modal .primary').first());
     const signalled=await snapshot();
     expect(signalled.turnPlayerId).toBe(snap.turnPlayerId);expect(signalled.trick).toEqual(snap.trick);
     for(const peer of pages) await expect(peer.locator('.player-seat .communication-card.broadcast')).toHaveCount(1);
