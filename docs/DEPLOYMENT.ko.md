@@ -14,7 +14,7 @@
 - 영속 볼륨: `wwdeemugv7lqzozohddwtvlx-space-crew-data` → 컨테이너 `/data`.
 - 업데이트 시 기존 볼륨, Cloudflare DNS/Tunnel, 호스트명을 유지한다. 로컬 개발용 `data/`로 운영 데이터를 덮어쓰지 않는다.
 - 2026-09-14 업데이트 전 백업: 홈 서버 `/data/coolify/backups/space-crew/20260914-preupdate/` (방 데이터 압축본 및 기존 compose). 인증 정보와 손패를 포함할 수 있으므로 서버 내부 비공개로 보관한다.
-- 현재 배포 SHA: `1a73e59d82b067f643f1d9e1157c7b9ad6e545a1`. 직전 배포 SHA: `def2b1a924adc5a24d7d86a48a611e1318cbd693`.
+- 현재 배포 SHA: `8d0b8a748c2ccc746ed9e66a274527697cfac494`. 직전 배포 SHA: `1a73e59d82b067f643f1d9e1157c7b9ad6e545a1`.
 - 새 배포 전 `npm test`, `VITE_BACKEND_MODE=server npm run build`, `npm run build:server`를 실행한다. 해당 브랜치에 소스를 반영한 뒤 Coolify의 커밋 SHA를 지정해 배포한다.
 - 배포 후 `/healthz`, `/api/capabilities`, 프론트 자산, 초대 링크를 통한 다인 플레이와 WebSocket 동기화/새로고침 복귀를 확인한다.
 - 롤백은 Coolify에서 직전 SHA를 지정해 배포한다. 새 버전에서 만든 방의 구버전 호환성을 검토하고, 데이터 복구는 필요한 경우에만 별도 수행한다.
@@ -96,3 +96,13 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 공개 `/healthz` 정상, `backendReady: true`, 규칙 버전 v4 유지. 공개 JS `index-DMdQTfeo.js`와 CSS `index-B7b2kfSj.css`의 SHA-256이 로컬 빌드와 일치한다.
 - 공개 3인 독립 브라우저 테스트 통과: 마지막 목표 자동 배정, 카드 호버, 다른 대원 차례 교신과 시작/취소 토글, 참가자 간 반영, 전원 동의 재시작 및 새로고침 복귀를 확인했다.
 - 백업 `/data/coolify/backups/space-crew/20260914-card-ui/`. 백업 당시 기존 방21개 중20개는 바이트 단위로 유지됐다. `54df9dd9-d040-475a-8458-b64b682c9bcf` 방은 서비스 중단 없이 실제 플레이가 이어져 리비전10→19로 진행됐으며 정상 저장되었다. 검증은 새 방에서 수행했다.
+
+## 2026-09-14 모바일 테이블 가독성 업데이트
+
+- 런타임 `8d0b8a748c2ccc746ed9e66a274527697cfac494`, Coolify ID `7e4cd829-6507-45b2-9ba8-fc48da3a242e`, 결과 `finished`/새 컨테이너 healthy.
+- 700px 이하 플레이 화면에서는 상단 안내를 기본 1줄로 접고 필요할 때 펼친다. 접힌 상태에서도 `다음 트릭`처럼 진행에 필요한 주 액션은 유지한다.
+- 중앙 트릭 카드를 모바일 2열·최대 3행으로 배치하고 손패 최소 폭을 62px, 본인 신호/목표 카드를 54px로 확보했다. Aside 390×844 검수에서 상단은 45px, 손패 카드는 `70.20×105.29px`, 중앙 대기 카드는 기존 `31.31×46.98px`에서 `48.80×73.20px`로 커졌고 전체 화면 높이 안에 유지됐다.
+- 배포 전 단위 테스트 758개, PC·모바일 UI 회귀 20개, 타입 검사, 프론트/서버 빌드와 로컬 실제 Node 다인 협동 시나리오가 통과했다.
+- 공개 `/healthz` 정상, `backendReady: true`, 규칙 버전 `crew-p9-50-4`와 미션 50개를 유지한다. 공개 JS `index-BOQ69ess.js`와 CSS `index-uuzd-eul.css`의 SHA-256이 로컬 빌드와 일치한다.
+- 공개 주소의 독립 브라우저 다인 테스트도 통과했다. 마지막 목표 자동 배정, 카드 정보, 다른 대원 차례 교신, 전원 동의 재시작과 새로고침 복귀를 확인했다.
+- 백업 `/data/coolify/backups/space-crew/20260914-mobile-ui/`. 배포 전 기존 방 23개가 모두 바이트 단위로 유지됐다. 기존 Cloudflare Tunnel, DNS와 영속 볼륨을 그대로 사용했다.
