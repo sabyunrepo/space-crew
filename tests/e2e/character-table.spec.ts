@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signal, play and always-visible owner goals`, async ({ page }, info) => {
+  if (info.project.name === "desktop") await page.setViewportSize({ width: 1189, height: 779 });
   await page.goto("/");
   await expect(page.locator(".character-options button")).toHaveCount(15);
   await page.locator(".character-options").scrollIntoViewIfNeeded();
@@ -39,7 +40,7 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
     const rect = (selector: string) => document.querySelector(selector)!.getBoundingClientRect().toJSON();
     return { height: innerHeight, scrollHeight: document.documentElement.scrollHeight, mission: rect(".mission-panel"), central: rect(".central-trick"), hand: rect(".hand-dock"), width: innerWidth,
       seats: [...document.querySelectorAll(".seat-layout .player-seat")].map(el => el.getBoundingClientRect().toJSON()),
-      rows: [...document.querySelectorAll(".player-seat")].map(el => ({
+      rows: [...document.querySelectorAll(".seat-layout .player-seat")].map(el => ({
         columns: [...el.querySelectorAll(".seat-column")].map(x => x.getBoundingClientRect().toJSON()),
         goals: el.querySelector(".seat-missions")!.getBoundingClientRect().toJSON(),
       })) };
@@ -54,10 +55,15 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
       clipped: own.scrollHeight > own.clientHeight + 1 || own.scrollWidth > own.clientWidth + 1 };
   });
   expect(dockLayout.clipped).toBe(false);
-  expect(dockLayout.own.left).toBeLessThan(dockLayout.cards.left);
-  expect(dockLayout.own.right).toBeLessThanOrEqual(dockLayout.cards.left);
   expect(dockLayout.own.top).toBeGreaterThanOrEqual(bounds.hand.top);
-  expect(Math.abs(dockLayout.own.height - dockLayout.cards.height)).toBeLessThan(2);
+  if (bounds.width > 700) {
+    expect(dockLayout.own.right).toBeLessThanOrEqual(dockLayout.cards.left);
+    expect(Math.abs(dockLayout.own.height - dockLayout.cards.height)).toBeLessThan(2);
+  } else expect(dockLayout.own.bottom).toBeLessThanOrEqual(dockLayout.cards.top);
+  const ownSignal = await page.locator('.own-seat-dock .communication-card').boundingBox();
+  expect(ownSignal!.width).toBeGreaterThanOrEqual(bounds.width > 700 ? 64 : 48);
+  const ownGoals = await page.locator('.own-seat-dock .seat-task').all();
+  for (const goal of ownGoals) expect((await goal.boundingBox())!.width).toBeGreaterThanOrEqual(bounds.width > 700 ? 64 : 48);
   for (const seat of bounds.seats) { expect(seat.top).toBeGreaterThanOrEqual(bounds.mission.bottom); expect(seat.bottom).toBeLessThanOrEqual(bounds.hand.top); expect(seat.left).toBeGreaterThanOrEqual(0); expect(seat.right).toBeLessThanOrEqual(bounds.width); }
   for (const { columns, goals } of bounds.rows) { expect(columns[0].right).toBeLessThan(columns[1].left); expect(columns).toHaveLength(2); expect(goals.top).toBeGreaterThanOrEqual(columns[0].bottom); }
   await expect(page.locator(".central-play")).toHaveCount(capacity);
