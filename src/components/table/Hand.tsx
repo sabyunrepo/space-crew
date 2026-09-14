@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { CardId } from "../../../shared/contracts.ts";
 import { cardImage, cardLabel } from "../../../shared/cards.ts";
+import { CompactCardFace } from "./CompactCardFace.tsx";
 import { isTurnBlocked, type CardAvailability } from "./cardRules.ts";
 
 /**
@@ -57,6 +58,7 @@ export function Hand({
             className={[
               "card",
               "hand-card",
+              "compact-card-container",
               isSelected ? "selected" : "",
               waiting ? "card--waiting" : "",
               illegal ? "card--illegal" : "",
@@ -77,11 +79,13 @@ export function Hand({
             }}
           >
             <img
+              className="compact-card-art"
               src={cardImage(cardId)}
               alt={cardLabel(cardId)}
               loading="lazy"
               draggable={false}
             />
+            <CompactCardFace cardId={cardId} />
           </button>
         );
       })}

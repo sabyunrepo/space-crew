@@ -73,6 +73,21 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   expect(ownSignal!.width).toBeGreaterThanOrEqual(bounds.width > 700 ? 64 : 48);
   const ownGoals = await page.locator('.own-seat-dock .seat-task').all();
   for (const goal of ownGoals) expect((await goal.boundingBox())!.width).toBeGreaterThanOrEqual(bounds.width > 700 ? 64 : 48);
+  const compactStates = await page.locator('.compact-card-container').evaluateAll(cards => cards.map(card => ({
+    width: card.getBoundingClientRect().width,
+    art: getComputedStyle(card.querySelector<HTMLElement>('.compact-card-art')!).visibility,
+    face: getComputedStyle(card.querySelector<HTMLElement>('.compact-card-face')!).display,
+  })));
+  expect(compactStates.length).toBeGreaterThan(0);
+  for (const card of compactStates) {
+    if (card.width <= 56) {
+      expect(card.art).toBe('hidden');
+      expect(card.face).toBe('grid');
+    } else if (card.width >= 60) {
+      expect(card.art).toBe('visible');
+      expect(card.face).toBe('none');
+    }
+  }
   if (info.project.name === "mobile") {
     const toggle = page.getByRole("button", { name: "상단 안내 펼치기", exact: true });
     await expect(toggle).toBeVisible();
@@ -109,6 +124,18 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
     await step(page.getByRole("button", { name: "선택한 카드 내기", exact: true }));
   } else await step(page.getByRole("button", { name: "데모 대원 진행", exact: true }));
   await expect(page.locator(".central-play .played-card")).toHaveCount(1);
+  const playedRepresentation = await page.locator('.central-play .played-card').evaluate(card => ({
+    width: card.getBoundingClientRect().width,
+    art: getComputedStyle(card.querySelector<HTMLElement>('.compact-card-art')!).visibility,
+    face: getComputedStyle(card.querySelector<HTMLElement>('.compact-card-face')!).display,
+  }));
+  if (playedRepresentation.width <= 56) {
+    expect(playedRepresentation.art).toBe('hidden');
+    expect(playedRepresentation.face).toBe('grid');
+  } else if (playedRepresentation.width >= 60) {
+    expect(playedRepresentation.art).toBe('visible');
+    expect(playedRepresentation.face).toBe('none');
+  }
   const submitBounds = await page.getByRole("button", { name: "선택한 카드 내기", exact: true }).boundingBox();
   const handBounds = await page.locator(".hand-cards").boundingBox();
   expect(submitBounds!.y + submitBounds!.height).toBeLessThanOrEqual(handBounds!.y);

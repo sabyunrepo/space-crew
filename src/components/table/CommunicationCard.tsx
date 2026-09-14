@@ -1,6 +1,7 @@
 import { Radio, RadioOff, Check } from "lucide-react";
 import type { Snapshot } from "../../../shared/contracts.ts";
 import { cardImage, cardLabel } from "../../../shared/cards.ts";
+import { CompactCardFace } from "./CompactCardFace.tsx";
 
 export const markerLabels = { highest: "이 색 중 가장 높음", only: "이 색은 이 카드뿐", lowest: "이 색 중 가장 낮음", hidden: "정보 축소 · 최고·최저·유일 여부 비공개" };
 export function CommunicationCard({ communication, blockedReason, selecting = false }: {
@@ -11,9 +12,9 @@ export function CommunicationCard({ communication, blockedReason, selecting = fa
   const StateIcon = communication && !active ? Check : blockedReason && !active ? RadioOff : Radio;
   const label = active ? `${cardLabel(communication.cardId)} · ${markerLabels[communication.marker]}`
     : communication ? "교신 사용 완료 · 공개한 카드를 냈습니다" : blockedReason ?? (selecting ? "교신 카드 선택 중 · 다시 누르면 취소" : "교신 가능 · 아직 신호를 보내지 않았습니다");
-  return <div className={`communication-card ${active ? "broadcast" : communication ? "used" : blockedReason ? "blocked" : "available"}`}
+  return <div className={`communication-card ${active ? "compact-card-container broadcast" : communication ? "used" : blockedReason ? "blocked" : "available"}`}
     role="img" aria-label={label} title={label}>
-    {active ? <img src={cardImage(communication.cardId)} alt="" draggable={false} />
+    {active ? <><img className="compact-card-art" src={cardImage(communication.cardId)} alt="" draggable={false} /><CompactCardFace cardId={communication.cardId} /></>
       : <div className="signal-back"><StateIcon aria-hidden="true" /><span>{communication ? "사용 완료" : blockedReason ?? (selecting ? "교신 취소" : "교신 가능")}</span></div>}
     <span className={`signal-token ${active ? `token-${communication.marker}` : communication ? "token-used" : blockedReason ? "token-blocked" : "token-ready"}`} aria-hidden="true">{active && communication.marker === "hidden" ? "D" : <StateIcon />}</span>
   </div>;

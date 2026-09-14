@@ -2,6 +2,7 @@ import { Orbit } from "lucide-react";
 import { useLayoutEffect, useRef } from "react";
 import type { Snapshot } from "../../../shared/contracts.ts";
 import { cardImage, cardLabel, suitOf, SUIT_META } from "../../../shared/cards.ts";
+import { CompactCardFace } from "./CompactCardFace.tsx";
 import { PlayerSeat } from "./PlayerSeat.tsx";
 import { arrangeSeats } from "./seatLayout.ts";
 
@@ -86,8 +87,9 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
           return <div className={`central-play played-slot from-${position} ${current ? "awaiting-card" : ""}`}
             key={player.id} data-player-id={player.id} data-seat-index={player.seat} data-position={position} aria-label={`${player.nickname} 낸 카드`}>
             <span className="central-player-name">{player.nickname}{player.id === mineId ? " · 나" : ""}</span>
-            {play ? <div tabIndex={0} className={`card played-card ${led === play.cardId ? "lead-card" : ""}`} aria-label={`${cardLabel(play.cardId)}${led === play.cardId ? " · 선도 카드" : ""}`} key={play.cardId}>
-              <img src={cardImage(play.cardId)} alt={cardLabel(play.cardId)} draggable={false} />
+            {play ? <div tabIndex={0} className={`card played-card compact-card-container ${led === play.cardId ? "lead-card" : ""}`} aria-label={`${cardLabel(play.cardId)}${led === play.cardId ? " · 선도 카드" : ""}`} key={play.cardId}>
+              <img className="compact-card-art" src={cardImage(play.cardId)} alt={cardLabel(play.cardId)} draggable={false} />
+              <CompactCardFace cardId={play.cardId} />
             </div> : <div className={`card-placeholder ${current ? "active" : ""}`}><Orbit size={18} /><span>{current ? "차례" : "대기"}</span></div>}
           </div>;
         })}</div>
