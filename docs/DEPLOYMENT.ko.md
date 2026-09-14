@@ -14,7 +14,7 @@
 - 영속 볼륨: `wwdeemugv7lqzozohddwtvlx-space-crew-data` → 컨테이너 `/data`.
 - 업데이트 시 기존 볼륨, Cloudflare DNS/Tunnel, 호스트명을 유지한다. 로컬 개발용 `data/`로 운영 데이터를 덮어쓰지 않는다.
 - 2026-09-14 업데이트 전 백업: 홈 서버 `/data/coolify/backups/space-crew/20260914-preupdate/` (방 데이터 압축본 및 기존 compose). 인증 정보와 손패를 포함할 수 있으므로 서버 내부 비공개로 보관한다.
-- 현재 배포 SHA: `def2b1a924adc5a24d7d86a48a611e1318cbd693`. 직전 배포 SHA: `ee3df6efa804c82c997b046a0a162a34a44d6e0f`.
+- 현재 배포 SHA: `1a73e59d82b067f643f1d9e1157c7b9ad6e545a1`. 직전 배포 SHA: `def2b1a924adc5a24d7d86a48a611e1318cbd693`.
 - 새 배포 전 `npm test`, `VITE_BACKEND_MODE=server npm run build`, `npm run build:server`를 실행한다. 해당 브랜치에 소스를 반영한 뒤 Coolify의 커밋 SHA를 지정해 배포한다.
 - 배포 후 `/healthz`, `/api/capabilities`, 프론트 자산, 초대 링크를 통한 다인 플레이와 WebSocket 동기화/새로고침 복귀를 확인한다.
 - 롤백은 Coolify에서 직전 SHA를 지정해 배포한다. 새 버전에서 만든 방의 구버전 호환성을 검토하고, 데이터 복구는 필요한 경우에만 별도 수행한다.
@@ -86,3 +86,13 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 공개 health 정상, backendReady true/v4 유지. JS `index-DoPc-QJA.js`, CSS `index-CMQEZE5-.css` SHA-256이 로컬 빌드와 일치.
 - 백업 `/data/coolify/backups/space-crew/20260914-signal-toggle/`. 기존17개 방 모두 파일 내용까지 유지됐다.
 - 공개 주소3인 테스트도 통과(28.8초): 같은 신호 카드로 시작→취소 시 리비전 불변, 다시 시작 후 교신 전송·다른 화면 반영·전원 동의 재시작·새로고침 확인. 검증은 새 방에서 수행했다.
+
+## 2026-09-14 카드 상태·대원 영역 업데이트
+
+- 런타임 `1a73e59d82b067f643f1d9e1157c7b9ad6e545a1`, Coolify ID `35c95c26-83f0-4ab2-a4ff-0e770cb5f35e`, 결과 `finished`/새 컨테이너 healthy.
+- 완료 목표 명암 처리, 현재 우선 목표 강조, 상대 순서 토큰 방향 수정, 선도 카드 효과, 교신 상태 구분, 카드 숫자 중복 오버레이 제거를 적용했다.
+- 상대 대원의 원형 프로필과 반응형 목표 배치, 좌석과 중앙 제출 카드 사이 연결선 및 영역 테두리를 적용했다. 교신 카드와 인접 목표 카드는 모든 화면 크기에서 같은 폭과 2:3 비율을 사용한다.
+- 배포 전 Aside 로컬 상태 화면에서 교신/목표 카드가 `70.47×105.70px`로 동일함을 확인했다. PC·모바일 UI12개, 단위758개, 프론트/서버 빌드가 통과했다.
+- 공개 `/healthz` 정상, `backendReady: true`, 규칙 버전 v4 유지. 공개 JS `index-DMdQTfeo.js`와 CSS `index-B7b2kfSj.css`의 SHA-256이 로컬 빌드와 일치한다.
+- 공개 3인 독립 브라우저 테스트 통과: 마지막 목표 자동 배정, 카드 호버, 다른 대원 차례 교신과 시작/취소 토글, 참가자 간 반영, 전원 동의 재시작 및 새로고침 복귀를 확인했다.
+- 백업 `/data/coolify/backups/space-crew/20260914-card-ui/`. 백업 당시 기존 방21개 중20개는 바이트 단위로 유지됐다. `54df9dd9-d040-475a-8458-b64b682c9bcf` 방은 서비스 중단 없이 실제 플레이가 이어져 리비전10→19로 진행됐으며 정상 저장되었다. 검증은 새 방에서 수행했다.
