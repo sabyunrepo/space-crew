@@ -60,23 +60,39 @@ test("mission 23 exposes and completes the token-edit preparation path", async (
 
   const preparation = page.locator(".mission-preparation");
   for (let i = 0; i < 20; i++) {
-    if (await preparation.getByText("토큰 두 개를 서로 교환").count()) break;
+    if (await preparation.getByText("카드 두 장을 선택하면").count()) break;
     const goal = page.locator(".target-list button:not([aria-disabled='true'])");
     await step(page, (await goal.count()) ? goal.first() : page.getByRole("button", { name: "데모 대원 진행", exact: true }));
   }
-  await expect(preparation).toContainText("토큰 두 개를 서로 교환");
+  await expect(preparation).toContainText("카드 두 장을 선택하면");
 
-  const reset = preparation.getByRole("button", { name: "원래 배치로 되돌리기", exact: true });
-  if (await reset.count()) {
-    const selects = preparation.locator("select");
-    await selects.nth(0).selectOption({ index: 1 });
-    await selects.nth(1).selectOption({ index: 1 });
-    await step(page, preparation.getByRole("button", { name: "토큰 변경", exact: true }));
-    await step(page, reset);
+  const choices = preparation.locator("button.token-choice");
+  if (await choices.count()) {
+    const before = await choices.locator(".task-order").allTextContents();
+    const revision = await page.locator(".room-view").getAttribute("data-revision");
+    await choices.nth(0).click();
+    await expect(preparation.getByRole("button", { name: "현재 토큰 배치 확정" })).toBeDisabled();
+    await choices.nth(1).click();
+    expect(await choices.locator(".task-order").allTextContents()).toEqual([before[1], before[0], ...before.slice(2)]);
+    await expect(page.locator(".room-view")).toHaveAttribute("data-revision", revision!);
     await step(page, preparation.getByRole("button", { name: "현재 토큰 배치 확정", exact: true }));
-  } else {
-    await step(page, page.getByRole("button", { name: "데모 대원 진행", exact: true }));
-  }
+  } else await step(page, page.getByRole("button", { name: "데모 대원 진행", exact: true }));
   await expect(preparation).toHaveCount(0);
   await expect(page.locator(".mission-task-draft")).toBeVisible();
+});
+
+test('local demo restart vote keeps AI responses accessible inside the dialog', async ({page}) => {
+  await page.goto('/');
+  await page.getByRole('combobox',{name:'시작 미션',exact:true}).selectOption('4');
+  await page.getByRole('button',{name:'탐사선 만들기',exact:true}).click();
+  for(const name of ['데모 대원 채우기','탑승 준비 완료','임무 시작']) await step(page,page.getByRole('button',{name,exact:true}));
+  await page.getByRole('button',{name:'테이블 보기',exact:true}).click();
+  await step(page,page.getByRole('button',{name:'게임 포기 · 재시작',exact:true}));
+  const modal=page.getByRole('dialog',{name:'게임 포기 및 재시작 동의'});
+  await expect(modal).toBeVisible();
+  await step(page,modal.getByRole('button',{name:'데모 대원 진행',exact:true}));
+  await expect(modal).toContainText('2/3명 동의');
+  await step(page,modal.getByRole('button',{name:'데모 대원 진행',exact:true}));
+  await expect(modal).not.toBeVisible();
+  await expect(page.locator('.attempt')).toContainText('2번째 시도');
 });

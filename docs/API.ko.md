@@ -75,7 +75,9 @@ capacity는 3/4/5. startMission은 1~50. random 모드에서는 startMission을 
 | assign_task | playerId | captain_distribution / 지휘관, 현재 공개 목표와 배정 한도 검증 |
 | edit_task_tokens | firstTaskId, secondTaskId | token_edit / 지휘관, 23번 두 토큰 교환·40번 빈 목표로 이동 |
 | reset_tokens | 없음 | token_edit / 지휘관, 최초 배열 복원 |
-| confirm_tokens | 없음 | token_edit / 지휘관 |
+| request_restart | 없음 | 진행 중 시도 / 참가자 누구나. 요청자 찬성으로 투표 생성 |
+| vote_restart | agree: boolean | 진행 중 투표 / 참가자. 전원 찬성 시 같은 미션 재시작, 반대 시 취소 |
+| confirm_tokens | firstTaskId, secondTaskId (함께 선택 제공) | token_edit / 지휘관. 두 카드의 토큰 변경과 준비 완료를 한 명령으로 저장. 생략하면 현재 배치 확정 |
 | transfer_task | taskId, playerId | task_transfer / 목표 소유자, 다른 대원에게 목표·토큰 함께 양도 |
 | skip_transfer | 없음 | task_transfer / 지휘관 |
 | request_distress | direction: left/right | briefing 방향 예약 또는 첫 카드·교신 전 playing / 방장, 실제 교환은 목표 배정·양도 후 |
@@ -127,3 +129,5 @@ snapshot은 roomId/revision/settings/phase/missionId/attemptId/시도 수/이미
 Realtime 구독: `postgres_changes`, event `UPDATE`, schema `public`, table `room_versions`, filter `room_id=eq.<roomId>`. payload는 room_id/revision뿐이다. 알림 수신·재구독 완료·포커스 복귀 시 snapshot을 다시 읽는다. 누락에 대비해 화면이 보일 때 15초 폴링한다. 중복/역순 알림은 revision으로 무시한다. 전체 손패를 Realtime broadcast 또는 공개 채널에 보내지 않는다.
 
 같은 브라우저의 Supabase 세션 갱신으로 기존 member를 찾는다. 새 닉네임이나 동일 닉네임은 자리를 되찾을 권한이 아니다. 저장소 삭제·기기 변경용 복구 코드는 별도 설계/구현 대상으로 남겨 둔다.
+
+`Snapshot.restartVote`는 선택적 nullable `{ requestedBy, approvals }`다. 투표 중 다른 게임 명령은 거부하며 참가 토큰 인증·revision/commandId 중복 방지 정책은 동일하다. v4의 교신 타이밍·목표 분산 정책은 [미션 기준](MISSIONS.ko.md)의 사용자 지정 절을 따른다.

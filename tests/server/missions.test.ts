@@ -27,6 +27,7 @@ describe.each([3, 4, 5] as const)("%i-player mission integration", (capacity) =>
         }
         let snap: Snapshot = await store.snapshot(roomId, host.playerToken);
         async function execute(token: string, command: Command) {
+          if (command.type === "confirm_tokens" && [23, 40].includes(mission)) command = { ...command, firstTaskId: snap.tasks[0].id, secondTaskId: snap.tasks[mission === 23 ? 1 : 3].id };
           const envelope = { commandId: crypto.randomUUID(), expectedRevision: snap.revision, attemptId: snap.attemptId, command };
           const next = await store.command(roomId, token, envelope);
           expect(SnapshotSchema.safeParse(next).success).toBe(true);
@@ -84,4 +85,39 @@ describe.each([3, 4, 5] as const)("%i-player mission integration", (capacity) =>
       } finally { store.shutdown(); await rm(dataDir, { recursive: true, force: true }); }
     },
   );
+});
+
+
+it("restart voting persists, rejects duplicate effects, and preserves the room identity", async () => {
+  const dataDir = await mkdtemp(join(tmpdir(), "crew-vote-"));
+  let store = new RoomStore({ dataDir });
+  try {
+    const host = await store.createRoom({ commandId: crypto.randomUUID(), nickname: "선장", settings: { name: "재시작", capacity: 3, missionMode: "random", startMission: 1 } });
+    const peers = [host];
+    for (let i=1;i<3;i++) peers.push(await store.joinRoom({ commandId: crypto.randomUUID(), nickname: `대원${i}`, inviteToken: host.inviteToken }) as typeof host);
+    const roomId=host.snapshot.roomId;
+    let snap=peers.at(-1)!.snapshot;
+    const command = async (index: number, action: Command) => {
+      const envelope={ commandId:crypto.randomUUID(), expectedRevision:snap.revision, attemptId:snap.attemptId, command:action };
+      snap=await store.command(roomId,peers[index].playerToken,envelope);
+      const duplicate=await store.command(roomId,peers[index].playerToken,envelope);
+      expect(duplicate).toEqual(snap);
+    };
+    for(let i=0;i<3;i++) await command(i,{type:"set_ready",ready:true});
+    await command(0,{type:"start_mission"});
+    const mission=snap.missionId, attempt=snap.attemptId;
+    await command(1,{type:"request_restart"});
+    await command(0,{type:"vote_restart",agree:true});
+    store.shutdown(); store=new RoomStore({dataDir});
+    snap=await store.snapshot(roomId,host.playerToken);
+    expect(snap.restartVote?.approvals).toHaveLength(2);
+    expect(snap.attemptId).toBe(attempt);
+    await command(2,{type:"vote_restart",agree:true});
+    expect(snap.restartVote).toBeNull();
+    expect(snap.missionId).toBe(mission);
+    expect(snap.attemptId).not.toBe(attempt);
+    expect(snap.attemptNumber).toBe(2);
+    expect(snap.roomId).toBe(roomId);
+    expect(await store.invite(roomId,host.playerToken)).toBe(host.inviteToken);
+  } finally {store.shutdown(); await rm(dataDir,{recursive:true,force:true});}
 });

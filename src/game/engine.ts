@@ -38,7 +38,7 @@ function seatAfter(state: State, playerId: string, offset = 1) {
 function mayCommunicate(state: State, playerId: string) {
   const rules = missionRules(state.missionId ?? 1);
   const player = state.players.find(p => p.id === playerId)!;
-  return state.phase === "playing" && state.trick.length === 0 && !player.communication &&
+  return state.phase === "playing" && !state.restartVote && (state.rulesetVersion === "crew-p9-50-4" || state.trick.length === 0) && !player.communication &&
     state.trickNumber >= rules.communication.fromTrick && state.missionProgress?.silentPlayerId !== playerId &&
     (state.hands[playerId] ?? []).some(c => communicationMarkers(state.hands[playerId], c).length > 0);
 }
@@ -158,6 +158,16 @@ function distributionTargets(state: State) {
     return Math.max(...counts) <= max && counts.reduce((n, count) => n + Math.max(0, min - count), 0) <= remaining;
   }).map(p => p.id);
 }
+function editTaskTokens(state: State, firstTaskId: string, secondTaskId: string) {
+      const first = state.tasks.findIndex(t => t.id === firstTaskId);
+      const second = state.tasks.findIndex(t => t.id === secondTaskId);
+      requireThat(first >= 0 && second >= 0 && first !== second, "서로 다른 목표 두 장을 선택해 주세요.");
+      const originals = state.setup!.originalTokens;
+      requireThat(originals[first] && (state.missionId === 23 ? originals[second] : !originals[second]), state.missionId === 23 ? "토큰 두 개를 교환해 주세요." : "토큰 한 개를 토큰이 없는 목표로 이동해 주세요.");
+      state.tasks.forEach((task, i) => { task.token = originals[i]; });
+      [state.tasks[first].token, state.tasks[second].token] = [state.tasks[second].token, state.tasks[first].token];
+      state.tasks.forEach(task => { task.order = task.token?.kind === "absolute" ? task.token.value! : null; });
+}
 function startPlaying(state: State) {
   state.phase = "playing"; state.preparation = null; state.turnPlayerId = state.commanderId;
   if (state.missionId === 46) {
@@ -203,6 +213,7 @@ function begin(state: State, missionId: number, random: () => number) {
   state.setup = { ...freshSetup(), distressEverUsed };
   state.missionProgress = { ...freshProgress(), distressActive: distressEverUsed };
   state.preparation = null;
+  state.restartVote = null;
   state.rulesetVersion = RULESET_VERSION;
   state.attemptNumber = state.missionId === missionId ? state.attemptNumber + 1 : 1;
   state.missionId = missionId;
@@ -229,11 +240,17 @@ function begin(state: State, missionId: number, random: () => number) {
     state.hands[p.id].includes("rocket-4"),
   )!.id;
   state.turnPlayerId = state.commanderId;
-  state.tasks = shuffled(
-    deck().filter((c) => suitOf(c) !== "rocket"),
-    random,
-  )
-    .slice(0, mission.taskCount)
+  const goalLimit = Math.ceil(mission.taskCount / 4);
+  const goalCounts = new Map<string, number>();
+  // User-requested balanced draw: retain randomness without four of five goals
+  // sharing a suit. This does not claim the resulting deal is always solvable.
+  const goals = shuffled(deck().filter(c => suitOf(c) !== "rocket"), random).filter(card => {
+    const suit = suitOf(card), count = goalCounts.get(suit) ?? 0;
+    if (count >= goalLimit) return false;
+    goalCounts.set(suit, count + 1);
+    return true;
+  }).slice(0, mission.taskCount);
+  state.tasks = goals
     .map((cardId, i) => ({
       id: crypto.randomUUID(),
       cardId,
@@ -377,7 +394,20 @@ export function applyCommand(
     const required = state.players.filter(p => ["captain_decision", "captain_distribution"].includes(state.preparation!.stage) || roleIncludesCommander(state.missionId!, state.rulesetVersion) || p.id !== state.commanderId);
     requireThat(required.every(p => state.preparation!.responses[p.id] !== undefined), "대원들의 응답을 기다려 주세요.");
   };
+  requireThat(!state.restartVote || command.type === "vote_restart", "재시작 동의가 진행 중입니다.");
   switch (command.type) {
+    case "request_restart":
+      phase("briefing", "preparation", "task_selection", "playing", "trick_result");
+      state.restartVote = { requestedBy: actor, approvals: [actor] };
+      break;
+    case "vote_restart":
+      requireThat(state.restartVote, "진행 중인 재시작 요청이 없습니다.");
+      if (!command.agree) state.restartVote = null;
+      else {
+        if (!state.restartVote!.approvals.includes(actor)) state.restartVote!.approvals.push(actor);
+        if (state.players.every(p => state.restartVote!.approvals.includes(p.id))) begin(state, state.missionId!, random);
+      }
+      break;
     case "update_settings":
       host();
       phase("lobby");
@@ -491,14 +521,7 @@ export function applyCommand(
     }
     case "edit_task_tokens": {
       prep("token_edit"); captain();
-      const first = state.tasks.findIndex(t => t.id === command.firstTaskId);
-      const second = state.tasks.findIndex(t => t.id === command.secondTaskId);
-      requireThat(first >= 0 && second >= 0 && first !== second, "서로 다른 목표 두 장을 선택해 주세요.");
-      const originals = state.setup!.originalTokens;
-      requireThat(originals[first] && (state.missionId === 23 ? originals[second] : !originals[second]), state.missionId === 23 ? "토큰 두 개를 교환해 주세요." : "토큰 한 개를 토큰이 없는 목표로 이동해 주세요.");
-      state.tasks.forEach((task, i) => { task.token = originals[i]; });
-      [state.tasks[first].token, state.tasks[second].token] = [state.tasks[second].token, state.tasks[first].token];
-      state.tasks.forEach(task => { task.order = task.token?.kind === "absolute" ? task.token.value! : null; });
+      editTaskTokens(state, command.firstTaskId, command.secondTaskId);
       break;
     }
     case "reset_tokens":
@@ -506,7 +529,12 @@ export function applyCommand(
       state.tasks.forEach((task, i) => { task.token = state.setup!.originalTokens[i]; task.order = task.token?.kind === "absolute" ? task.token.value! : null; });
       break;
     case "confirm_tokens":
-      prep("token_edit"); captain(); state.setup!.tokensDone = true; advanceSetup(state); break;
+      prep("token_edit"); captain();
+      if (command.firstTaskId || command.secondTaskId) {
+        requireThat(command.firstTaskId && command.secondTaskId, "서로 다른 목표 두 장을 선택해 주세요.");
+        editTaskTokens(state, command.firstTaskId!, command.secondTaskId!);
+      }
+      state.setup!.tokensDone = true; advanceSetup(state); break;
     case "transfer_task": {
       prep("task_transfer");
       const task = state.tasks.find(t => t.id === command.taskId);
@@ -524,6 +552,9 @@ export function applyCommand(
       const task = state.tasks.find((t) => t.id === command.taskId);
       requireThat(task && !task.ownerId, "선택할 수 없는 목표입니다.");
       task!.ownerId = actor;
+      const remaining = state.tasks.filter(t => !t.ownerId);
+      // The last draft card has no choice left: preserve the next seat's turn.
+      if (remaining.length === 1) remaining[0].ownerId = nextSeat();
       if (state.tasks.every((t) => t.ownerId)) {
         state.setup!.assignmentDone = true;
         advanceSetup(state);
@@ -534,7 +565,7 @@ export function applyCommand(
       phase("playing");
       requireThat(
         mayCommunicate(state, actor),
-        "교신은 트릭 시작 전 임무당 한 번 가능합니다.",
+        "지금은 교신할 수 없습니다. 미션의 교신 제한과 사용 여부를 확인해 주세요.",
       );
       requireThat(
         command.marker === "hidden"

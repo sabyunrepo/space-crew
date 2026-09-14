@@ -3,6 +3,7 @@ import type { Command, Snapshot } from "../../../shared/contracts.ts";
 import { cardImage, cardLabel, suitOf } from "../../../shared/cards.ts";
 import { roleIncludesCommander } from "../../../shared/missionRules.ts";
 import { TaskCard } from "./TaskCard.tsx";
+import { TokenEditor } from "./TokenEditor.tsx";
 import { taskTokenDescription } from "./taskToken.ts";
 
 const answerLabels = { yes: "예", no: "아니오", unknown: "모르겠어요", first: "첫 4트릭", middle: "중간 트릭", last: "마지막 트릭" };
@@ -44,7 +45,6 @@ function PreparationControls({ snapshot, locked, onSend }: { snapshot: Snapshot;
   const [primary, setPrimary] = useState("");
   const [secondary, setSecondary] = useState("");
   const [firstTask, setFirstTask] = useState("");
-  const [secondTask, setSecondTask] = useState("");
   const [card, setCard] = useState("");
   const activeTask = snapshot.tasks.find(t => t.id === prep.activeTaskId);
   const answered = prep.answeredPlayerIds.includes(mineId);
@@ -71,7 +71,6 @@ function PreparationControls({ snapshot, locked, onSend }: { snapshot: Snapshot;
   const labels = prep.stage === "role" && snapshot.missionId === 5 ? { ...answerLabels, yes: "좋음", no: "나쁨" } : answerLabels;
   const ownTasks = snapshot.tasks.filter(t => t.ownerId === mineId);
   const selectedTask = snapshot.tasks.find(t => t.id === firstTask);
-  const tokenTargets = snapshot.tasks.filter(t => t.id !== firstTask && (snapshot.missionId === 40 ? !t.token && !t.order : !!t.token || !!t.order));
   const nick = (id: string) => snapshot.players.find(p => p.id === id)?.nickname ?? "대원";
   return <section className="mission-preparation" aria-label="미션 준비">
     <div className="preparation-heading"><strong>{preparationTitle(snapshot)}</strong><span>{commander ? "내가 지휘관" : `지휘관: ${nick(snapshot.commanderId ?? "")}`}</span></div>
@@ -99,17 +98,7 @@ function PreparationControls({ snapshot, locked, onSend }: { snapshot: Snapshot;
       </div>
     </div>}
     {responseStage && <div className="preparation-responses" aria-label="대원 응답">{requiredResponders.map(p => <span key={p.id}>{p.nickname}{p.id === mineId ? " (나)" : ""}: {prep.responses[p.id] ? labels[prep.responses[p.id]] : "응답 대기"}</span>)}</div>}
-    {prep.stage === "token_edit" && <>
-      <p>{snapshot.missionId === 23 ? "토큰 두 개를 서로 교환할 수 있습니다." : "토큰 하나를 토큰이 없는 목표로 옮길 수 있습니다."} 변경하지 않고 확정해도 됩니다.</p>
-      <div className="preparation-task-row">{snapshot.tasks.map(task => <TaskCard key={task.id} task={task} />)}</div>
-      {commander ? <div className="preparation-actions">
-        <label>이동할 토큰<select value={firstTask} disabled={locked} onChange={e => { setFirstTask(e.target.value); setSecondTask(""); }}><option value="">목표 선택</option>{snapshot.tasks.filter(t => t.token || t.order).map(t => <option key={t.id} value={t.id}>{cardLabel(t.cardId)} · {taskTokenDescription(t)}</option>)}</select></label>
-        <label>{snapshot.missionId === 23 ? "교환할 토큰" : "토큰 없는 목표"}<select value={secondTask} disabled={locked || !firstTask} onChange={e => setSecondTask(e.target.value)}><option value="">목표 선택</option>{tokenTargets.map(t => <option key={t.id} value={t.id}>{cardLabel(t.cardId)} · {taskTokenDescription(t)}</option>)}</select></label>
-        <button className="secondary" disabled={locked || !firstTask || !secondTask} onClick={() => { onSend({ type: "edit_task_tokens", firstTaskId: firstTask, secondTaskId: secondTask }); setFirstTask(""); setSecondTask(""); }}>토큰 변경</button>
-        <button className="secondary" disabled={locked} onClick={() => onSend({ type: "reset_tokens" })}>원래 배치로 되돌리기</button>
-        <button className="primary" disabled={locked} onClick={() => onSend({ type: "confirm_tokens" })}>현재 토큰 배치 확정</button>
-      </div> : <p className="helper">지휘관이 토큰 배치를 확정하고 있습니다.</p>}
-    </>}
+    {prep.stage === "token_edit" && <TokenEditor snapshot={snapshot} locked={locked} onSend={onSend} />}
     {prep.stage === "task_transfer" && <>
       <p>팀이 합의하면 목표 한 장을 토큰과 함께 다른 대원에게 양도할 수 있습니다. 해당 목표의 담당자가 선택하세요.</p>
       {ownTasks.length > 0 && <div className="preparation-actions">

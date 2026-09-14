@@ -1,9 +1,9 @@
 import type { Snapshot } from "../../../shared/contracts.ts";
 import { cardImage, cardLabel, rankOf, suitOf } from "../../../shared/cards.ts";
 import { taskTokenDescription, taskTokenLabel } from "./taskToken.ts";
-export function TaskCard({ task }: { task: Snapshot["tasks"][number] }) {
+export function TaskCard({ task, focusable = true }: { task: Snapshot["tasks"][number]; focusable?: boolean }) {
   const status = task.status === "success" ? "완료" : task.status === "failed" ? "실패" : "대기";
-  return <div className={`seat-task ${task.status}`} data-task-id={task.id}
+  return <div tabIndex={focusable ? 0 : undefined} className={`seat-task ${task.status}`} data-task-id={task.id}
     title={`${cardLabel(task.cardId)} · ${taskTokenDescription(task)} · ${status}`}
     aria-label={`${cardLabel(task.cardId)} 목표 · ${taskTokenDescription(task)} · ${status}`}>
     <img src={cardImage(task.cardId)} alt={cardLabel(task.cardId)} draggable={false} />

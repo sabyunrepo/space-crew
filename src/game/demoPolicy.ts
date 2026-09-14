@@ -7,6 +7,7 @@ export function suggestDemoCommand(view: Snapshot): Command | null {
   const actor = view.me.playerId;
   const me = view.players.find((p) => p.id === actor);
   if (!me) return null;
+  if (view.restartVote) return view.restartVote.approvals.includes(actor) ? null : { type: "vote_restart", agree: true };
   if (view.phase === "briefing")
     return me.briefingReady ? null : { type: "briefing_ready" };
   if (view.phase === "task_selection" && view.turnPlayerId === actor) {

@@ -2,7 +2,7 @@
 import { z } from "zod";
 
 export const API_VERSION = "1";
-export const RULESET_VERSION = "crew-p9-50-3";
+export const RULESET_VERSION = "crew-p9-50-4";
 export const SuitSchema = z.enum([
   "blue",
   "green",
@@ -73,6 +73,8 @@ export const MissionProgressSchema = z.object({
   distressDirection: z.enum(["left", "right"]).nullable().optional(),
 });
 export const CommandSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("request_restart") }).strict(),
+  z.object({ type: z.literal("vote_restart"), agree: z.boolean() }).strict(),
   z.object({ type: z.literal("set_character"), characterId: CharacterIdSchema }).strict(),
   z
     .object({
@@ -88,7 +90,7 @@ export const CommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("assign_task"), playerId: z.uuid() }).strict(),
   z.object({ type: z.literal("edit_task_tokens"), firstTaskId: z.uuid(), secondTaskId: z.uuid() }).strict(),
   z.object({ type: z.literal("reset_tokens") }).strict(),
-  z.object({ type: z.literal("confirm_tokens") }).strict(),
+  z.object({ type: z.literal("confirm_tokens"), firstTaskId: z.uuid().optional(), secondTaskId: z.uuid().optional() }).strict(),
   z.object({ type: z.literal("transfer_task"), taskId: z.uuid(), playerId: z.uuid() }).strict(),
   z.object({ type: z.literal("skip_transfer") }).strict(),
   z.object({ type: z.literal("request_distress"), direction: z.enum(["left", "right"]) }).strict(),
@@ -195,6 +197,7 @@ export const SnapshotSchema = z.object({
     canCommunicate: z.boolean(),
   }),
   tasks: z.array(TaskSchema),
+  restartVote: z.object({ requestedBy: z.uuid(), approvals: z.array(z.uuid()) }).nullable().optional(),
   preparation: PreparationSchema.nullable().optional(),
   missionProgress: MissionProgressSchema.optional(),
   hiddenTaskCount: z.number().int().nonnegative().optional(),

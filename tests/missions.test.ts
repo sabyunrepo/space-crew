@@ -367,7 +367,7 @@ describe("simultaneous goals and special trick edge cases", () => {
     expect(() => applyCommand(state, state.commanderId!, { type: "preparation_response", answer: "yes" })).toThrow();
     state.phase = "failure";
     state = ready(applyCommand(state, state.hostId, { type: "retry_mission" }));
-    expect(state.rulesetVersion).toBe("crew-p9-50-3");
+    expect(state.rulesetVersion).toBe("crew-p9-50-4");
     expect(state.preparation!.eligiblePlayerIds).toContain(state.commanderId);
   });
   it("new mission resets attempt counter and preserves drawn history", () => {
@@ -406,4 +406,96 @@ it("briefing distress reservation waits for captain distribution and five-player
   expect(state.missionProgress?.distressActive).toBe(true);
   expect(state.missionProgress?.distressUsed).toBe(false);
   expect(state.attemptNumber).toBe(3);
+});
+
+
+describe("draft last card and atomic token confirmation", () => {
+  it.each([3,4,5] as const)("auto-assigns the last card to the next seat with %i players", count => {
+    for (const mission of [2,4,18,25,47]) {
+      let state = ready(start(mission, count));
+      while (state.tasks.filter(t => !t.ownerId).length > 2) state = setupStep(state);
+      const remaining = state.tasks.filter(t => !t.ownerId);
+      const actor = state.turnPlayerId!;
+      const next = state.players[(state.players.findIndex(p => p.id === actor) + 1) % count].id;
+      const before = structuredClone(state);
+      const done = applyCommand(state, actor, { type: "choose_task", taskId: remaining[0].id });
+      expect(state).toEqual(before);
+      expect(done.tasks.find(t => t.id === remaining[0].id)?.ownerId).toBe(actor);
+      expect(done.tasks.find(t => t.id === remaining[1].id)?.ownerId).toBe(next);
+      expect(done.tasks.every(t => t.ownerId)).toBe(true);
+      expect(done.phase).toBe(count === 5 && missions.find(m => m.id === mission)!.fivePlayerTransfer ? "preparation" : "playing");
+      if (done.phase === "preparation") expect(done.preparation?.stage).toBe("task_transfer");
+    }
+  });
+  it.each([23,40])("confirms mission %i preview and token placement atomically", mission => {
+    const state = ready(start(mission));
+    const first = state.tasks[0], second = state.tasks[mission === 23 ? 1 : 3];
+    const command = { type: "confirm_tokens" as const, firstTaskId: first.id, secondTaskId: second.id };
+    const before = structuredClone(state);
+    const done = applyCommand(state, state.commanderId!, command);
+    expect(state).toEqual(before);
+    expect(done.phase).toBe("task_selection");
+    expect(done.tasks[0].token).toEqual(second.token);
+    expect(done.tasks[mission === 23 ? 1 : 3].token).toEqual(first.token);
+    expect(() => applyCommand(state, state.players.find(p => p.id !== state.commanderId)!.id, command)).toThrow();
+    expect(() => applyCommand(state, state.commanderId!, { ...command, secondTaskId: first.id })).toThrow();
+    expect(() => applyCommand(state, state.commanderId!, { type: "confirm_tokens", firstTaskId: first.id })).toThrow();
+  });
+});
+
+
+describe("requested cooperative play options", () => {
+  it("allows off-turn communication mid-trick in v4 while preserving legacy timing", () => {
+    const state = playing(4);
+    const actor = state.players.find(p => p.id !== state.turnPlayerId)!.id;
+    state.trick = [{ playerId: state.turnPlayerId!, cardId: "blue-3" }];
+    state.hands[actor] = ["green-2", "green-8"];
+    expect(project(state, actor).me.canCommunicate).toBe(true);
+    const done = applyCommand(state, actor, { type: "communicate", cardId: "green-8", marker: "highest" });
+    expect(done.trick).toEqual(state.trick);
+    expect(done.turnPlayerId).toBe(state.turnPlayerId);
+    expect(done.hands).toEqual(state.hands);
+    expect(() => applyCommand(done, actor, { type: "communicate", cardId: "green-2", marker: "lowest" })).toThrow();
+    state.rulesetVersion = "crew-p9-50-3";
+    expect(project(state, actor).me.canCommunicate).toBe(false);
+  });
+  it.each([3,4,5] as const)("requires every one of %i players to approve a restart", count => {
+    const state = playing(22, count);
+    let next = applyCommand(state, ids[1], { type: "request_restart" });
+    expect(next.restartVote?.approvals).toEqual([ids[1]]);
+    expect(() => applyCommand(next, next.turnPlayerId!, { type: "play_card", cardId: next.hands[next.turnPlayerId!][0] })).toThrow();
+    expect(() => applyCommand(next, ids[0], { type: "request_restart" })).toThrow();
+    const declined = applyCommand(next, ids[2], { type: "vote_restart", agree: false });
+    expect(declined.restartVote).toBeNull();
+    expect(declined.hands).toEqual(state.hands);
+    expect(declined.attemptId).toBe(state.attemptId);
+    for (const id of ids.slice(0,count).filter(id => id !== ids[1])) {
+      expect(next.attemptId).toBe(state.attemptId);
+      next = applyCommand(next, id, { type: "vote_restart", agree: true });
+    }
+    expect(next.restartVote).toBeNull();
+    expect(next.phase).toBe("briefing");
+    expect(next.missionId).toBe(22);
+    expect(next.attemptNumber).toBe(state.attemptNumber + 1);
+    expect(next.attemptId).not.toBe(state.attemptId);
+    expect(next.players.map(p => [p.id,p.characterId])).toEqual(state.players.map(p => [p.id,p.characterId]));
+    expect(state.restartVote).toBeNull();
+  });
+  it("limits suit concentration across all task counts without changing count or tokens", () => {
+    const draws = new Set<string>();
+    for (const mission of missions) for (let seed = 1; seed <= 12; seed++) {
+      const state = start(mission.id, 3, seeded(seed));
+      expect(state.tasks).toHaveLength(mission.taskCount);
+      expect(new Set(state.tasks.map(t => t.cardId)).size).toBe(mission.taskCount);
+      const counts = new Map<string,number>();
+      state.tasks.forEach((t,i) => {
+        const suit = t.cardId.split("-")[0];
+        expect(suit).not.toBe("rocket"); counts.set(suit,(counts.get(suit) ?? 0)+1);
+        expect(t.token).toEqual(missionRules(mission.id).tokens[i] ?? null);
+      });
+      expect(Math.max(0,...counts.values())).toBeLessThanOrEqual(Math.ceil(mission.taskCount / 4));
+      if (mission.id === 22) draws.add(state.tasks.map(t => t.cardId).join(","));
+    }
+    expect(draws.size).toBeGreaterThan(10);
+  });
 });

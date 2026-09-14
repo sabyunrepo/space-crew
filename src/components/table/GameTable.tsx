@@ -20,6 +20,7 @@ import { cardLabel } from "../../../shared/cards.ts";
 import { communicationMarkers } from "../../game/engine.ts";
 import { StatusBar } from "./StatusBar.tsx";
 import { PlayerPanel } from "./PlayerPanel.tsx";
+import { RestartVote } from "./RestartVote.tsx";
 import { MissionPanel } from "./MissionPanel.tsx";
 import { TrickArea } from "./TrickArea.tsx";
 import { Hand } from "./Hand.tsx";
@@ -131,7 +132,7 @@ export function GameTable({
     : snapshot.phase === "briefing" && usesCombinedTaskSetup(snapshot) ? "waiting" : "";
   const setupPhase = usesCombinedTaskSetup(snapshot) && ["briefing", "task_selection"].includes(snapshot.phase) ? "task-draft" : snapshot.phase;
   const setupKey = `${snapshot.roomId}:${snapshot.attemptId}:${setupPhase}:${snapshot.preparation?.stage ?? ""}:${snapshot.preparation?.activeTaskId ?? setupTurn}`;
-  const setupOpen = setupActive && dismissedSetup !== setupKey;
+  const setupOpen = !snapshot.restartVote && setupActive && dismissedSetup !== setupKey;
   const [communicateMode, setCommunicateMode] = useState(false);
   const [distressOpen, setDistressOpen] = useState(false);
   const [hint, setHint] = useState("");
@@ -183,14 +184,14 @@ export function GameTable({
 
   const demoStepVisible =
     onDemoStep &&
-    ((snapshot.phase === "briefing" &&
+    (snapshot.restartVote ? snapshot.players.some(p => p.isDemo && !snapshot.restartVote!.approvals.includes(p.id)) : ((snapshot.phase === "briefing" &&
       snapshot.players.some((p) => p.isDemo && !p.briefingReady)) ||
       (["playing", "task_selection"].includes(snapshot.phase) &&
         snapshot.players.some(
           (p) => p.isDemo && p.id === snapshot.turnPlayerId,
         )) ||
       (snapshot.phase === "preparation" &&
-        snapshot.players.some((p) => p.isDemo)));
+        snapshot.players.some((p) => p.isDemo))));
   // 목표 선택 단계의 보조 동작은 목표 배정 영역에 함께 둡니다.
   const demoStepButton = demoStepVisible && (
     <button
@@ -214,9 +215,10 @@ export function GameTable({
         isHost={isHost}
         onInvite={onCopyInvite}
       />
+      <RestartVote snapshot={snapshot} locked={locked} onSend={onSend} footer={snapshot.restartVote ? demoStepButton : undefined} />
       <div className="game-table-body">
         {!lobby && (
-          <MissionPanel snapshot={snapshot} currentMission={currentMission} />
+          <MissionPanel snapshot={snapshot} currentMission={currentMission} locked={locked} onRestart={() => onSend({ type: "request_restart" })} />
         )}
         {!lobby && snapshot.phase === "preparation" && !setupActive && (
           <PreparationPanel snapshot={snapshot} locked={locked} onSend={onSend} />
@@ -321,7 +323,7 @@ export function GameTable({
           ) : (
             <TrickArea snapshot={snapshot} mineId={mine?.id} />
           )}
-          {(!setupActive || !setupOpen) && demoStepButton}
+          {!snapshot.restartVote && (!setupActive || !setupOpen) && demoStepButton}
         </div>
         {lobby && <PlayerPanel snapshot={snapshot} mineId={mine?.id} />}
       </div>

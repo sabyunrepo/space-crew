@@ -529,10 +529,9 @@ for (const [mission, capacity] of [[22, 3], [5, 3], [17, 3], [33, 4], [11, 4], [
                   await panel.getByRole("combobox", { name: "마지막 트릭 담당 B", exact: true }).selectOption(command.secondaryPlayerId);
                 await step(page, panel.getByRole("button", { name: command.type === "assign_task" ? "목표 배정" : "담당자 확정", exact: true })); break;
               case "confirm_tokens":
-                await panel.getByRole("combobox", { name: "이동할 토큰", exact: true }).selectOption({ index: 1 });
-                await panel.getByRole("combobox", { name: mission === 23 ? "교환할 토큰" : "토큰 없는 목표", exact: true }).selectOption({ index: 1 });
-                await step(page, panel.getByRole("button", { name: "토큰 변경", exact: true }));
-                await step(page, panel.getByRole("button", { name: "원래 배치로 되돌리기", exact: true }));
+                await panel.locator("button.token-choice").nth(0).click();
+                await panel.locator("button.token-choice").nth(mission === 23 ? 1 : 3).click();
+                await expect(panel.locator(".preview-changed")).toHaveCount(2);
                 await step(page, panel.getByRole("button", { name: "현재 토큰 배치 확정", exact: true })); break;
               case "transfer_task":
                 await panel.getByRole("combobox", { name: "내 목표", exact: true }).selectOption(command.taskId);
@@ -564,3 +563,81 @@ for (const [mission, capacity] of [[22, 3], [5, 3], [17, 3], [33, 4], [11, 4], [
     } finally { for (const ctx of contexts) await ctx.close(); }
   });
 }
+
+test("cooperative controls: last goal, hover, off-turn signal and unanimous restart", async ({ browser, request }) => {
+  test.setTimeout(180000);
+  const post = async (path: string, data: unknown) => {
+    for (let i=0;i<12;i++) {
+      const response=await request.post(path,{data});
+      if(response.status() !== 429) { expect(response.ok()).toBe(true); return response.json(); }
+      await new Promise(resolve=>setTimeout(resolve,6200));
+    }
+    throw new Error("Room entry rate limit");
+  };
+  const first=await post('/api/rooms',{commandId:crypto.randomUUID(),nickname:'검증 선장',settings:{name:'협동 조작 검증',capacity:3,missionMode:'sequential',startMission:4}});
+  const entries=[first];
+  for(let i=1;i<3;i++) entries.push(await post('/api/join',{commandId:crypto.randomUUID(),nickname:`검증 대원${i}`,inviteToken:first.entry.inviteToken}));
+  const roomId=first.entry.snapshot.roomId;
+  const contexts: BrowserContext[]=[];
+  const pages: Page[]=[];
+  const snapshot=async(i=0)=>(await request.get(`/api/rooms/${roomId}`,{headers:{Authorization:`Bearer ${entries[i].playerToken}`}})).json();
+  try {
+    for(let i=0;i<3;i++) {
+      const context=await browser.newContext({viewport:i===2?{width:390,height:844}:{width:1469,height:900}});contexts.push(context);
+      await context.addInitScript(({roomId,token})=>localStorage.setItem(`crew.server.v1.token.${roomId}`,token),{roomId,token:entries[i].playerToken});
+      const page=await context.newPage();pages.push(page);
+      await page.goto(`/rooms/${roomId}`);
+      await step(page,page.getByRole('button',{name:'탑승 준비 완료',exact:true}));
+    }
+    await step(pages[0],pages[0].getByRole('button',{name:'임무 시작',exact:true}));
+    await expect.poll(async()=>(await snapshot()).phase).toBe('task_selection');
+    let snap=await snapshot();
+    while(snap.phase==='task_selection') {
+      const i=entries.findIndex(e=>e.entry.snapshot.me.playerId===snap.turnPlayerId);
+      const remaining=snap.tasks.filter((t: {ownerId:string|null})=>!t.ownerId);
+      const last=remaining.length===2?remaining[1]:null;
+      const next=snap.players[(snap.players.findIndex((p:{id:string})=>p.id===snap.turnPlayerId)+1)%3].id;
+      await step(pages[i],pages[i].locator('.target-list button:enabled').first());
+      snap=await snapshot();
+      if(last) {expect(snap.tasks.find((t:{id:string})=>t.id===last.id).ownerId).toBe(next);expect(snap.phase).toBe('playing');}
+    }
+    const host=pages[0];
+    await expect(host.locator('.mission-setup-modal')).toHaveCount(0);
+    expect((await host.locator('.mission-panel').boundingBox())!.height).toBeLessThan(90);
+    const goal=host.locator('.player-seat .seat-task').first();
+    await goal.hover();
+    await expect(host.getByRole('tooltip',{name:'카드 정보'})).toBeVisible();
+    await expect(host.getByRole('tooltip')).toContainText(await goal.locator('img').getAttribute('alt') ?? '');
+    await host.keyboard.press('Escape');
+    await expect(host.getByRole('tooltip')).not.toBeVisible();
+    const actor=entries.findIndex(e=>e.entry.snapshot.me.playerId===snap.turnPlayerId);
+    await tapCard(pages[actor].locator('.hand-cards button[aria-disabled="false"]').first());
+    await step(pages[actor],pages[actor].getByRole('button',{name:'선택한 카드 내기',exact:true}));
+    snap=await snapshot();expect(snap.trick).toHaveLength(1);
+    const views=await Promise.all(entries.map((_,i)=>snapshot(i)));
+    const communicator=views.findIndex(v=>v.me.playerId!==snap.turnPlayerId && v.me.canCommunicate);
+    expect(communicator).toBeGreaterThanOrEqual(0);
+    const page=pages[communicator];
+    await page.getByRole('button',{name:'교신하기',exact:true}).click();
+    await tapCard(page.locator('.hand-cards button[aria-disabled="false"]').first());
+    await step(page,page.locator('.communication-options button').first());
+    const signalled=await snapshot();
+    expect(signalled.turnPlayerId).toBe(snap.turnPlayerId);expect(signalled.trick).toEqual(snap.trick);
+    for(const peer of pages) await expect(peer.locator('.player-seat .communication-card.broadcast')).toHaveCount(1);
+    const attempt=snap.attemptId;
+    await step(pages[1],pages[1].getByRole('button',{name:'게임 포기 · 재시작',exact:true}));
+    for(const peer of pages) await expect(peer.getByRole('dialog',{name:'게임 포기 및 재시작 동의'})).toBeVisible();
+    await pages[2].reload();
+    await expect(pages[2].getByRole('dialog',{name:'게임 포기 및 재시작 동의'})).toBeVisible();
+    await step(pages[2],pages[2].getByRole('button',{name:'반대 · 게임 계속',exact:true}));
+    expect((await snapshot()).attemptId).toBe(attempt);
+    await step(pages[1],pages[1].getByRole('button',{name:'게임 포기 · 재시작',exact:true}));
+    await step(pages[0],pages[0].getByRole('button',{name:'동의 · 다시 시작',exact:true}));
+    expect((await snapshot()).attemptId).toBe(attempt);
+    await step(pages[2],pages[2].getByRole('button',{name:'동의 · 다시 시작',exact:true}));
+    await expect.poll(async()=>(await snapshot()).attemptId).not.toBe(attempt);
+    const restarted=await snapshot();expect(restarted.missionId).toBe(4);expect(restarted.attemptNumber).toBe(2);
+    for(const peer of pages) await expect(peer.locator('.restart-vote')).not.toBeVisible();
+    await host.screenshot({path:'artifacts/qa/missions/cooperative-restart.png'});
+  } finally {for(const context of contexts) await context.close();}
+});

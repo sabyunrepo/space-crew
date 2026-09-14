@@ -19,7 +19,7 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
     const fit = () => {
       if (!layout.isConnected) return;
       const mobile = window.innerWidth <= 700;
-      const available = layout.clientHeight - 10;
+      const available = layout.clientHeight - 18;
       const seats = [...layout.querySelectorAll<HTMLElement>(".player-seat")];
       let low = 16;
       let high = Math.min(180, layout.clientWidth * (mobile ? .1 : .05));
@@ -115,7 +115,7 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
           return <div className={`central-play played-slot from-${position} ${current ? "awaiting-card" : ""}`}
             key={player.id} data-player-id={player.id} data-position={position} aria-label={`${player.nickname} 낸 카드`}>
             <span className="central-player-name">{player.nickname}{player.id === mineId ? " · 나" : ""}</span>
-            {play ? <div className="card played-card" key={play.cardId}>
+            {play ? <div tabIndex={0} className="card played-card" key={play.cardId}>
               <img src={cardImage(play.cardId)} alt={cardLabel(play.cardId)} draggable={false} />
               <b className={`card-value suit-${suitOf(play.cardId)}`}>{rankOf(play.cardId)}</b>
               {snapshot.trick[0]?.playerId === player.id && <small className="lead-card-label">선도</small>}

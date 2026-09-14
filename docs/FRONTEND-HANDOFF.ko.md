@@ -143,3 +143,5 @@ npm run test:e2e
 일반 draft 목표 미션은 `usesCombinedTaskSetup` 정책에 따라 조건 표시와 카드 선택을 한 모달로 처리한다. UI의 별도 확인 클릭 대신 모달을 열 때 `briefing_ready`를 전송하며 엔진의 준비 장벽은 유지한다. 특수 미션 질문에는 자동 응답하지 않는다. 종료 결과는 `MissionResultModal.tsx`로 이동했고 재도전/다음 임무는 기존 명령과 방장 권한을 사용한다.
 
 테마는 `ThemePicker.tsx`, `theme.css`, 초기 로딩용 `public/theme-init.js`에서 관리한다. 선택값 키는 `crew.theme`, 루트 속성은 `data-theme="light|dark"`다. 새 UI에 색을 추가할 때 양 테마의 글자 대비를 함께 확인하고 카드 이미지/슈트 의미 색에는 테마 필터를 적용하지 않는다. API 변경은 없다.
+
+후속 협동 UI: `TokenEditor`는 확정 전 로컬 교환 미리보기를 제공하며 `confirm_tokens`의 선택적 두 ID로 원자적 확정한다. `RestartVote`는 snapshot 투표 상태를 표시한다. `CardHoverInfo`는 화면에 이미 있는 공개 이미지/라벨만 확대한다. 사용자 요청 웹 변형은 v4부터 적용한다([미션 기준](MISSIONS.ko.md)).

@@ -23,6 +23,9 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   }
   await expect(page.locator(".player-seat")).toHaveCount(capacity);
   await expect(page.locator(".seat-task")).toHaveCount(3);
+  const goalRatio = await page.locator(".player-seat").filter({ has: page.locator(".seat-task") }).first().evaluate(el => el.querySelector(".seat-task")!.getBoundingClientRect().width / el.querySelector(".character-card")!.getBoundingClientRect().width);
+  expect(goalRatio).toBeGreaterThan(.9);
+  await expect(page.locator(".mission-public-tasks")).toHaveCount(0);
   await expect(page.locator(".player-seat[aria-current='true']")).toHaveCount(1);
   await expect(page.locator(".seat-turn-badge")).toBeVisible();
   await expect(page.locator(".seat-south .character-card")).toHaveAttribute("data-character-id", "green-dino");

@@ -609,6 +609,12 @@ export class RoomStore {
    * a human (or bot) who advances first wins; this timer becomes a no-op.
    */
   private maybeScheduleTrickAdvance(record: RoomRecord): void {
+    if (record.state.restartVote) {
+      const timer = this.trickTimers.get(record.state.roomId);
+      if (timer) clearTimeout(timer);
+      this.trickTimers.delete(record.state.roomId);
+      return;
+    }
     if (record.state.phase !== "trick_result") return;
     const roomId = record.state.roomId;
     if (this.trickTimers.has(roomId)) return;
@@ -627,7 +633,7 @@ export class RoomStore {
   ): Promise<void> {
     await this.withRoom(roomId, async (record) => {
       if (
-        record.state.phase !== "trick_result" ||
+        record.state.restartVote || record.state.phase !== "trick_result" ||
         record.state.revision !== expectedRevision
       )
         return; // someone already advanced (or the room moved on) - nothing to do
