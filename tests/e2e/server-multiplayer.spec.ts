@@ -602,6 +602,10 @@ test("cooperative controls: last goal, hover, off-turn signal and unanimous rest
       if(last) {expect(snap.tasks.find((t:{id:string})=>t.id===last.id).ownerId).toBe(next);expect(snap.phase).toBe('playing');}
     }
     const host=pages[0];
+    for (const peer of pages) {
+      await expect(peer.locator('.hand-dock .seat-south')).toHaveCount(1);
+      await expect(peer.locator('.seat-layout .player-seat')).toHaveCount(2);
+    }
     await expect(host.locator('.mission-setup-modal')).toHaveCount(0);
     expect((await host.locator('.mission-panel').boundingBox())!.height).toBeLessThan(90);
     const goal=host.locator('.player-seat .seat-task').first();

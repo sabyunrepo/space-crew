@@ -14,7 +14,7 @@
 - 영속 볼륨: `wwdeemugv7lqzozohddwtvlx-space-crew-data` → 컨테이너 `/data`.
 - 업데이트 시 기존 볼륨, Cloudflare DNS/Tunnel, 호스트명을 유지한다. 로컬 개발용 `data/`로 운영 데이터를 덮어쓰지 않는다.
 - 2026-09-14 업데이트 전 백업: 홈 서버 `/data/coolify/backups/space-crew/20260914-preupdate/` (방 데이터 압축본 및 기존 compose). 인증 정보와 손패를 포함할 수 있으므로 서버 내부 비공개로 보관한다.
-- 현재 배포 SHA: `f829bce5995dfbad534268764a2326cb1d0a950a`. 직전 배포 SHA: `53fbc1e0edfa641561ad61883b63d25c52a3dbd9`.
+- 현재 배포 SHA: `b631c7bdd2ddf74b9fa44950c96f3a940bfaf56f`. 직전 배포 SHA: `f829bce5995dfbad534268764a2326cb1d0a950a`.
 - 새 배포 전 `npm test`, `VITE_BACKEND_MODE=server npm run build`, `npm run build:server`를 실행한다. 해당 브랜치에 소스를 반영한 뒤 Coolify의 커밋 SHA를 지정해 배포한다.
 - 배포 후 `/healthz`, `/api/capabilities`, 프론트 자산, 초대 링크를 통한 다인 플레이와 WebSocket 동기화/새로고침 복귀를 확인한다.
 - 롤백은 Coolify에서 직전 SHA를 지정해 배포한다. 새 버전에서 만든 방의 구버전 호환성을 검토하고, 데이터 복구는 필요한 경우에만 별도 수행한다.
@@ -59,3 +59,12 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - `f829bce5995dfbad534268764a2326cb1d0a950a`, Coolify ID `bcba23da-216c-427b-85e1-b56e3ebc7ab9`, `finished`.
 - Aside 로컬 PC/390×844 프레임 검수 후 배포했다. 공개 3인 독립 참가자 교신/재시작/새로고침 검증 통과.
 - 백업: `/data/coolify/backups/space-crew/20260914-communication-ui/` (데이터·compose, 비공개 권한). 이후 본인 패널 이동 요청은 별도 후속 배포로 검증한다.
+
+## 2026-09-14 본인 패널 하단 이동
+
+- 런타임 커밋 `b631c7bdd2ddf74b9fa44950c96f3a940bfaf56f`, Coolify ID `1a6104d1-8112-43c5-b39b-e08dba4a93ce`, `finished`/새 컨테이너 healthy.
+- Aside 로컬 PC 실제 카드 선택·제출, 모바일 390×844 프레임 하단 교신→확인→전송, 동일 높이/스크롤/잘림 검수 후 배포했다. UI 28개와 Node 3인 협동 시나리오 통과.
+- 공개 `/healthz` 정상, `backendReady: true`, v4 유지. 공개 JS `index-BBLNx3hi.js`와 CSS `index-GtG4OHCE.css`가 로컬 빌드 SHA-256과 일치.
+- 공개 3인 독립 브라우저 테스트 통과: 각 참가자의 본인 패널은 손패 왼쪽에 1개, 위쪽 패널은 다른 대원 2개, 교신·전원 동의 재시작·거절·새로고침 동기화 확인.
+- 백업 `/data/coolify/backups/space-crew/20260914-own-seat/`. 배포 전 기존 방 15개 모두 파일 내용까지 동일하게 유지됐음을 확인했다. 검증은 새 방에서 수행했다.
+- 기존 Cloudflare Tunnel/DNS/영속 볼륨을 유지했다. 검증 문서와 테스트 보강 커밋은 런타임 재배포 없이 별도로 저장한다.
