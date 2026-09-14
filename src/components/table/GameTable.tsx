@@ -5,7 +5,6 @@ import {
   ChevronRight,
   Rocket,
   Users,
-  X,
 } from "lucide-react";
 import type {
   CardId,
@@ -155,7 +154,7 @@ export function GameTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEntry?.enabled, selected]);
   const markers = selected ? communicationMarkers(snapshot.me.hand, selected) : [];
-  const startCommunication = () => { setSelected(null); setCommunicateMode(true); };
+  const toggleCommunication = () => { setSelected(null); setCommunicateMode(active => !active); };
 
   const lobby = snapshot.phase === "lobby";
   const nextPlayable = catalogue.find(
@@ -335,7 +334,7 @@ export function GameTable({
         locked={locked} error={error} hasPending={hasPending} onSend={onSend} onDismiss={() => setSelected(null)} />}
       {!lobby && (
       <div className="hand-dock">
-        {mine && <OwnSeatDock snapshot={snapshot} player={mine} onCommunicate={startCommunication} communicationActive={communicateMode} locked={locked} />}
+        {mine && <OwnSeatDock snapshot={snapshot} player={mine} onCommunicate={toggleCommunication} communicationActive={communicateMode} locked={locked} />}
         <div className="hand-play-area">
         {hint && (
           <p className="hand-hint" role="status">
@@ -346,7 +345,6 @@ export function GameTable({
           <h3>
             내 손패 <span>{snapshot.me.hand.length}장</span>
           </h3>
-          {communicateMode && <button type="button" className="secondary hand-comm-cancel" onClick={() => { setCommunicateMode(false); setSelected(null); }}><X size={14} />교신 취소</button>}
           {isHost &&
             (snapshot.phase === "briefing" || snapshot.phase === "playing") &&
             snapshot.trickNumber === 1 &&
@@ -380,7 +378,7 @@ export function GameTable({
           onBlocked={showHint}
         />
         {communicateMode ? (
-          <p className="hand-controls-hint" role="status">교신할 카드를 선택하세요. 선택 후 확인 창이 열립니다.</p>
+          <p className="hand-controls-hint" role="status">교신할 카드를 선택하세요. 신호 카드를 다시 누르면 취소됩니다.</p>
         ) : (
           <div className="hand-controls">
             <span>

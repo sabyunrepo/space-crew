@@ -23,7 +23,17 @@ for (const mission of [4, 6]) test(`mission ${mission}: own signal, cancel, conf
   await expect(details).toBeVisible(); await expect(details).toContainText(`미션 0${mission}`);
   await details.getByRole('button', { name: '닫기' }).click();
   await expect(page.locator('.player-seat:not(.seat-south) .seat-communication-button')).toHaveCount(0);
-  const signal = page.locator('.seat-south').getByRole('button', { name: '교신하기', exact: true });
+  const signal = page.locator('.seat-south .seat-communication-button');
+  const beforeToggle = await page.locator('.room-view').getAttribute('data-revision');
+  await signal.click();
+  await expect(signal).toHaveAccessibleName('교신 취소');
+  await expect(signal).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.hand-comm-cancel')).toHaveCount(0);
+  await signal.click();
+  await expect(signal).toHaveAccessibleName('교신하기');
+  await expect(signal).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('button', { name: '선택한 카드 내기', exact: true })).toBeDisabled();
+  await expect(page.locator('.room-view')).toHaveAttribute('data-revision', beforeToggle!);
   await signal.click();
   const card = page.locator('.hand-cards button[aria-disabled="false"]').first();
   const revision = await page.locator('.room-view').getAttribute('data-revision');
@@ -35,6 +45,9 @@ for (const mission of [4, 6]) test(`mission ${mission}: own signal, cancel, conf
   await page.keyboard.press('Escape'); await expect(modal).toHaveCount(0);
   await expect(page.locator('.room-view')).toHaveAttribute('data-revision', revision!);
   await expect(card).toBeFocused();
+  await signal.click();
+  await expect(page.locator('.hand-cards button[aria-pressed="true"]')).toHaveCount(0);
+  await signal.click();
   await card.click({ position: { x: 4, y: 30 } });
   await expect(modal).toBeVisible();
   if (mission === 6) {
