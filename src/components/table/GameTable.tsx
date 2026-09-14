@@ -22,6 +22,7 @@ import { PlayerPanel } from "./PlayerPanel.tsx";
 import { RestartVote } from "./RestartVote.tsx";
 import { MissionPanel } from "./MissionPanel.tsx";
 import { TrickArea } from "./TrickArea.tsx";
+import { OwnSeatDock } from "./OwnSeatDock.tsx";
 import { Hand } from "./Hand.tsx";
 import { CharacterPicker } from "../CharacterPicker.tsx";
 import { characterFor } from "../../../shared/characters.ts";
@@ -317,7 +318,7 @@ export function GameTable({
               </p>
             </div>
           ) : (
-            <TrickArea snapshot={snapshot} mineId={mine?.id} onCommunicate={startCommunication} communicationActive={communicateMode} locked={locked} />
+            <TrickArea snapshot={snapshot} mineId={mine?.id} />
           )}
           {!snapshot.restartVote && (!setupActive || !setupOpen) && demoStepButton}
         </div>
@@ -334,6 +335,8 @@ export function GameTable({
         locked={locked} error={error} hasPending={hasPending} onSend={onSend} onDismiss={() => setSelected(null)} />}
       {!lobby && (
       <div className="hand-dock">
+        {mine && <OwnSeatDock snapshot={snapshot} player={mine} onCommunicate={startCommunication} communicationActive={communicateMode} locked={locked} />}
+        <div className="hand-play-area">
         {hint && (
           <p className="hand-hint" role="status">
             {hint}
@@ -400,6 +403,7 @@ export function GameTable({
             </button>
           </div>
         )}
+      </div>
       </div>
       )}
     </div>

@@ -14,7 +14,7 @@
 - 영속 볼륨: `wwdeemugv7lqzozohddwtvlx-space-crew-data` → 컨테이너 `/data`.
 - 업데이트 시 기존 볼륨, Cloudflare DNS/Tunnel, 호스트명을 유지한다. 로컬 개발용 `data/`로 운영 데이터를 덮어쓰지 않는다.
 - 2026-09-14 업데이트 전 백업: 홈 서버 `/data/coolify/backups/space-crew/20260914-preupdate/` (방 데이터 압축본 및 기존 compose). 인증 정보와 손패를 포함할 수 있으므로 서버 내부 비공개로 보관한다.
-- 현재 배포 SHA: `53fbc1e0edfa641561ad61883b63d25c52a3dbd9`. 직전 배포 SHA: `ab724fe8b08c2c34471406babaf0bf719d70bc78`.
+- 현재 배포 SHA: `f829bce5995dfbad534268764a2326cb1d0a950a`. 직전 배포 SHA: `53fbc1e0edfa641561ad61883b63d25c52a3dbd9`.
 - 새 배포 전 `npm test`, `VITE_BACKEND_MODE=server npm run build`, `npm run build:server`를 실행한다. 해당 브랜치에 소스를 반영한 뒤 Coolify의 커밋 SHA를 지정해 배포한다.
 - 배포 후 `/healthz`, `/api/capabilities`, 프론트 자산, 초대 링크를 통한 다인 플레이와 WebSocket 동기화/새로고침 복귀를 확인한다.
 - 롤백은 Coolify에서 직전 SHA를 지정해 배포한다. 새 버전에서 만든 방의 구버전 호환성을 검토하고, 데이터 복구는 필요한 경우에만 별도 수행한다.
@@ -53,3 +53,9 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 공개 주소에서 40번 3인 준비·플레이와 협동 조작(마지막 목표, 호버, 트릭 중 교신, 재시작 거절/전원 동의/새로고침)을 통과했다. 전환 직후 최초 23번 방 생성에서 502가 1회 관측되어 중단됐고, 배포 완료 후 23번 4인 테스트를 재실행해 통과했다.
 - 운영 백업 `/data/coolify/backups/space-crew/20260914-v4/`; 업데이트 전 방 8개 모두 파일 내용까지 동일하게 유지됨을 확인했다. 검증은 새 방에서 수행했다.
 - 교신 타이밍과 목표 분산은 사용자 지정 변형이다. 기존 판의 목표는 바꾸지 않으며 새 시도부터 적용한다. 이후 배포는 위 Aside 로컬 검증 정책을 반드시 따른다.
+
+## 2026-09-14 교신 확인·준비 화면 수정
+
+- `f829bce5995dfbad534268764a2326cb1d0a950a`, Coolify ID `bcba23da-216c-427b-85e1-b56e3ebc7ab9`, `finished`.
+- Aside 로컬 PC/390×844 프레임 검수 후 배포했다. 공개 3인 독립 참가자 교신/재시작/새로고침 검증 통과.
+- 백업: `/data/coolify/backups/space-crew/20260914-communication-ui/` (데이터·compose, 비공개 권한). 이후 본인 패널 이동 요청은 별도 후속 배포로 검증한다.

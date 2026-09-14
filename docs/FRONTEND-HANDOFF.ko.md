@@ -147,3 +147,5 @@ npm run test:e2e
 후속 협동 UI: `TokenEditor`는 확정 전 로컬 교환 미리보기를 제공하며 `confirm_tokens`의 선택적 두 ID로 원자적 확정한다. `RestartVote`는 snapshot 투표 상태를 표시한다. `CardHoverInfo`는 화면에 이미 있는 공개 이미지/라벨만 확대한다. 사용자 요청 웹 변형은 v4부터 적용한다([미션 기준](MISSIONS.ko.md)).
 
 교신 확정은 `CommunicationModal.tsx`에서 처리한다. 시작 위치는 `TrickArea` 본인 신호 버튼이다. 미션 요약은 `StatusBar` 안의 `MissionPanel`, 재시작은 상단 액션 영역에 있다. API 변경 없이 기존 `communicate`/`request_restart`를 사용하며, D 미션에서는 `hidden` 표식을 전송한다. 브리핑부터 고정 화면을 적용하고 준비 dialog의 native close와 명시적 재열기를 동기화한다.
+
+본인 대원 패널은 `OwnSeatDock`에서 손패 왼쪽에 배치한다. `PlayerSeat`를 본인/다른 대원이 공유하고 `TrickArea`는 본인을 제외한 패널만 렌더링한다. 중앙 트릭의 본인 슬롯은 유지한다. 본인 패널 높이는 손패 영역에 맞추며, 큰 미션의 여러 목표는 열 수를 늘려 두 줄로 배치한다.

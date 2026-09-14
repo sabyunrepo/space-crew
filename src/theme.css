@@ -205,3 +205,33 @@ html, body { background-color: var(--theme-page); }
 }
 .communication-preview .signal-token { width: calc(var(--seat-card) * .28); height: calc(var(--seat-card) * .28); font-size: calc(var(--seat-card) * .16); }
 .communication-preview .signal-token svg { width: calc(var(--seat-card) * .16); height: calc(var(--seat-card) * .16); }
+
+/* Identity and hand share the bottom row; only other crew occupy the board. */
+.hand-dock { display: grid; grid-template-columns: clamp(110px, 17vw, 310px) minmax(0, 1fr); align-items: stretch; gap: 14px; }
+.hand-play-area { min-width: 0; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.own-seat-dock { --seat-card: 40px; --seat-gap: calc(var(--seat-card) * .15); position: relative; min-height: 0; min-width: 0; }
+.own-seat-dock > .player-seat { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; padding: 10px; border-radius: 10px; overflow: hidden; }
+.own-seat-dock .seat-heading { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 3px 6px; }
+.own-seat-dock .seat-heading strong { font-size: clamp(11px, .85vw, 18px); }
+.own-seat-dock .seat-heading > span { font-size: clamp(9px, .65vw, 13px); }
+.own-seat-dock .seat-main-row { justify-content: center; }
+.own-seat-dock .seat-missions { margin-top: 5px; padding-top: 5px; }
+.own-seat-dock .seat-task-list { display: grid; grid-template-columns: repeat(var(--own-goal-columns), minmax(0, 1fr)); justify-items: center; gap: 4px; }
+.own-seat-dock .seat-task { --task-card: min(calc(var(--seat-card) * .95), 100%); width: var(--task-card); max-width: 100%; }
+.own-seat-dock .seat-turn-indicator { position: static; transform: none; margin-bottom: 3px; }
+.own-seat-dock .seat-briefing { font-size: 10px; }
+.own-seat-dock .seat-column-label, .own-seat-dock .seat-missions-label { font-size: clamp(9px, .65vw, 13px); }
+.seat-layout.played-cards.opponents-layout { grid-template-rows: max-content max-content; }
+.seat-layout.opponents-layout .seat-west, .seat-layout.opponents-layout .seat-east { grid-row: 2; align-self: end; }
+@media (max-width: 700px) {
+  .hand-dock { grid-template-columns: 104px minmax(0, 1fr); gap: 7px; }
+  .hand-play-area { gap: 3px; }
+  .own-seat-dock > .player-seat { padding: 5px; }
+  .own-seat-dock .seat-heading { flex-direction: column; align-items: flex-start; }
+  .own-seat-dock .seat-turn-badge { font-size: 8px; }
+  .own-seat-dock .seat-missions { margin-top: 3px; padding-top: 3px; }
+  .hand-play-area .hand-controls { display: flex; justify-content: center; }
+  .hand-play-area .hand-controls > span { display: none; }
+  .hand-play-area .hand-controls-hint { font-size: 10px; line-height: 1.4; }
+  .hand-play-area .hand-dock-head { flex-wrap: wrap; gap: 2px; }
+}
