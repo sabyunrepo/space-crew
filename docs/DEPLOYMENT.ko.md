@@ -14,7 +14,7 @@
 - 영속 볼륨: `wwdeemugv7lqzozohddwtvlx-space-crew-data` → 컨테이너 `/data`.
 - 업데이트 시 기존 볼륨, Cloudflare DNS/Tunnel, 호스트명을 유지한다. 로컬 개발용 `data/`로 운영 데이터를 덮어쓰지 않는다.
 - 2026-09-14 업데이트 전 백업: 홈 서버 `/data/coolify/backups/space-crew/20260914-preupdate/` (방 데이터 압축본 및 기존 compose). 인증 정보와 손패를 포함할 수 있으므로 서버 내부 비공개로 보관한다.
-- 현재 배포 SHA: `8d0b8a748c2ccc746ed9e66a274527697cfac494`. 직전 배포 SHA: `1a73e59d82b067f643f1d9e1157c7b9ad6e545a1`.
+- 현재 배포 SHA: `87b37d9e4440ad8b95edde51805b421de5ad54b4`. 직전 배포 SHA: `8d0b8a748c2ccc746ed9e66a274527697cfac494`.
 - 새 배포 전 `npm test`, `VITE_BACKEND_MODE=server npm run build`, `npm run build:server`를 실행한다. 해당 브랜치에 소스를 반영한 뒤 Coolify의 커밋 SHA를 지정해 배포한다.
 - 배포 후 `/healthz`, `/api/capabilities`, 프론트 자산, 초대 링크를 통한 다인 플레이와 WebSocket 동기화/새로고침 복귀를 확인한다.
 - 롤백은 Coolify에서 직전 SHA를 지정해 배포한다. 새 버전에서 만든 방의 구버전 호환성을 검토하고, 데이터 복구는 필요한 경우에만 별도 수행한다.
@@ -106,3 +106,13 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 공개 `/healthz` 정상, `backendReady: true`, 규칙 버전 `crew-p9-50-4`와 미션 50개를 유지한다. 공개 JS `index-BOQ69ess.js`와 CSS `index-uuzd-eul.css`의 SHA-256이 로컬 빌드와 일치한다.
 - 공개 주소의 독립 브라우저 다인 테스트도 통과했다. 마지막 목표 자동 배정, 카드 정보, 다른 대원 차례 교신, 전원 동의 재시작과 새로고침 복귀를 확인했다.
 - 백업 `/data/coolify/backups/space-crew/20260914-mobile-ui/`. 배포 전 기존 방 23개가 모두 바이트 단위로 유지됐다. 기존 Cloudflare Tunnel, DNS와 영속 볼륨을 그대로 사용했다.
+
+## 2026-09-14 작은 카드 축약형 업데이트
+
+- 런타임 `87b37d9e4440ad8b95edde51805b421de5ad54b4`, Coolify ID `becaa8d3-e3e5-4710-a37f-280358fa2c1d`, 결과 `finished`/새 컨테이너 healthy.
+- 테이블 카드의 실제 폭이56px 이하이면 일러스트 대신 카드 색 배경과 큰 숫자를 표시한다. 60px 이상에서는 기존 일러스트를 유지하며 중간 경계는 컨테이너 실제 폭으로 판정한다.
+- 목표 순서 토큰, 완료/실패, 현재 우선 목표, 선도 효과, 교신 토큰과 접근 가능한 전체 카드 이름은 축약형에서도 유지한다.
+- Aside 390×844 로컬 5인 검수에서 상대 목표40.63px, 중앙 카드48.80px, 본인 목표54px가 축약형으로 표시됐고 손패70.20px는 일러스트를 유지했다.
+- 배포 전 단위758개, PC·모바일 UI22개, 타입 검사, 프론트/서버 빌드와 로컬 실제 Node 다인 시나리오가 통과했다. 공개 다인 교신·재시작·복귀 시나리오도 통과했다.
+- 공개 `/healthz` 정상, `backendReady: true`, 규칙 버전 `crew-p9-50-4`, 미션50개를 유지한다. 공개 JS `index-CSLjIcDL.js`와 CSS `index-DRFWCQDs.css`가 로컬 빌드 SHA-256과 일치한다.
+- 백업 `/data/coolify/backups/space-crew/20260914-compact-cards/`. 배포 전 기존 방24개가 모두 바이트 단위로 유지됐다.
