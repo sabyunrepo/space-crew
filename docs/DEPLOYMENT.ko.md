@@ -14,7 +14,7 @@
 - 영속 볼륨: `wwdeemugv7lqzozohddwtvlx-space-crew-data` → 컨테이너 `/data`.
 - 업데이트 시 기존 볼륨, Cloudflare DNS/Tunnel, 호스트명을 유지한다. 로컬 개발용 `data/`로 운영 데이터를 덮어쓰지 않는다.
 - 2026-09-14 업데이트 전 백업: 홈 서버 `/data/coolify/backups/space-crew/20260914-preupdate/` (방 데이터 압축본 및 기존 compose). 인증 정보와 손패를 포함할 수 있으므로 서버 내부 비공개로 보관한다.
-- 현재 배포 SHA: `b631c7bdd2ddf74b9fa44950c96f3a940bfaf56f`. 직전 배포 SHA: `f829bce5995dfbad534268764a2326cb1d0a950a`.
+- 현재 배포 SHA: `ee3df6efa804c82c997b046a0a162a34a44d6e0f`. 직전 배포 SHA: `b631c7bdd2ddf74b9fa44950c96f3a940bfaf56f`.
 - 새 배포 전 `npm test`, `VITE_BACKEND_MODE=server npm run build`, `npm run build:server`를 실행한다. 해당 브랜치에 소스를 반영한 뒤 Coolify의 커밋 SHA를 지정해 배포한다.
 - 배포 후 `/healthz`, `/api/capabilities`, 프론트 자산, 초대 링크를 통한 다인 플레이와 WebSocket 동기화/새로고침 복귀를 확인한다.
 - 롤백은 Coolify에서 직전 SHA를 지정해 배포한다. 새 버전에서 만든 방의 구버전 호환성을 검토하고, 데이터 복구는 필요한 경우에만 별도 수행한다.
@@ -68,3 +68,12 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 공개 3인 독립 브라우저 테스트 통과: 각 참가자의 본인 패널은 손패 왼쪽에 1개, 위쪽 패널은 다른 대원 2개, 교신·전원 동의 재시작·거절·새로고침 동기화 확인.
 - 백업 `/data/coolify/backups/space-crew/20260914-own-seat/`. 배포 전 기존 방 15개 모두 파일 내용까지 동일하게 유지됐음을 확인했다. 검증은 새 방에서 수행했다.
 - 기존 Cloudflare Tunnel/DNS/영속 볼륨을 유지했다. 검증 문서와 테스트 보강 커밋은 런타임 재배포 없이 별도로 저장한다.
+
+## 2026-09-14 하단 패널 가독성 보완
+
+- 런타임 `ee3df6efa804c82c997b046a0a162a34a44d6e0f`, Coolify ID `8fb966e1-2064-4e84-ac58-5bef2a4eeb2a`, `finished`.
+- 본인 패널의 높이 기반 무제한 축소를 제거했다. 프로필 헤더+신호/목표 한 행, PC64px/모바일48px 카드 최소 폭, 좁은 화면 손패 위 가로 배치를 적용했다. 1189×779 하단 높이207px를 유지하면서 기존31px 카드를64px로 확대했다.
+- Aside 로컬 PC 양 테마·내 차례·카드 선택/제출, 모바일390×844의 표시와 진행 검수 후 배포했다. 자동 UI28개, 단위753개 통과. Node3인 테스트는1189×779/2279×1426/390×844 조합에서도 통과했다.
+- HTTPS health 정상, API backendReady true/v4 유지. 공개 JS `index-DXxf4oo-.js`, CSS `index-CMQEZE5-.css`가 로컬 빌드 SHA-256과 일치.
+- 백업 `/data/coolify/backups/space-crew/20260914-readable-dock/`. 기존16개 방 모두 파일 내용까지 그대로 유지됐다.
+- 공개 주소에서도 동일한 PC/대형/모바일3인 조합으로 교신·목표 정보·재시작 거절/전원 동의·새로고침 복귀 테스트 통과(28.4초). 검증은 새 방에서 수행했다. 테스트/문서 보강은 별도 커밋으로 저장하며 런타임 SHA는 위 값을 유지한다.

@@ -583,7 +583,7 @@ test("cooperative controls: last goal, hover, off-turn signal and unanimous rest
   const snapshot=async(i=0)=>(await request.get(`/api/rooms/${roomId}`,{headers:{Authorization:`Bearer ${entries[i].playerToken}`}})).json();
   try {
     for(let i=0;i<3;i++) {
-      const context=await browser.newContext({viewport:i===2?{width:390,height:844}:{width:1469,height:900}});contexts.push(context);
+      const context=await browser.newContext({viewport:i===2?{width:390,height:844}:i===0?{width:1189,height:779}:{width:2279,height:1426}});contexts.push(context);
       await context.addInitScript(({roomId,token})=>localStorage.setItem(`crew.server.v1.token.${roomId}`,token),{roomId,token:entries[i].playerToken});
       const page=await context.newPage();pages.push(page);
       await page.goto(`/rooms/${roomId}`);
@@ -605,7 +605,12 @@ test("cooperative controls: last goal, hover, off-turn signal and unanimous rest
     for (const peer of pages) {
       await expect(peer.locator('.hand-dock .seat-south')).toHaveCount(1);
       await expect(peer.locator('.seat-layout .player-seat')).toHaveCount(2);
+      const signal = await peer.locator('.own-seat-dock .communication-card').boundingBox();
+      expect(signal!.width).toBeGreaterThanOrEqual(peer.viewportSize()!.width > 700 ? 64 : 48);
+      expect(await peer.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
+
     }
+    await host.screenshot({path:'artifacts/qa/missions/readable-dock-1189.png'});
     await expect(host.locator('.mission-setup-modal')).toHaveCount(0);
     expect((await host.locator('.mission-panel').boundingBox())!.height).toBeLessThan(90);
     const goal=host.locator('.player-seat .seat-task').first();
