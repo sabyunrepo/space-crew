@@ -34,7 +34,8 @@ export function Hand({
         return;
       }
       const cardWidth = first.getBoundingClientRect().width;
-      const available = track.clientWidth;
+      const style = getComputedStyle(track);
+      const available = track.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
       const next = Math.max(0, (cardWidth * count - available) / (count - 1));
       setOverlap(next);
     };

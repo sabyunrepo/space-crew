@@ -21,6 +21,7 @@ import {
   project,
   type State,
 } from "../game/engine.ts";
+import { pendingDemoActor, demoCommand } from "../game/demo.ts";
 const PREFIX = "crew.demo.v1.";
 type RecordState = {
   state: State;
@@ -88,7 +89,7 @@ export class MockService implements GameService {
         };
       }
       const record = {
-        state: createState(this.actor, input.nickname, input.settings),
+        state: createState(this.actor, input.nickname, input.settings, input.characterId),
         token: crypto.randomUUID() + crypto.randomUUID(),
         receipts: {},
       };
@@ -137,7 +138,7 @@ export class MockService implements GameService {
         )
           return fail("ROOM_FULL", "입장 가능한 좌석이 없습니다.");
         record.state.players.push(
-          newPlayer(this.actor, input.nickname, record.state.players.length),
+          newPlayer(this.actor, input.nickname, record.state.players.length, false, input.characterId),
         );
         record.state.hands[this.actor] = [];
         record.state.revision++;
@@ -215,25 +216,9 @@ export class MockService implements GameService {
   async demoStep(id: string) {
     return this.locked(id, () => {
       const { state } = this.read(id);
-      const bot =
-        state.phase === "briefing"
-          ? state.players.find((p) => p.isDemo && !p.briefingReady)
-          : state.players.find((p) => p.isDemo && p.id === state.turnPlayerId);
-      if (!bot) return project(state, this.actor);
-      const command =
-        state.phase === "briefing"
-          ? { type: "briefing_ready" as const }
-          : state.phase === "task_selection"
-            ? {
-                type: "choose_task" as const,
-                taskId: state.tasks.find((t) => !t.ownerId)!.id,
-              }
-            : state.phase === "playing"
-              ? {
-                  type: "play_card" as const,
-                  cardId: project(state, bot.id).me.legalCardIds[0],
-                }
-              : null;
+      const botId = pendingDemoActor(state);
+      if (!botId) return project(state, this.actor);
+      const command = demoCommand(state, botId);
       if (!command) return project(state, this.actor);
       return this.execute(
         id,
@@ -243,7 +228,7 @@ export class MockService implements GameService {
           expectedRevision: state.revision,
           command,
         },
-        bot.id,
+        botId,
       );
     });
   }

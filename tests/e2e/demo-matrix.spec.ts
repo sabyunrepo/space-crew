@@ -104,14 +104,12 @@ for (const { capacity, mission, seed, expectedSuccess } of scenarios) {
         .locator(".hand-cards img")
         .evaluateAll((els) => els.map((e) => e.getAttribute("alt"))),
     ).toEqual(hand);
-    await step(
-      page,
-      page.getByRole("button", { name: "임무 확인 완료", exact: true }),
-    );
-    await expect(page.locator(".crew-member").first()).toContainText(
+    if (await page.getByRole("button", { name: "임무 확인 완료", exact: true }).isVisible())
+      await step(page, page.getByRole("button", { name: "임무 확인 완료", exact: true }));
+    await expect(page.locator(".seat-south")).toContainText(
       "브리핑 확인 완료",
     );
-    await expect(page.locator(".crew-member").nth(1)).toContainText(
+    await expect(page.locator(".player-seat:not(.seat-south)").first()).toContainText(
       "브리핑 확인 중",
     );
     for (let i = 1; i < capacity; i++)
@@ -150,7 +148,7 @@ for (const { capacity, mission, seed, expectedSuccess } of scenarios) {
       }
     }
     expect(communicated).toBe(true);
-    await expect(page.locator(".crew-member .communication")).toHaveCount(1);
+    await expect(page.locator(".player-seat .communication-card:not(.available)")).toHaveCount(1);
     await expect(page.locator(".communication-options button")).toHaveCount(0);
     let ownPlays = 0,
       botPlays = 0;
@@ -198,7 +196,7 @@ for (const { capacity, mission, seed, expectedSuccess } of scenarios) {
     ).toBe(true);
     await page.reload();
     await expect(page.locator(".result-box h2")).toHaveText(outcome);
-    await expect(page.locator(".crew-member .communication")).toHaveCount(1);
+    await expect(page.locator(".player-seat .communication-card:not(.available)")).toHaveCount(1);
     const retry = page.getByRole("button", { name: "같은 미션 다시 도전" });
     const nextMission = page.getByRole("button", {
       name: "다음 임무",
@@ -214,8 +212,8 @@ for (const { capacity, mission, seed, expectedSuccess } of scenarios) {
         `MISSION ${String(mission).padStart(2, "0")}`,
       );
       await expect(page.locator(".attempt")).toContainText("2번째 시도");
-      await expect(page.locator(".crew-member .communication")).toHaveCount(0);
-    } else if (mission < 4) {
+      await expect(page.locator(".player-seat .communication-card:not(.available)")).toHaveCount(0);
+    } else if (mission < 50) {
       await step(page, nextMission);
       await expect(page.locator(".mission-panel-strip")).toContainText(
         `MISSION ${String(mission + 1).padStart(2, "0")}`,

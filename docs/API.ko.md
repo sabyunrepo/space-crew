@@ -2,9 +2,13 @@
 
 기계 판독 계약: [openapi.json](./openapi.json). 타입 및 검증 원본: [shared/contracts.ts](../shared/contracts.ts). 모든 경로는 프로젝트의 `/functions/v1/crew-api` 아래다.
 
-현재 HTTP 골격만 준비되어 있다. `GET /capabilities`는 `backendReady: false`; 나머지 유효한 요청은 저장소 연결 전까지 `501 BACKEND_NOT_IMPLEMENTED`를 반환한다. 프론트 로컬 모드와 실제 서버의 구현 상태를 구분한다.
+Supabase Edge 경로는 현재 HTTP 골격만 준비되어 있다. `GET /capabilities`는 `backendReady: false`; 나머지 유효한 요청은 저장소 연결 전까지 `501 BACKEND_NOT_IMPLEMENTED`를 반환한다. 프론트 로컬 모드와 실제 서버의 구현 상태를 구분한다.
 
-## 인증과 기본 형식
+## Node 실시간 서버
+
+현재 동작하는 Node 서버는 `/api`를 사용한다. 방 생성은 `POST /api/rooms`, 입장은 `POST /api/join`이며 `{ entry: { snapshot, inviteToken }, playerToken }`을 반환한다. 이후 조회·명령은 서버가 발급한 `playerToken`을 Bearer 인증으로 보낸다. 초대 조회는 `GET /api/rooms/{roomId}/invite`다. `/ws?roomId=…` 연결 후 첫 메시지 `{ type: "auth", token }`으로 인증하면 revision 알림을 받는다. 클라이언트는 개인 snapshot을 다시 조회한다. 이 인증·저장 방식과 아래 Supabase JWT·Postgres 계약은 별개의 어댑터이며 혼용하지 않는다.
+
+## 인증과 기본 형식 (Supabase)
 
 모든 API는 Supabase 익명/일반 로그인 후 받은 사용자 JWT를 `Authorization: Bearer <access_token>`에 보내고 공개 프로젝트 키를 `apikey` 헤더에 보낸다. 쓰기는 `Content-Type: application/json`. 응답은 `Cache-Control: no-store`. 게임의 actor는 JWT의 auth 사용자에서 `crew_private.players`로 매핑한다.
 
@@ -56,13 +60,30 @@ capacity는 3/4/5. startMission은 1~50. random 모드에서는 startMission을 
 | start_mission | 없음 | lobby / 방장, 좌석 충족 및 전원 준비, 지원 미션 |
 | briefing_ready | 없음 | briefing / 본인 |
 | choose_task | taskId: UUID | task_selection / 현재 차례, 미선택 목표 |
-| communicate | cardId, marker: highest/lowest/only | playing / 트릭 시작 전, 임무당 1회, 일반 카드, 현재 손패 검증 |
+| communicate | cardId, marker: highest/lowest/only/hidden | playing / 트릭 시작 전, 임무당 1회, 일반 카드, 현재 손패 검증 |
 | play_card | cardId | playing / 차례·소유·선도색 확인 |
-| advance_trick | 없음 | trick_result / 방장 |
+| advance_trick | 없음 | trick_result / 참여 대원 (Node 서버는 자동 진행도 지원) |
 | retry_mission | 없음 | failure / 방장, 같은 미션 새 시도 |
 | next_mission | 없음 | success / 방장, 순차 다음 번호 또는 미추첨 랜덤 |
 
-미션 5~50 특수 명령(목표 양도/대원 지명/카드 교환 등)은 후속 명세 확장이 필요하다. 기존 명령으로 처리했다고 간주하지 않는다. 규칙 버전과 capabilities를 함께 갱신하고 진행 중 attempt에 갑자기 새 규칙을 적용하지 않는다.
+새 시도의 규칙 버전은 `crew-p9-50-3`이다. 진행 중인 v2 시도는 5·33번 담당자 범위와 17번 종료 판정을 유지하며 재도전·다음 미션에서 v3으로 전환한다. 변경 근거는 [원작 재대조](./ORIGINAL-MISSION-AUDIT.ko.md)를 따른다. 아래 명령은 공유 엔진·Node 서버·로컬 데모에 적용됐고 파생 Edge 계약에도 포함된다. Supabase `PendingRepository`의 게임 저장소 구현은 여전히 후속 작업이다.
+
+| command.type | 추가 필드 | 단계/권한 |
+| --- | --- | --- |
+| preparation_response | answer: yes/no (50번 first/middle/last) | preparation / 해당 질문 응답자, 중복 응답 거부 |
+| select_crew | playerId, secondaryPlayerId? | role/captain_decision / 지휘관, 응답 완료 후; 50번 두 담당자는 달라야 함 |
+| assign_task | playerId | captain_distribution / 지휘관, 현재 공개 목표와 배정 한도 검증 |
+| edit_task_tokens | firstTaskId, secondTaskId | token_edit / 지휘관, 23번 두 토큰 교환·40번 빈 목표로 이동 |
+| reset_tokens | 없음 | token_edit / 지휘관, 최초 배열 복원 |
+| confirm_tokens | 없음 | token_edit / 지휘관 |
+| transfer_task | taskId, playerId | task_transfer / 목표 소유자, 다른 대원에게 목표·토큰 함께 양도 |
+| skip_transfer | 없음 | task_transfer / 지휘관 |
+| request_distress | direction: left/right | briefing 방향 예약 또는 첫 카드·교신 전 playing / 방장, 실제 교환은 목표 배정·양도 후 |
+| select_distress_card | cardId | distress_cards / 본인 일반 카드, 전원 선택 후 동시 이동 |
+
+`preparation`에는 stage, 공개 responses, answeredPlayerIds, activeTaskId, eligiblePlayerIds를 저장한다. `eligiblePlayerIds`는 지휘관이 지정할 수 있는 대상이며 응답자 목록과는 다르다. `missionProgress`에는 공개 역할·획득 진행·구조 신호 방향을 전달한다. `hiddenTaskCount`는 아직 공개하지 않은 목표 개수다. 비공개 목표와 교환 카드 선택은 엔진의 내부 setup에만 저장하고 snapshot에서 제거한다.
+
+`hidden` 교신은 정보 축소 미션에서만 허용한다. 일반 카드의 최고/최저/유일 조건 자체는 그대로 검사하고 공개 표식만 숨긴다. 지연 교신 및 11번 지정자의 교신 금지도 서버가 검사한다. 구버전 `unknown` 응답은 계약 역호환용으로 파싱하지만 현행 준비 명령은 거부한다.
 
 ## Snapshot의 공개 경계
 

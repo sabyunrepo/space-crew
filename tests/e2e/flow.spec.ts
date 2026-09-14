@@ -53,7 +53,7 @@ test("create, invite, resume and play a mission with private hand controls", asy
   await step(page.getByRole("button", { name: "탑승 준비 완료", exact: true }));
   await step(page.getByRole("button", { name: "임무 시작", exact: true }));
   await expect(
-    page.getByRole("button", { name: "임무 확인 완료", exact: true }),
+    page.getByRole("dialog", { name: "목표 카드 선택", exact: true }),
   ).toBeVisible();
   const hand = await page
     .locator(".hand-cards img")
@@ -66,7 +66,6 @@ test("create, invite, resume and play a mission with private hand controls", asy
       .locator(".hand-cards img")
       .evaluateAll((images) => images.map((img) => img.getAttribute("alt"))),
   ).toEqual(hand);
-  await step(page.getByRole("button", { name: "임무 확인 완료", exact: true }));
   for (let i = 0; i < 2; i++)
     await step(page.getByRole("button", { name: "데모 대원 진행" }));
   for (let i = 0; i < 8; i++) {
@@ -118,6 +117,16 @@ test("create, invite, resume and play a mission with private hand controls", asy
   await page.reload();
   await expect(page.locator(".result-box")).toBeVisible();
   expect(page.url()).toBe(url);
+  const resultModal = page.locator(".mission-result-modal");
+  await expect(resultModal).toBeVisible();
+  await expect(resultModal.locator("h2")).toBeFocused();
+  const resultRevision = await page.locator(".room-view").getAttribute("data-revision");
+  await page.keyboard.press("Escape");
+  await expect(resultModal).not.toBeVisible();
+  await expect(page.locator(".room-view")).toHaveAttribute("data-revision", resultRevision!);
+  await expect(page.getByRole("button", { name: "결과 다시 보기", exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "결과 다시 보기", exact: true }).click();
+  await expect(resultModal).toBeVisible();
   expect(errors).toEqual([]);
   await page.screenshot({
     path: `test-results/room-${test.info().project.name}.png`,
@@ -140,7 +149,7 @@ test("all 50 missions selectable, random mode explained, all 41 assets load", as
   ).toHaveValue("50");
   await page.getByRole("button", { name: "랜덤 탐사" }).click();
   await expect(
-    page.getByText("현재 실행 가능한 1, 2, 3, 4번 미션 중 추첨합니다.", {
+    page.getByText("현재 실행 가능한 1~50번 미션 중 추첨합니다.", {
       exact: false,
     }),
   ).toBeVisible();

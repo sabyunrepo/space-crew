@@ -23,6 +23,8 @@ import {
 import {
   ApiError,
   type CardId,
+  CharacterIdSchema,
+  type CharacterId,
   type Command,
   type Connection,
   type Envelope,
@@ -41,6 +43,9 @@ import {
 } from "../shared/cards.ts";
 import missions from "../shared/missions.json";
 import { makeService } from "./services/index.ts";
+import { characterFor } from "../shared/characters.ts";
+import { ThemePicker } from "./components/ThemePicker.tsx";
+import { CharacterPicker } from "./components/CharacterPicker.tsx";
 import { GameTable } from "./components/table/GameTable.tsx";
 import { GuidePage } from "./pages/GuidePage.tsx";
 /** service.mode는 향후 "server"도 값으로 가질 수 있어 문자열 비교로 안전하게 처리한다. */
@@ -144,8 +149,11 @@ export function App() {
   const [modal, setModal] = useState<"missions" | "cards" | null>(null);
   const guideReturnPath = useRef("/");
   const [settings, setSettings] = useState<RoomSettings>(defaultSettings);
+  const [characterId, setCharacterId] = useState<CharacterId>(() =>
+    CharacterIdSchema.safeParse(localStorage.getItem("crew.character")).data ?? "otter",
+  );
   const [nickname, setNickname] = useState(
-    () => localStorage.getItem("crew.nickname") || "별빛",
+    () => localStorage.getItem("crew.nickname") || characterFor(characterId).name,
   );
   const [selected, setSelected] = useState<CardId | null>(null);
   const [recent, setRecent] = useState(() =>
@@ -282,14 +290,15 @@ export function App() {
   async function enter(join = false) {
     if (!service) return;
     await run(async () => {
-      const key = JSON.stringify({ join, nickname, settings, inviteToken });
+      const key = JSON.stringify({ join, nickname, characterId, settings, inviteToken });
       if (createPending.current?.key !== key)
         createPending.current = { key, id: crypto.randomUUID() };
       const commandId = createPending.current!.id;
       const entry = join
-        ? await service.joinRoom({ commandId, nickname, inviteToken })
-        : await service.createRoom({ commandId, nickname, settings });
+        ? await service.joinRoom({ commandId, nickname, characterId, inviteToken })
+        : await service.createRoom({ commandId, nickname, characterId, settings });
       localStorage.setItem("crew.nickname", nickname);
+      localStorage.setItem("crew.character", characterId);
       accept(entry.snapshot);
       createPending.current = null;
       history.replaceState(null, "", `/rooms/${entry.snapshot.roomId}`);
@@ -331,7 +340,7 @@ export function App() {
   // 100dvh 안에서 페이지 스크롤 없이 조작 가능해야 한다.
   const fixedLayout = !!(
     snapshot &&
-    ["task_selection", "playing", "trick_result", "success", "failure"].includes(
+    ["task_selection", "preparation", "playing", "trick_result", "success", "failure"].includes(
       snapshot.phase,
     )
   );
@@ -359,6 +368,7 @@ export function App() {
           </span>
         </button>
         <nav>
+          <ThemePicker />
           <button
             onClick={() => {
               guideReturnPath.current = path;
@@ -536,6 +546,7 @@ export function App() {
                   />
                 </label>
               </div>
+              <CharacterPicker value={characterId} onChange={(id) => { setCharacterId(id); setNickname(characterFor(id).name); }} disabled={busy} />
               <label>탑승 인원</label>
               <div className="segments">
                 {([3, 4, 5] as const).map((n) => (
@@ -603,7 +614,7 @@ export function App() {
               ) : (
                 <p className="helper">
                   현재 실행 가능한{" "}
-                  {catalogue
+                  {catalogue.filter((m) => m.playable).length === 50 ? "1~50" : catalogue
                     .filter((m) => m.playable)
                     .map((m) => m.id)
                     .join(", ")}
@@ -680,6 +691,7 @@ export function App() {
                 onChange={(e) => setNickname(e.target.value)}
               />
             </label>
+            <CharacterPicker value={characterId} onChange={(id) => { setCharacterId(id); setNickname(characterFor(id).name); }} disabled={busy} />
             <button
               className="primary full"
               disabled={busy || !service || !inviteToken}
@@ -713,6 +725,8 @@ export function App() {
             currentMission={currentMission}
             catalogue={catalogue}
             locked={locked}
+            error={error}
+            hasPending={hasPending}
             connection={connection}
             serviceMode={service!.mode}
             selected={selected}
@@ -749,8 +763,8 @@ export function App() {
       {modal === "missions" && (
         <Modal title="50개의 임무 기록" onClose={() => setModal(null)}>
           <p className="helper">
-            미션 1~4는 데모 플레이, 나머지는 규칙 열람과 시작 번호 설정을
-            지원합니다. 특수 미션은 백엔드 구현 시 활성화합니다.
+            목표 수와 특수 조건을 확인한 뒤 원하는 번호부터 시작할 수 있습니다.
+            랜덤 모드는 현재 서버가 지원하는 미션 중에서 선택합니다.
           </p>
           <div className="mission-catalogue">
             {catalogue.map((m) => (

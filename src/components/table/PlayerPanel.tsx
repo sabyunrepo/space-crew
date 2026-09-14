@@ -1,11 +1,13 @@
 import { Check, Radio } from "lucide-react";
 import type { Snapshot } from "../../../shared/contracts.ts";
+import { characterFor, characterImage } from "../../../shared/characters.ts";
 import { cardLabel } from "../../../shared/cards.ts";
 
 const markers = {
   highest: "이 색 중 가장 높음",
   lowest: "이 색 중 가장 낮음",
   only: "이 색은 이 카드뿐",
+  hidden: "정보 축소 · 표시 비공개",
 };
 
 /**
@@ -33,7 +35,7 @@ export function PlayerPanel({
             className={`crew-member ${p?.id === snapshot.turnPlayerId ? "on-turn" : ""}`}
           >
             <div className={`avatar avatar-${i}`}>
-              {p ? p.nickname.slice(0, 1) : "+"}
+              {p ? <img src={characterImage(p.characterId)} alt={characterFor(p.characterId).name} /> : "+"}
             </div>
             <div className="member-details">
               <strong>

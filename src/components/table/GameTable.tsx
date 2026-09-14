@@ -3,7 +3,6 @@ import {
   ArrowRight,
   Check,
   ChevronRight,
-  Orbit,
   Radio,
   Rocket,
   Users,
@@ -24,6 +23,12 @@ import { PlayerPanel } from "./PlayerPanel.tsx";
 import { MissionPanel } from "./MissionPanel.tsx";
 import { TrickArea } from "./TrickArea.tsx";
 import { Hand } from "./Hand.tsx";
+import { CharacterPicker } from "../CharacterPicker.tsx";
+import { characterFor } from "../../../shared/characters.ts";
+import { CommunicationCard } from "./CommunicationCard.tsx";
+import { PreparationPanel, preparationTitle } from "./PreparationPanel.tsx";
+import { MissionSetupModal, usesCombinedTaskSetup } from "./MissionSetupModal.tsx";
+import { MissionResultModal } from "./MissionResultModal.tsx";
 import { handAvailability } from "./cardRules.ts";
 
 const markerLabels = {
@@ -50,6 +55,8 @@ function statusMessage(
       return snapshot.turnPlayerId === mineId
         ? "당신이 맡을 목표를 선택하세요"
         : `${nickOf(snapshot.turnPlayerId)} 대원이 목표를 고르는 중입니다`;
+    case "preparation":
+      return `${preparationTitle(snapshot)} · 준비 절차를 완료하세요`;
     case "playing":
       return snapshot.turnPlayerId === mineId
         ? "당신의 차례입니다 · 카드를 내세요"
@@ -83,6 +90,8 @@ export function GameTable({
   currentMission,
   catalogue,
   locked,
+  error,
+  hasPending,
   connection,
   serviceMode,
   selected,
@@ -99,6 +108,8 @@ export function GameTable({
   currentMission: Mission | undefined;
   catalogue: Mission[];
   locked: boolean;
+  error?: string;
+  hasPending?: boolean;
   connection: Connection;
   serviceMode: GameService["mode"];
   selected: CardId | null;
@@ -109,7 +120,20 @@ export function GameTable({
   onFillDemoCrew?(): void;
   onDemoStep?(): void;
 }) {
+  const [dismissedSetup, setDismissedSetup] = useState<string | null>(null);
+  const [dismissedResult, setDismissedResult] = useState<string | null>(null);
+  const resultActive = ["success", "failure", "campaign_complete"].includes(snapshot.phase);
+  const resultKey = `${snapshot.roomId}:${snapshot.attemptId}:${snapshot.phase}`;
+  const setupActive = snapshot.phase === "briefing" || snapshot.phase === "task_selection" ||
+    (snapshot.phase === "preparation" && !["distress_vote", "distress_cards"].includes(snapshot.preparation?.stage ?? ""));
+  const setupTurn = snapshot.phase === "task_selection"
+    ? snapshot.turnPlayerId === snapshot.me.playerId ? "my-turn" : "waiting"
+    : snapshot.phase === "briefing" && usesCombinedTaskSetup(snapshot) ? "waiting" : "";
+  const setupPhase = usesCombinedTaskSetup(snapshot) && ["briefing", "task_selection"].includes(snapshot.phase) ? "task-draft" : snapshot.phase;
+  const setupKey = `${snapshot.roomId}:${snapshot.attemptId}:${setupPhase}:${snapshot.preparation?.stage ?? ""}:${snapshot.preparation?.activeTaskId ?? setupTurn}`;
+  const setupOpen = setupActive && dismissedSetup !== setupKey;
   const [communicateMode, setCommunicateMode] = useState(false);
+  const [distressOpen, setDistressOpen] = useState(false);
   const [hint, setHint] = useState("");
   const hintTimer = useRef<number>(undefined);
   useEffect(() => {
@@ -142,19 +166,8 @@ export function GameTable({
   let action:
     | { label: string; icon?: ReactNode; onClick(): void; disabled?: boolean }
     | null = null;
-  if (snapshot.phase === "briefing")
-    action = mine?.briefingReady
-      ? {
-          label: "다른 대원을 기다리는 중",
-          disabled: true,
-          onClick: () => {},
-        }
-      : {
-          label: "임무 확인 완료",
-          icon: <Check size={16} />,
-          disabled: locked,
-          onClick: () => onSend({ type: "briefing_ready" }),
-        };
+  if (setupActive)
+    action = { label: "임무 준비 열기", onClick: () => setDismissedSetup(null) };
   else if (
     snapshot.phase === "trick_result" &&
     (isHost || serviceMode === "server")
@@ -165,23 +178,8 @@ export function GameTable({
       disabled: locked,
       onClick: () => onSend({ type: "advance_trick" }),
     };
-  else if (
-    (snapshot.phase === "success" || snapshot.phase === "failure") &&
-    isHost
-  )
-    action = {
-      label: snapshot.phase === "success" ? "다음 임무" : "같은 미션 다시 도전",
-      icon: <ArrowRight size={16} />,
-      disabled:
-        locked ||
-        (snapshot.phase === "success" &&
-          snapshot.settings.missionMode === "sequential" &&
-          !nextPlayable),
-      onClick: () =>
-        onSend({
-          type: snapshot.phase === "success" ? "next_mission" : "retry_mission",
-        }),
-    };
+  else if (resultActive)
+    action = { label: "결과 다시 보기", onClick: () => setDismissedResult(null) };
 
   const demoStepVisible =
     onDemoStep &&
@@ -190,9 +188,10 @@ export function GameTable({
       (["playing", "task_selection"].includes(snapshot.phase) &&
         snapshot.players.some(
           (p) => p.isDemo && p.id === snapshot.turnPlayerId,
-        )));
-  // task_selection 단계에서는 미션 패널이 항상 펼쳐져 그 안(오버레이)에서 보여줘야
-  // TrickArea 자리의 다른 버튼을 가리지 않는다.
+        )) ||
+      (snapshot.phase === "preparation" &&
+        snapshot.players.some((p) => p.isDemo)));
+  // 목표 선택 단계의 보조 동작은 목표 배정 영역에 함께 둡니다.
   const demoStepButton = demoStepVisible && (
     <button
       className="demo-step secondary"
@@ -217,18 +216,10 @@ export function GameTable({
       />
       <div className="game-table-body">
         {!lobby && (
-          <MissionPanel
-            snapshot={snapshot}
-            currentMission={currentMission}
-            mineId={mine?.id}
-            locked={locked}
-            onChooseTask={(taskId) => onSend({ type: "choose_task", taskId })}
-            footer={
-              snapshot.phase === "task_selection" && demoStepButton
-                ? demoStepButton
-                : undefined
-            }
-          />
+          <MissionPanel snapshot={snapshot} currentMission={currentMission} />
+        )}
+        {!lobby && snapshot.phase === "preparation" && !setupActive && (
+          <PreparationPanel snapshot={snapshot} locked={locked} onSend={onSend} />
         )}
         <div className="game-table-center">
           {lobby ? (
@@ -248,6 +239,8 @@ export function GameTable({
                   ? "랜덤 선택"
                   : `${String(snapshot.settings.startMission).padStart(2, "0")} · ${currentMission?.title}`}
               </p>
+              <CharacterPicker value={characterFor(mine?.characterId).id} disabled={locked}
+                onChange={(characterId) => onSend({ type: "set_character", characterId })} />
               <div className="lobby-actions">
                 <button
                   className={mine?.ready ? "secondary" : "primary"}
@@ -291,7 +284,7 @@ export function GameTable({
                 snapshot.settings.missionMode === "sequential" && (
                   <p className="helper warning">
                     미션 {currentMission?.id}의 특수 규칙은 구현 예정입니다.
-                    현재 미션 1~4를 플레이할 수 있습니다.
+                    서버가 지원하는 미션을 선택해 주세요.
                   </p>
                 )}
               {isHost && (
@@ -325,28 +318,19 @@ export function GameTable({
                 아닙니다.
               </p>
             </div>
-          ) : snapshot.phase === "briefing" ? (
-            <div className="briefing">
-              <Orbit size={35} />
-              <h3>손패를 확인하고, 임무를 읽어 주세요.</h3>
-              <p>
-                로켓 4를 가진{" "}
-                {
-                  snapshot.players.find((p) => p.id === snapshot.commanderId)
-                    ?.nickname
-                }{" "}
-                대원이 사령관입니다.
-                <br />
-                모두 확인하면 사령관부터 목표를 선택합니다.
-              </p>
-            </div>
           ) : (
             <TrickArea snapshot={snapshot} mineId={mine?.id} />
           )}
-          {snapshot.phase !== "task_selection" && demoStepButton}
+          {(!setupActive || !setupOpen) && demoStepButton}
         </div>
-        <PlayerPanel snapshot={snapshot} mineId={mine?.id} />
+        {lobby && <PlayerPanel snapshot={snapshot} mineId={mine?.id} />}
       </div>
+      {resultActive && <MissionResultModal snapshot={snapshot} open={dismissedResult !== resultKey}
+        isHost={isHost} locked={locked} canContinue={snapshot.settings.missionMode === "random" || !!nextPlayable}
+        error={error} hasPending={hasPending} onDismiss={() => setDismissedResult(resultKey)} onSend={onSend} />}
+      {setupActive && <MissionSetupModal snapshot={snapshot} mission={currentMission}
+        open={setupOpen} stepKey={setupKey} locked={locked} error={error} hasPending={hasPending}
+        onDismiss={() => setDismissedSetup(setupKey)} onSend={onSend} footer={setupOpen ? demoStepButton : undefined} />}
       {!lobby && (
       <div className="hand-dock">
         {hint && (
@@ -387,6 +371,31 @@ export function GameTable({
               </button>
             )
           )}
+          {isHost &&
+            (snapshot.phase === "briefing" || snapshot.phase === "playing") &&
+            snapshot.trickNumber === 1 &&
+            snapshot.trick.length === 0 &&
+            snapshot.players.every((player) => !player.communication) &&
+            !snapshot.missionProgress?.distressDirection && (
+              <div className="distress-control">
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={locked}
+                  aria-expanded={distressOpen}
+                  onClick={() => setDistressOpen((open) => !open)}
+                >
+                  구조 신호
+                </button>
+                {distressOpen && (
+                  <span className="distress-directions" role="group" aria-label="구조 신호 카드 이동 방향">
+                    {snapshot.phase === "briefing" && <small>방향을 예약합니다. 목표 배정 후 전원 동의로 교환합니다.</small>}
+                    <button type="button" className="secondary" disabled={locked} onClick={() => { onSend({ type: "request_distress", direction: "left" }); setDistressOpen(false); }}>왼쪽으로 교환</button>
+                    <button type="button" className="secondary" disabled={locked} onClick={() => { onSend({ type: "request_distress", direction: "right" }); setDistressOpen(false); }}>오른쪽으로 교환</button>
+                  </span>
+                )}
+              </div>
+            )}
         </div>
         <Hand
           cards={availability}
@@ -404,11 +413,13 @@ export function GameTable({
                   className="secondary"
                   disabled={locked}
                   key={marker}
+                  aria-label={markerLabels[marker]}
                   onClick={() => {
                     onSend({ type: "communicate", cardId: selected, marker });
                     setCommunicateMode(false);
                   }}
                 >
+                  <CommunicationCard communication={{ cardId: selected, marker, played: false }} />
                   {markerLabels[marker]}
                 </button>
               ))}

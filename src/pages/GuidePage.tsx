@@ -13,6 +13,7 @@ import { cardImage, cardLabel, SUIT_META, SUITS } from "../../shared/cards.ts";
 import missions from "../../shared/missions.json";
 import { winner } from "../game/engine.ts";
 import "./guide.css";
+import { ThemePicker } from "../components/ThemePicker.tsx";
 
 const SECTIONS: { id: string; label: string }[] = [
   { id: "overview", label: "한눈에 보기" },
@@ -24,7 +25,7 @@ const SECTIONS: { id: string; label: string }[] = [
   { id: "communication", label: "교신" },
   { id: "result", label: "성공·실패" },
   { id: "how-to-play", label: "이 사이트에서 하는 법" },
-  { id: "missions", label: "미션 1~4 요약" },
+  { id: "missions", label: "미션 1~50 요약" },
 ];
 
 type TrickExamplePlay = { playerId: string; label: string; cardId: CardId };
@@ -122,10 +123,7 @@ export function GuidePage(props: { onBack: () => void }): JSX.Element {
     return () => observer.disconnect();
   }, []);
 
-  const missionsById = new Map(missions.map((m) => [m.id, m]));
-  const playableMissions = [1, 2, 3, 4]
-    .map((id) => missionsById.get(id))
-    .filter((m): m is NonNullable<typeof m> => m !== undefined);
+  const playableMissions = missions;
 
   return (
     <div className="guide-page">
@@ -138,6 +136,7 @@ export function GuidePage(props: { onBack: () => void }): JSX.Element {
           <BookOpen size={16} />
           게임 방법
         </div>
+        <div className="guide-tools"><ThemePicker />
         <button
           className="guide-toc-toggle"
           aria-expanded={tocOpen}
@@ -146,7 +145,7 @@ export function GuidePage(props: { onBack: () => void }): JSX.Element {
         >
           {tocOpen ? <X size={15} /> : <ChevronRight size={15} />}
           목차
-        </button>
+        </button></div>
       </header>
       <div className="guide-body">
         <nav
@@ -283,8 +282,9 @@ export function GuidePage(props: { onBack: () => void }): JSX.Element {
             <p>
               미션이 정해지면 그 미션이 요구하는 수만큼 목표 카드가 공개됩니다.
               지휘관부터 시작해 자리 순서대로 돌아가며 목표를 하나씩 골라
-              담당자를 정하고, 모든 목표에 담당자가 정해지면 바로 첫 트릭이
-              시작됩니다.
+              담당자를 정하고, 모든 목표에 담당자가 정해지면 준비 절차에 따라 첫 트릭을
+              시작합니다. 지휘관 결정 미션은 목표를 숨긴 채 응답하고,
+              지휘관 분배 미션은 한 장씩 공개해 배정합니다.
             </p>
             <p>
               순서 토큰이 붙은 미션(예: 미션 3)은 목표마다 완수해야 하는
@@ -292,6 +292,8 @@ export function GuidePage(props: { onBack: () => void }): JSX.Element {
               획득하면, 남은 앞 순서 목표가 아직 완료되지 않은 상태이므로 그
               즉시 미션이 실패합니다.
             </p>
+            <p>숫자는 전체 목표의 절대 완료 순서, &lt;·&lt;&lt;·&lt;&lt;&lt;는 해당 토큰끼리의 상대 순서입니다. Ω는 마지막 목표입니다. 48번에서는 Ω 목표를 마지막 트릭에 획득해야 합니다.</p>
+            <p>5인 양도 표시가 있는 미션은 배정 후 목표 한 장을 다른 대원에게 넘길 수 있습니다. 토큰은 목표와 함께 이동합니다.</p>
           </section>
 
           <section id="communication">
@@ -318,6 +320,7 @@ export function GuidePage(props: { onBack: () => void }): JSX.Element {
               기준으로 고정되며, 이후 카드를 내며 손패가 바뀌어도 다시
               갱신되지 않습니다.
             </p>
+            <p>정보 축소 교신(D)은 같은 교신 가능 조건을 지키면서 최고·최저·유일 여부를 숨깁니다. 카드 옆의 뒤집힌 토큰으로 표시하며 ‘유일한 카드’라는 뜻이 아닙니다. C2·C3은 각각 두 번째·세 번째 트릭부터 교신할 수 있다는 뜻입니다. 11번은 지정된 대원 한 명만 교신할 수 없습니다.</p>
           </section>
 
           <section id="result">
@@ -325,8 +328,9 @@ export function GuidePage(props: { onBack: () => void }): JSX.Element {
               <ShieldCheck size={16} className="inline-icon" /> 8. 성공·실패
             </h2>
             <p>
-              모든 목표 카드가 각자의 담당자에게, 순서 조건이 있다면 그
-              순서대로 온전히 돌아가면 미션 성공입니다.
+              목표 카드 미션은 담당자와 순서 조건을 함께 지켜야 합니다.
+              목표가 없는 미션은 특정 카드로 승리하기, 승수 균형, 지정 대원의
+              첫·마지막 트릭 등 화면에 표시된 특수 조건을 달성해야 합니다.
             </p>
             <p>
               목표 카드를 담당자가 아닌 다른 대원이 가져가거나, 정해진 순서를
@@ -344,7 +348,8 @@ export function GuidePage(props: { onBack: () => void }): JSX.Element {
               <li>초대 링크를 함께할 대원들에게 공유합니다.</li>
               <li>전원이 자리에 들어와 "준비 완료"를 누릅니다.</li>
               <li>방장이 미션을 시작하면 브리핑 화면에서 조건을 확인합니다.</li>
-              <li>차례가 오면 맡을 목표 카드를 하나 선택합니다.</li>
+              <li>미션에 따라 상태 질문에 응답하거나 담당자·목표를 정합니다. 준비 상태는 새로고침해도 유지됩니다.</li>
+              <li>브리핑에서 방장이 구조 신호를 제안하면 전원 동의 후 같은 방향으로 일반 카드 한 장씩 교환할 수 있습니다.</li>
               <li>
                 트릭과 트릭 사이(아직 아무도 카드를 내지 않았을 때) 원한다면
                 교신을 한 번 사용합니다(선택 사항이며 건너뛸 수 있습니다).
@@ -360,10 +365,10 @@ export function GuidePage(props: { onBack: () => void }): JSX.Element {
           </section>
 
           <section id="missions">
-            <h2>10. 미션 1~4 요약</h2>
+            <h2>10. 미션 1~50 요약</h2>
             <p className="helper">
-              지금 플레이할 수 있는 미션은 1~4번입니다. 목표 수와 특수 조건만
-              안내하며, 어떤 카드가 목표인지는 알려주지 않습니다.
+              50개 미션의 목표 수와 특수 조건입니다. 방을 만들 때 원하는 번호부터
+              시작하거나 랜덤으로 선택할 수 있습니다.
             </p>
             <ul className="mission-summary-list">
               {playableMissions.map((mission) => (
@@ -373,10 +378,12 @@ export function GuidePage(props: { onBack: () => void }): JSX.Element {
                   </strong>
                   <span>
                     목표 {mission.taskCount}개
+                    {mission.taskCount === 0 ? " · 특수 조건 미션" : ""}
                     {mission.modifiers.length
                       ? ` · ${mission.modifiers.join(", ")}`
                       : " · 특수 조건 없음"}
                   </span>
+                  <p>{mission.summary}</p>
                 </li>
               ))}
             </ul>

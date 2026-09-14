@@ -2,8 +2,8 @@
 export default [
   {
     "id": 1,
-    "title": "첫 번째 신호",
-    "summary": "대원들이 나누어 맡은 목표 1개를 담당자가 획득하세요.",
+    "title": "미션 01",
+    "summary": "목표 카드 1장을 각 담당자가 획득하세요.",
     "taskCount": 1,
     "modifiers": [],
     "fivePlayerTransfer": false,
@@ -11,8 +11,8 @@ export default [
   },
   {
     "id": 2,
-    "title": "둘이 만드는 궤도",
-    "summary": "대원들이 나누어 맡은 목표 2개를 담당자가 획득하세요.",
+    "title": "미션 02",
+    "summary": "목표 카드 2장을 각 담당자가 획득하세요.",
     "taskCount": 2,
     "modifiers": [],
     "fivePlayerTransfer": false,
@@ -20,19 +20,19 @@ export default [
   },
   {
     "id": 3,
-    "title": "차례대로, 침착하게",
-    "summary": "대원들이 나누어 맡은 목표 2개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 03",
+    "summary": "목표 카드 2장을 각 담당자가 획득하세요.",
     "taskCount": 2,
     "modifiers": [
-      "지정 순서"
+      "절대 순번 토큰: 1, 2 (전체 목표의 완료 순서)"
     ],
     "fivePlayerTransfer": false,
     "playable": true
   },
   {
     "id": 4,
-    "title": "작은 팀의 큰 도약",
-    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요.",
+    "title": "미션 04",
+    "summary": "목표 카드 3장을 각 담당자가 획득하세요.",
     "taskCount": 3,
     "modifiers": [],
     "fivePlayerTransfer": false,
@@ -40,489 +40,502 @@ export default [
   },
   {
     "id": 5,
-    "title": "조용한 동행",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 지정 대원은 트릭을 얻지 않아야 합니다.",
+    "title": "미션 05",
+    "summary": "지휘관이 상태 응답을 듣고 대원 한 명을 지정합니다. 지정된 대원은 미션이 끝날 때까지 트릭을 하나도 획득하면 안 됩니다.",
     "taskCount": 0,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 6,
-    "title": "흐릿한 교신",
-    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요.",
+    "title": "미션 06",
+    "summary": "목표 카드 3장을 각 담당자가 획득하세요.",
     "taskCount": 3,
     "modifiers": [
-      "상대 순서",
-      "정보 축소 통신"
+      "상대 순서 토큰: › → ›› (다른 목표가 사이에 들어가도 됨)",
+      "정보 축소 교신: 카드만 공개하고 최고·최저·유일 표식은 공개하지 않음"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 7,
-    "title": "마지막 한 조각",
-    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요.",
+    "title": "미션 07",
+    "summary": "목표 카드 3장을 각 담당자가 획득하세요.",
     "taskCount": 3,
     "modifiers": [
-      "마지막 목표"
+      "Ω: 마지막으로 완료할 목표 (다른 목표와 같은 트릭에서 완료 가능)"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 8,
-    "title": "정해진 순서",
-    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 08",
+    "summary": "목표 카드 3장을 각 담당자가 획득하세요.",
     "taskCount": 3,
     "modifiers": [
-      "지정 순서"
+      "절대 순번 토큰: 1, 2, 3 (전체 목표의 완료 순서)"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 9,
-    "title": "작은 카드의 반전",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 일반1 카드로 트릭을 한 번 이겨야 합니다.",
+    "title": "미션 09",
+    "summary": "일반 숫자 1 카드로 트릭을 한 번 승리해야 합니다. 숫자 1이 포함된 트릭을 다른 카드로 이기는 것은 인정되지 않습니다.",
     "taskCount": 0,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 10,
-    "title": "더 먼 우주로",
-    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요.",
+    "title": "미션 10",
+    "summary": "목표 카드 4장을 각 담당자가 획득하세요.",
     "taskCount": 4,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 11,
-    "title": "심우주 탐사 11",
-    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요. 지휘관 외 지정 대원은 통신할 수 없습니다. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 11",
+    "summary": "목표 카드 4장을 각 담당자가 획득하세요. 지휘관이 다른 대원 한 명을 지정합니다. 그 대원은 이번 미션에서 교신할 수 없습니다.",
     "taskCount": 4,
     "modifiers": [
-      "지정 순서"
+      "절대 순번 토큰: 1 (전체 목표의 완료 순서)"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 12,
-    "title": "심우주 탐사 12",
-    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요. 첫 트릭 뒤 오른쪽 대원에게서 무작위 카드를 받습니다.",
+    "title": "미션 12",
+    "summary": "목표 카드 4장을 각 담당자가 획득하세요. 첫 번째 트릭 직후, 각 대원이 오른쪽 대원의 손패에서 무작위 카드 한 장을 받아 동시에 이동합니다.",
     "taskCount": 4,
     "modifiers": [
-      "마지막 목표"
+      "Ω: 마지막으로 완료할 목표 (다른 목표와 같은 트릭에서 완료 가능)"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 13,
-    "title": "심우주 탐사 13",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 로켓마다 트릭을 이겨야 합니다.",
+    "title": "미션 13",
+    "summary": "로켓 1·2·3·4가 각각 트릭의 승리 카드가 되어야 합니다. 로켓의 승리 순서는 상관없습니다.",
     "taskCount": 0,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 14,
-    "title": "심우주 탐사 14",
-    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요.",
+    "title": "미션 14",
+    "summary": "목표 카드 4장을 각 담당자가 획득하세요.",
     "taskCount": 4,
     "modifiers": [
-      "상대 순서",
-      "정보 축소 통신"
+      "상대 순서 토큰: › → ›› → ››› (다른 목표가 사이에 들어가도 됨)",
+      "정보 축소 교신: 카드만 공개하고 최고·최저·유일 표식은 공개하지 않음"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 15,
-    "title": "심우주 탐사 15",
-    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 15",
+    "summary": "목표 카드 4장을 각 담당자가 획득하세요.",
     "taskCount": 4,
     "modifiers": [
-      "지정 순서"
+      "절대 순번 토큰: 1, 2, 3, 4 (전체 목표의 완료 순서)"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 16,
-    "title": "심우주 탐사 16",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 일반9 카드로 트릭을 이기면 안 됩니다.",
+    "title": "미션 16",
+    "summary": "미션 전체에서 일반 숫자 9 카드로 트릭을 이기면 안 됩니다.",
     "taskCount": 0,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 17,
-    "title": "심우주 탐사 17",
-    "summary": "대원들이 나누어 맡은 목표 2개를 담당자가 획득하세요. 일반9 카드로 트릭을 이기면 안 됩니다.",
+    "title": "미션 17",
+    "summary": "목표 카드 2장을 각 담당자가 획득하세요. 일반 숫자 9 카드로 트릭을 이기면 안 됩니다. 이 제한을 지키며 두 목표를 완료하면 성공합니다.",
     "taskCount": 2,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 18,
-    "title": "심우주 탐사 18",
-    "summary": "대원들이 나누어 맡은 목표 5개를 담당자가 획득하세요.",
+    "title": "미션 18",
+    "summary": "목표 카드 5장을 각 담당자가 획득하세요.",
     "taskCount": 5,
     "modifiers": [
-      "2트릭부터 통신"
+      "교신은 두 번째 트릭 직전부터 가능"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 19,
-    "title": "심우주 탐사 19",
-    "summary": "대원들이 나누어 맡은 목표 5개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 19",
+    "summary": "목표 카드 5장을 각 담당자가 획득하세요.",
     "taskCount": 5,
     "modifiers": [
-      "지정 순서",
-      "3트릭부터 통신"
+      "절대 순번 토큰: 1 (전체 목표의 완료 순서)",
+      "교신은 세 번째 트릭 직전부터 가능"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 20,
-    "title": "심우주 탐사 20",
-    "summary": "대원들이 나누어 맡은 목표 2개를 담당자가 획득하세요.",
+    "title": "미션 20",
+    "summary": "목표 카드 2장을 각 담당자가 획득하세요. 목표를 공개하기 전에 지휘관이 전원의 예/아니오 응답을 듣고, 자신을 제외한 한 대원에게 모든 목표를 맡깁니다.",
     "taskCount": 2,
-    "modifiers": [
-      "지휘관 결정"
-    ],
+    "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 21,
-    "title": "심우주 탐사 21",
-    "summary": "대원들이 나누어 맡은 목표 5개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 21",
+    "summary": "목표 카드 5장을 각 담당자가 획득하세요.",
     "taskCount": 5,
     "modifiers": [
-      "지정 순서",
-      "정보 축소 통신"
+      "절대 순번 토큰: 1, 2 (전체 목표의 완료 순서)",
+      "정보 축소 교신: 카드만 공개하고 최고·최저·유일 표식은 공개하지 않음"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 22,
-    "title": "심우주 탐사 22",
-    "summary": "대원들이 나누어 맡은 목표 5개를 담당자가 획득하세요.",
+    "title": "미션 22",
+    "summary": "목표 카드 5장을 각 담당자가 획득하세요.",
     "taskCount": 5,
     "modifiers": [
-      "상대 순서"
+      "상대 순서 토큰: › → ›› → ››› → ›››› (다른 목표가 사이에 들어가도 됨)"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 23,
-    "title": "심우주 탐사 23",
-    "summary": "대원들이 나누어 맡은 목표 5개를 담당자가 획득하세요. 임무를 나누기 전 순서 토큰을 교환합니다. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 23",
+    "summary": "목표 카드 5장을 각 담당자가 획득하세요. 목표를 선택하기 전에 순서 토큰 두 개의 위치를 서로 바꿀 수 있습니다.",
     "taskCount": 5,
     "modifiers": [
-      "지정 순서"
+      "절대 순번 토큰: 1, 2, 3, 4, 5 (전체 목표의 완료 순서)"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 24,
-    "title": "심우주 탐사 24",
-    "summary": "대원들이 나누어 맡은 목표 6개를 담당자가 획득하세요.",
+    "title": "미션 24",
+    "summary": "목표 카드 6장을 각 담당자가 획득하세요. 지휘관이 목표를 한 장씩 공개하고 전원의 예/아니오 응답을 들은 뒤 배정합니다. 최종 배정 수의 차이는 1장 이하여야 합니다.",
     "taskCount": 6,
-    "modifiers": [
-      "지휘관 분배"
-    ],
+    "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 25,
-    "title": "심우주 탐사 25",
-    "summary": "대원들이 나누어 맡은 목표 6개를 담당자가 획득하세요.",
+    "title": "미션 25",
+    "summary": "목표 카드 6장을 각 담당자가 획득하세요.",
     "taskCount": 6,
     "modifiers": [
-      "상대 순서",
-      "정보 축소 통신"
+      "상대 순서 토큰: › → ›› (다른 목표가 사이에 들어가도 됨)",
+      "정보 축소 교신: 카드만 공개하고 최고·최저·유일 표식은 공개하지 않음",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 26,
-    "title": "심우주 탐사 26",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 일반1 카드로 트릭을 두 번 이겨야 합니다.",
+    "title": "미션 26",
+    "summary": "일반 숫자 1 카드가 트릭의 승리 카드가 되는 일을 두 번 달성해야 합니다.",
     "taskCount": 0,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 27,
-    "title": "심우주 탐사 27",
-    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요.",
+    "title": "미션 27",
+    "summary": "목표 카드 3장을 각 담당자가 획득하세요. 목표를 공개하기 전에 지휘관이 전원의 예/아니오 응답을 듣고, 자신을 제외한 한 대원에게 모든 목표를 맡깁니다.",
     "taskCount": 3,
     "modifiers": [
-      "지휘관 결정"
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 28,
-    "title": "심우주 탐사 28",
-    "summary": "대원들이 나누어 맡은 목표 6개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 28",
+    "summary": "목표 카드 6장을 각 담당자가 획득하세요.",
     "taskCount": 6,
     "modifiers": [
-      "지정 순서",
-      "마지막 목표",
-      "3트릭부터 통신"
+      "절대 순번 토큰: 1 (전체 목표의 완료 순서)",
+      "Ω: 마지막으로 완료할 목표 (다른 목표와 같은 트릭에서 완료 가능)",
+      "교신은 세 번째 트릭 직전부터 가능",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 29,
-    "title": "심우주 탐사 29",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 항상 대원별 승수 차이를1 이내로 유지합니다.",
+    "title": "미션 29",
+    "summary": "어느 순간에도 대원 간 획득한 트릭 수의 차이가 2개 이상이 되면 안 됩니다.",
     "taskCount": 0,
     "modifiers": [
-      "정보 축소 통신"
+      "정보 축소 교신: 카드만 공개하고 최고·최저·유일 표식은 공개하지 않음"
     ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 30,
-    "title": "심우주 탐사 30",
-    "summary": "대원들이 나누어 맡은 목표 6개를 담당자가 획득하세요.",
+    "title": "미션 30",
+    "summary": "목표 카드 6장을 각 담당자가 획득하세요.",
     "taskCount": 6,
     "modifiers": [
-      "상대 순서",
-      "2트릭부터 통신"
+      "상대 순서 토큰: › → ›› → ››› (다른 목표가 사이에 들어가도 됨)",
+      "교신은 두 번째 트릭 직전부터 가능",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 31,
-    "title": "심우주 탐사 31",
-    "summary": "대원들이 나누어 맡은 목표 6개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 31",
+    "summary": "목표 카드 6장을 각 담당자가 획득하세요.",
     "taskCount": 6,
     "modifiers": [
-      "지정 순서"
+      "절대 순번 토큰: 1, 2, 3 (전체 목표의 완료 순서)",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 32,
-    "title": "심우주 탐사 32",
-    "summary": "대원들이 나누어 맡은 목표 7개를 담당자가 획득하세요.",
+    "title": "미션 32",
+    "summary": "목표 카드 7장을 각 담당자가 획득하세요. 지휘관이 목표를 한 장씩 공개하고 전원의 예/아니오 응답을 들은 뒤 배정합니다. 최종 배정 수의 차이는 1장 이하여야 합니다.",
     "taskCount": 7,
     "modifiers": [
-      "지휘관 분배"
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 33,
-    "title": "심우주 탐사 33",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 지정 대원은 로켓 없이 정확히 한 번 이깁니다.",
+    "title": "미션 33",
+    "summary": "응답을 들은 지휘관이 대원 한 명을 지정합니다. 지정된 대원은 일반 카드로 정확히 한 트릭만 획득해야 합니다.",
     "taskCount": 0,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 34,
-    "title": "심우주 탐사 34",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 지휘관은 첫·마지막 트릭을 이기고 승수 차이는1 이내로 유지합니다.",
+    "title": "미션 34",
+    "summary": "대원 간 획득한 트릭 수의 차이가 항상 1개 이하여야 하며, 지휘관이 첫 번째와 마지막 트릭을 획득해야 합니다.",
     "taskCount": 0,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 35,
-    "title": "심우주 탐사 35",
-    "summary": "대원들이 나누어 맡은 목표 7개를 담당자가 획득하세요.",
+    "title": "미션 35",
+    "summary": "목표 카드 7장을 각 담당자가 획득하세요.",
     "taskCount": 7,
     "modifiers": [
-      "상대 순서"
+      "상대 순서 토큰: › → ›› → ››› (다른 목표가 사이에 들어가도 됨)",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 36,
-    "title": "심우주 탐사 36",
-    "summary": "대원들이 나누어 맡은 목표 7개를 담당자가 획득하세요. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 36",
+    "summary": "목표 카드 7장을 각 담당자가 획득하세요. 지휘관이 목표를 한 장씩 공개하고 전원의 예/아니오 응답을 들은 뒤 배정합니다. 최종 배정 수의 차이는 1장 이하여야 합니다.",
     "taskCount": 7,
     "modifiers": [
-      "지정 순서",
-      "지휘관 분배"
+      "절대 순번 토큰: 1, 2 (전체 목표의 완료 순서)",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 37,
-    "title": "심우주 탐사 37",
-    "summary": "대원들이 나누어 맡은 목표 4개를 담당자가 획득하세요.",
+    "title": "미션 37",
+    "summary": "목표 카드 4장을 각 담당자가 획득하세요. 목표를 공개하기 전에 지휘관이 전원의 예/아니오 응답을 듣고, 자신을 제외한 한 대원에게 모든 목표를 맡깁니다.",
     "taskCount": 4,
     "modifiers": [
-      "지휘관 결정"
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 38,
-    "title": "심우주 탐사 38",
-    "summary": "대원들이 나누어 맡은 목표 8개를 담당자가 획득하세요.",
+    "title": "미션 38",
+    "summary": "목표 카드 8장을 각 담당자가 획득하세요.",
     "taskCount": 8,
     "modifiers": [
-      "3트릭부터 통신"
+      "교신은 세 번째 트릭 직전부터 가능",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 39,
-    "title": "심우주 탐사 39",
-    "summary": "대원들이 나누어 맡은 목표 8개를 담당자가 획득하세요.",
+    "title": "미션 39",
+    "summary": "목표 카드 8장을 각 담당자가 획득하세요.",
     "taskCount": 8,
     "modifiers": [
-      "상대 순서",
-      "정보 축소 통신"
+      "상대 순서 토큰: › → ›› → ››› (다른 목표가 사이에 들어가도 됨)",
+      "정보 축소 교신: 카드만 공개하고 최고·최저·유일 표식은 공개하지 않음",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 40,
-    "title": "심우주 탐사 40",
-    "summary": "대원들이 나누어 맡은 목표 8개를 담당자가 획득하세요. 순서 토큰을 빈 목표로 옮깁니다. 목표의 지정 순서를 지켜야 합니다.",
+    "title": "미션 40",
+    "summary": "목표 카드 8장을 각 담당자가 획득하세요. 목표를 선택하기 전에 순서 토큰 하나를 토큰이 없는 목표 카드로 옮길 수 있습니다.",
     "taskCount": 8,
     "modifiers": [
-      "지정 순서"
+      "절대 순번 토큰: 1, 2, 3 (전체 목표의 완료 순서)",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 41,
-    "title": "심우주 탐사 41",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 지정 대원은 일반 카드로 첫·마지막 트릭만 이깁니다.",
+    "title": "미션 41",
+    "summary": "지휘관이 대원 한 명을 지정합니다. 지정된 대원은 첫 번째와 마지막 트릭만 획득해야 하며, 두 트릭 모두 로켓으로 이기면 안 됩니다.",
     "taskCount": 0,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 42,
-    "title": "심우주 탐사 42",
-    "summary": "대원들이 나누어 맡은 목표 9개를 담당자가 획득하세요.",
+    "title": "미션 42",
+    "summary": "목표 카드 9장을 각 담당자가 획득하세요.",
     "taskCount": 9,
-    "modifiers": [],
+    "modifiers": [
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
+    ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 43,
-    "title": "심우주 탐사 43",
-    "summary": "대원들이 나누어 맡은 목표 9개를 담당자가 획득하세요.",
+    "title": "미션 43",
+    "summary": "목표 카드 9장을 각 담당자가 획득하세요. 지휘관이 목표를 한 장씩 공개하고 전원의 예/아니오 응답을 들은 뒤 배정합니다. 최종 배정 수의 차이는 1장 이하여야 합니다.",
     "taskCount": 9,
     "modifiers": [
-      "지휘관 분배"
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 44,
-    "title": "심우주 탐사 44",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 로켓1→2→3→4 순서로 트릭을 이깁니다.",
+    "title": "미션 44",
+    "summary": "로켓 1, 2, 3, 4의 순서대로 각각 트릭을 승리해야 합니다.",
     "taskCount": 0,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 45,
-    "title": "심우주 탐사 45",
-    "summary": "대원들이 나누어 맡은 목표 9개를 담당자가 획득하세요.",
+    "title": "미션 45",
+    "summary": "목표 카드 9장을 각 담당자가 획득하세요.",
     "taskCount": 9,
     "modifiers": [
-      "상대 순서"
+      "상대 순서 토큰: › → ›› → ››› (다른 목표가 사이에 들어가도 됨)",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 46,
-    "title": "심우주 탐사 46",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 검정9 보유자의 왼쪽 대원이 검정 카드를 전부 얻습니다.",
+    "title": "미션 46",
+    "summary": "검은 9의 보유자를 공개합니다. 그 사람의 왼쪽 대원이 검은 카드 9장을 모두 획득해야 합니다.",
     "taskCount": 0,
-    "modifiers": [],
+    "modifiers": [
+      "원작의 분홍색 카드를 이 프로젝트의 검은색 타마마 카드로 대응"
+    ],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   },
   {
     "id": 47,
-    "title": "심우주 탐사 47",
-    "summary": "대원들이 나누어 맡은 목표 10개를 담당자가 획득하세요.",
+    "title": "미션 47",
+    "summary": "목표 카드 10장을 각 담당자가 획득하세요.",
     "taskCount": 10,
-    "modifiers": [],
+    "modifiers": [
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
+    ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 48,
-    "title": "심우주 탐사 48",
-    "summary": "대원들이 나누어 맡은 목표 3개를 담당자가 획득하세요. 마지막 목표는 마지막 트릭에서 얻습니다.",
+    "title": "미션 48",
+    "summary": "목표 카드 3장을 각 담당자가 획득하세요. 마지막 목표 토큰 Ω가 놓인 목표를 게임의 마지막 트릭에서 완료해야 합니다.",
     "taskCount": 3,
     "modifiers": [
-      "마지막 목표"
+      "Ω: 마지막으로 완료할 목표 (다른 목표와 같은 트릭에서 완료 가능)",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 49,
-    "title": "심우주 탐사 49",
-    "summary": "대원들이 나누어 맡은 목표 10개를 담당자가 획득하세요.",
+    "title": "미션 49",
+    "summary": "목표 카드 10장을 각 담당자가 획득하세요.",
     "taskCount": 10,
     "modifiers": [
-      "상대 순서"
+      "상대 순서 토큰: › → ›› → ››› (다른 목표가 사이에 들어가도 됨)",
+      "5인 플레이: 목표 배정 후 목표 한 장을 다른 대원에게 양도 가능"
     ],
     "fivePlayerTransfer": true,
-    "playable": false
+    "playable": true
   },
   {
     "id": 50,
-    "title": "심우주 탐사 50",
-    "summary": "특별한 트릭 조건을 함께 달성하세요. 한 명은 첫4트릭만, 다른 한 명은 마지막만, 나머지 대원은 중간 트릭을 담당합니다.",
+    "title": "미션 50",
+    "summary": "한 대원이 첫 네 트릭만, 다른 대원이 마지막 트릭만 획득합니다. 그 사이의 트릭은 나머지 대원들이 획득해야 합니다. 선호 역할을 답한 뒤 함께 담당자를 정합니다.",
     "taskCount": 0,
     "modifiers": [],
     "fivePlayerTransfer": false,
-    "playable": false
+    "playable": true
   }
 ]
 ;

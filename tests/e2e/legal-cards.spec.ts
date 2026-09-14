@@ -51,10 +51,8 @@ test("illegal cards are greyed out, aria-disabled and unselectable; legal cards 
     page.getByRole("button", { name: "임무 시작", exact: true }),
   );
   // 브리핑: 나부터 확인하고, 데모 대원들을 진행시킨다.
-  await step(
-    page,
-    page.getByRole("button", { name: "임무 확인 완료", exact: true }),
-  );
+  if (await page.getByRole("button", { name: "임무 확인 완료", exact: true }).isVisible())
+      await step(page, page.getByRole("button", { name: "임무 확인 완료", exact: true }));
   for (let i = 0; i < 3; i++)
     await step(page, page.getByRole("button", { name: "데모 대원 진행" }));
   // 임무 선택: 내 차례면 첫 목표를 고르고, 아니면 데모 대원을 진행시킨다.

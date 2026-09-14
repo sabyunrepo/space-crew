@@ -1,6 +1,6 @@
 # 프론트 구현 및 셀프호스팅 연동 인계
 
-작성: 2026-09-09. 프론트와 로컬 규칙 데모는 실행 가능하다. 원격 Supabase 프로젝트를 생성하거나 원격 DB에 SQL을 적용하지 않았다. 제공된 Edge Function은 인증·검증·라우팅 골격이며, 게임 트랜잭션 저장소는 아직 구현하지 않았다.
+갱신: 2026-09-14. 프론트와 로컬 규칙 데모는 실행 가능하다. 원격 Supabase 프로젝트를 생성하거나 원격 DB에 SQL을 적용하지 않았다. 제공된 Edge Function은 인증·검증·라우팅 골격이며, 게임 트랜잭션 저장소는 아직 구현하지 않았다.
 
 ## 바로 실행
 
@@ -19,7 +19,7 @@ npm run dev
 - 자신의 목표를 선택하고, 손패를 고른 뒤 **선택한 카드 내기**를 누른다. 선도 색 따르기와 차례 검증이 적용된다.
 - 교신 가능한 카드 선택 시 최고/최저/유일 버튼이 나타난다.
 - 같은 브라우저의 새로고침/재방문은 좌석·손패·목표·교신·임무 시도를 유지한다.
-- 로컬 초대 링크는 같은 브라우저 저장소만 읽는다. 다른 기기 간 실시간 플레이는 서버 구현 후 지원한다.
+- 로컬 초대 링크는 같은 브라우저 저장소만 읽는다. 다른 기기 간 실시간 플레이는 `VITE_BACKEND_MODE=server`와 Node 서버로 지원한다.
 
 ## 현재 구현 범위
 
@@ -27,23 +27,23 @@ npm run dev
 | --- | --- |
 | 한국어 PC/모바일 웹 | 홈, 방 생성, 대기실, 브리핑, 목표 선택, 테이블, 손패, 교신, 성공/실패 |
 | 카드 | v3 앞면 40장 + 뒷면 1종, 스폰지밥 7번 포함, 카드 도감 |
-| 미션 | 50개 조건 데이터와 시작 번호 선택; 실제 데모 엔진은 1~4 |
-| 랜덤 | 실행 가능한 미션 1~4 중 선택, 성공 후 미추첨 미션, 실패/복귀 시 같은 번호 |
+| 미션 | 50개 조건 데이터와 시작 번호 선택; 공유 엔진 1~50 및 특수 준비 단계 |
+| 랜덤 | 실행 가능한 미션 1~50 중 선택, 성공 후 미추첨 미션, 실패/복귀 시 같은 번호 |
 | 방 복귀 | 같은 브라우저의 저장된 익명/로컬 식별자 사용; 닉네임으로 자리를 찾지 않음 |
-| 데이터 계층 | `GameService`를 공유하는 MockService / SupabaseService |
+| 데이터 계층 | `GameService`를 공유하는 MockService / ServerService / SupabaseService |
 | 실시간 어댑터 | `room_versions` 구독, 연결 후 snapshot 재조회, 포커스/복귀/15초 폴링 재동기화 |
 | 명령 | commandId, expectedRevision, attemptId; 충돌 시 재조회; 응답 불명 시 동일 요청 재전송 |
 | DB | private 권한/RLS/참조키/인덱스/Realtime 최소 데이터 migration |
 | Edge Function | JWT 사용자 확인, Origin 제한, JSON/Zod 검증, CORS, 경로, 오류 응답 |
-| 서버 게임 저장소 | 미구현. `PendingRepository`는 쓰기/읽기에 501, capabilities는 backendReady=false |
-| 배포 | Vercel 정적 SPA 설정 준비. 원격 배포 미실행 |
+| Supabase 게임 저장소 | 미구현. `PendingRepository`는 쓰기/읽기에 501, capabilities는 backendReady=false |
+| 배포 | 기존 Cloudflare Tunnel + 홈 서버 Coolify의 crew.bsh00.com. Node 프론트/API/WS 통합 서비스. [운영 문서](DEPLOYMENT.ko.md) |
 
-미션 5~50의 특수 엔진, 실제 동시 사용자 DB 트랜잭션, 운영 환경 인증/Realtime, 기기를 바꿨을 때의 자리 복구는 다음 백엔드 단계다. 현재 브라우저 저장소가 지워지거나 시크릿 창을 바꾸면 기존 익명 식별자로 복귀하지 못한다. 초대 토큰은 기존 대원의 자리 복구 비밀로 사용하지 않는다.
+미션 1~50은 공통 엔진과 Node 저장소에 적용했다. Supabase의 실제 동시 사용자 DB 트랜잭션, 운영 환경 인증/Realtime, 기기를 바꿨을 때의 자리 복구는 다음 백엔드 단계다. 현재 브라우저 저장소가 지워지거나 시크릿 창을 바꾸면 기존 익명 식별자로 복귀하지 못한다. 초대 토큰은 기존 대원의 자리 복구 비밀로 사용하지 않는다.
 
 ## 파일 안내
 
 - `src/App.tsx`, `src/styles.css`: 화면과 반응형 디자인
-- `src/game/engine.ts`: 로컬 기본 규칙 엔진 (1~4), 사용자별 snapshot 투영
+- `src/game/engine.ts`: 로컬·Node 공유 규칙 엔진 (1~50), 사용자별 snapshot 투영
 - `src/services/mock.ts`: localStorage + Web Locks + 탭 간 알림; 데모 전용
 - `src/services/supabase.ts`: Auth/HTTP/Realtime 어댑터
 - `shared/contracts.ts`: 요청/응답 타입과 런타임 검증의 기준
@@ -117,7 +117,7 @@ npm run test:e2e
 - [Supabase 변경 기록](https://supabase.com/changelog)
 - [Vite 시작 가이드](https://vite.dev/guide/)
 
-## 이번 구현 검증 결과
+## 초기 프론트 구현 검증 결과 (2026-09-09 기록)
 
 - 프로덕션 빌드 성공: JavaScript 약 336KB (gzip 약 101KB), 카드 WebP 41장 약 4MB.
 - 단위·계약·SQL/RLS 테스트 14개 통과.
@@ -125,3 +125,21 @@ npm run test:e2e
 - Deno 타입 검사 통과: `npx deno check --config supabase/functions/deno.json supabase/functions/crew-api/index.ts`.
 - PC 홈과 모바일 임무 결과 스크린샷 시각 검수 완료.
 - 원격 DB/Edge 배포 및 실제 다중 기기 통신 검증은 아직 수행하지 않음.
+
+## 2026-09-14 미션 적용
+
+최신 범위·테스트 결과는 [50개 미션 구현 결과](./MISSION-IMPLEMENTATION-RESULTS.ko.md)에 기록한다. Node 실시간 서버 실행은 [README](../README.md#실시간-서버-실행)를 따른다. 이 모드는 Supabase 배포 완료를 의미하지 않는다.
+
+공유 계약에 `preparation` 단계, 준비 응답/담당자 선택/목표 분배/토큰 편집/목표 양도/구조 신호 명령을 추가했다. `missionProgress`는 공개된 역할과 판정 진행량만, `me.hand`는 본인 손패만 전달한다. 준비 중 비공개 목표와 구조 신호 선택 카드는 다른 대원의 응답에 포함하지 않는다. DB의 JSON 상태를 갱신하는 후속 저장소는 `src/game/engine.ts`의 동일 규칙과 개인 투영을 사용해야 한다.
+
+## 미션 준비 모달 (2026-09-14)
+
+브리핑 확인·목표 선택·역할/목표 배정은 `src/components/table/MissionSetupModal.tsx`로 집중한다. 손패와 대원별 배정 결과는 기존 게임보드에서만 표시한다. `테이블 보기`는 화면만 닫고 확인 명령을 보내지 않는다. 서버의 준비 단계·내 선택 차례가 바뀌거나 재접속하면 모달을 다시 표시한다. 상태 저장, 게임 규칙 및 API 계약 변경은 없다. 세부 흐름과 접근성은 [캐릭터와 테이블](./CHARACTERS-AND-TABLE.ko.md)을 따른다.
+
+### 2026-09-14 UI 후속 변경
+
+목표 총수/공개 시점은 `MissionTaskInfo`, 지휘관 응답·결정은 `PreparationPanel`을 따른다. 실제 낸 카드는 `TrickArea`의 `.central-trick`에만 렌더링한다. 플레이어 패널은 캐릭터·교신 2열, 목표는 아래 행이다. 화면 맞춤과 캐릭터 명칭/기본 이름 정책은 [최신 테이블 기록](CHARACTERS-AND-TABLE.ko.md)을 참조한다. API와 캐릭터 ID는 변경하지 않았다.
+
+일반 draft 목표 미션은 `usesCombinedTaskSetup` 정책에 따라 조건 표시와 카드 선택을 한 모달로 처리한다. UI의 별도 확인 클릭 대신 모달을 열 때 `briefing_ready`를 전송하며 엔진의 준비 장벽은 유지한다. 특수 미션 질문에는 자동 응답하지 않는다. 종료 결과는 `MissionResultModal.tsx`로 이동했고 재도전/다음 임무는 기존 명령과 방장 권한을 사용한다.
+
+테마는 `ThemePicker.tsx`, `theme.css`, 초기 로딩용 `public/theme-init.js`에서 관리한다. 선택값 키는 `crew.theme`, 루트 속성은 `data-theme="light|dark"`다. 새 UI에 색을 추가할 때 양 테마의 글자 대비를 함께 확인하고 카드 이미지/슈트 의미 색에는 테마 필터를 적용하지 않는다. API 변경은 없다.

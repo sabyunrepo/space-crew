@@ -948,6 +948,26 @@
             "minLength": 1,
             "maxLength": 16
           },
+          "characterId": {
+            "type": "string",
+            "enum": [
+              "otter",
+              "gary",
+              "moby-dick",
+              "spongebob",
+              "green-dino",
+              "coral",
+              "komodo",
+              "hangyodon",
+              "pingu",
+              "ilu",
+              "snow",
+              "tamama",
+              "sun",
+              "tree",
+              "bay"
+            ]
+          },
           "settings": {
             "type": "object",
             "properties": {
@@ -1072,6 +1092,7 @@
                   "lobby",
                   "briefing",
                   "task_selection",
+                  "preparation",
                   "playing",
                   "trick_result",
                   "success",
@@ -1162,6 +1183,26 @@
                       "minLength": 1,
                       "maxLength": 16
                     },
+                    "characterId": {
+                      "type": "string",
+                      "enum": [
+                        "otter",
+                        "gary",
+                        "moby-dick",
+                        "spongebob",
+                        "green-dino",
+                        "coral",
+                        "komodo",
+                        "hangyodon",
+                        "pingu",
+                        "ilu",
+                        "snow",
+                        "tamama",
+                        "sun",
+                        "tree",
+                        "bay"
+                      ]
+                    },
                     "seat": {
                       "type": "integer",
                       "minimum": 0,
@@ -1200,7 +1241,8 @@
                               "enum": [
                                 "highest",
                                 "lowest",
-                                "only"
+                                "only",
+                                "hidden"
                               ]
                             },
                             "played": {
@@ -1306,6 +1348,35 @@
                         }
                       ]
                     },
+                    "token": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "absolute",
+                                "relative",
+                                "omega"
+                              ]
+                            },
+                            "value": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 10
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "status": {
                       "type": "string",
                       "enum": [
@@ -1324,6 +1395,199 @@
                   ],
                   "additionalProperties": false
                 }
+              },
+              "preparation": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "stage": {
+                        "type": "string",
+                        "enum": [
+                          "role",
+                          "captain_decision",
+                          "captain_distribution",
+                          "token_edit",
+                          "task_transfer",
+                          "distress_vote",
+                          "distress_cards"
+                        ]
+                      },
+                      "responses": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string",
+                          "enum": [
+                            "yes",
+                            "no",
+                            "unknown",
+                            "first",
+                            "middle",
+                            "last"
+                          ]
+                        }
+                      },
+                      "activeTaskId": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "eligiblePlayerIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        }
+                      },
+                      "answeredPlayerIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        }
+                      }
+                    },
+                    "required": [
+                      "stage",
+                      "responses",
+                      "activeTaskId",
+                      "eligiblePlayerIds",
+                      "answeredPlayerIds"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "missionProgress": {
+                "type": "object",
+                "properties": {
+                  "selectedPlayerId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "secondaryPlayerId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "silentPlayerId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "blackNineHolderId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "oneWins": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "ninesPlayed": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4
+                  },
+                  "rocketsWon": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 4
+                    }
+                  },
+                  "blackCardsWon": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "transferApplied": {
+                    "type": "boolean"
+                  },
+                  "distressUsed": {
+                    "type": "boolean"
+                  },
+                  "distressActive": {
+                    "type": "boolean"
+                  },
+                  "distressDirection": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "left",
+                          "right"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "selectedPlayerId",
+                  "secondaryPlayerId",
+                  "silentPlayerId",
+                  "blackNineHolderId",
+                  "oneWins",
+                  "rocketsWon",
+                  "blackCardsWon",
+                  "transferApplied",
+                  "distressUsed"
+                ],
+                "additionalProperties": false
+              },
+              "hiddenTaskCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
               },
               "trick": {
                 "type": "array",
@@ -1481,6 +1745,40 @@
                 "properties": {
                   "type": {
                     "type": "string",
+                    "const": "set_character"
+                  },
+                  "characterId": {
+                    "type": "string",
+                    "enum": [
+                      "otter",
+                      "gary",
+                      "moby-dick",
+                      "spongebob",
+                      "green-dino",
+                      "coral",
+                      "komodo",
+                      "hangyodon",
+                      "pingu",
+                      "ilu",
+                      "snow",
+                      "tamama",
+                      "sun",
+                      "tree",
+                      "bay"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "characterId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
                     "const": "update_settings"
                   },
                   "settings": {
@@ -1583,6 +1881,202 @@
                 "properties": {
                   "type": {
                     "type": "string",
+                    "const": "preparation_response"
+                  },
+                  "answer": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "no",
+                      "unknown",
+                      "first",
+                      "middle",
+                      "last"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "answer"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "select_crew"
+                  },
+                  "playerId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "secondaryPlayerId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "playerId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "assign_task"
+                  },
+                  "playerId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "playerId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "edit_task_tokens"
+                  },
+                  "firstTaskId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "secondTaskId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "firstTaskId",
+                  "secondTaskId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "reset_tokens"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "confirm_tokens"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "transfer_task"
+                  },
+                  "taskId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "playerId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "taskId",
+                  "playerId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "skip_transfer"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "request_distress"
+                  },
+                  "direction": {
+                    "type": "string",
+                    "enum": [
+                      "left",
+                      "right"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "direction"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "select_distress_card"
+                  },
+                  "cardId": {
+                    "type": "string",
+                    "pattern": "^(blue|green|yellow|black)-[1-9]$|^rocket-[1-4]$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "cardId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
                     "const": "choose_task"
                   },
                   "taskId": {
@@ -1613,7 +2107,8 @@
                     "enum": [
                       "highest",
                       "lowest",
-                      "only"
+                      "only",
+                      "hidden"
                     ]
                   }
                 },
@@ -1705,6 +2200,26 @@
             "minLength": 1,
             "maxLength": 16
           },
+          "characterId": {
+            "type": "string",
+            "enum": [
+              "otter",
+              "gary",
+              "moby-dick",
+              "spongebob",
+              "green-dino",
+              "coral",
+              "komodo",
+              "hangyodon",
+              "pingu",
+              "ilu",
+              "snow",
+              "tamama",
+              "sun",
+              "tree",
+              "bay"
+            ]
+          },
           "inviteToken": {
             "type": "string",
             "minLength": 20,
@@ -1786,6 +2301,7 @@
               "lobby",
               "briefing",
               "task_selection",
+              "preparation",
               "playing",
               "trick_result",
               "success",
@@ -1876,6 +2392,26 @@
                   "minLength": 1,
                   "maxLength": 16
                 },
+                "characterId": {
+                  "type": "string",
+                  "enum": [
+                    "otter",
+                    "gary",
+                    "moby-dick",
+                    "spongebob",
+                    "green-dino",
+                    "coral",
+                    "komodo",
+                    "hangyodon",
+                    "pingu",
+                    "ilu",
+                    "snow",
+                    "tamama",
+                    "sun",
+                    "tree",
+                    "bay"
+                  ]
+                },
                 "seat": {
                   "type": "integer",
                   "minimum": 0,
@@ -1914,7 +2450,8 @@
                           "enum": [
                             "highest",
                             "lowest",
-                            "only"
+                            "only",
+                            "hidden"
                           ]
                         },
                         "played": {
@@ -2020,6 +2557,35 @@
                     }
                   ]
                 },
+                "token": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "absolute",
+                            "relative",
+                            "omega"
+                          ]
+                        },
+                        "value": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 10
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "status": {
                   "type": "string",
                   "enum": [
@@ -2038,6 +2604,199 @@
               ],
               "additionalProperties": false
             }
+          },
+          "preparation": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "stage": {
+                    "type": "string",
+                    "enum": [
+                      "role",
+                      "captain_decision",
+                      "captain_distribution",
+                      "token_edit",
+                      "task_transfer",
+                      "distress_vote",
+                      "distress_cards"
+                    ]
+                  },
+                  "responses": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "enum": [
+                        "yes",
+                        "no",
+                        "unknown",
+                        "first",
+                        "middle",
+                        "last"
+                      ]
+                    }
+                  },
+                  "activeTaskId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "eligiblePlayerIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "answeredPlayerIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  }
+                },
+                "required": [
+                  "stage",
+                  "responses",
+                  "activeTaskId",
+                  "eligiblePlayerIds",
+                  "answeredPlayerIds"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "missionProgress": {
+            "type": "object",
+            "properties": {
+              "selectedPlayerId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "secondaryPlayerId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "silentPlayerId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "blackNineHolderId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "oneWins": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "ninesPlayed": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "rocketsWon": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 4
+                }
+              },
+              "blackCardsWon": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "transferApplied": {
+                "type": "boolean"
+              },
+              "distressUsed": {
+                "type": "boolean"
+              },
+              "distressActive": {
+                "type": "boolean"
+              },
+              "distressDirection": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "left",
+                      "right"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "selectedPlayerId",
+              "secondaryPlayerId",
+              "silentPlayerId",
+              "blackNineHolderId",
+              "oneWins",
+              "rocketsWon",
+              "blackCardsWon",
+              "transferApplied",
+              "distressUsed"
+            ],
+            "additionalProperties": false
+          },
+          "hiddenTaskCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
           "trick": {
             "type": "array",

@@ -55,10 +55,10 @@ describe("authoritative demo rules", () => {
       "대원이 아닙니다",
     );
   });
-  it("rejects unsupported missions and unfinished preparation without mutating input", () => {
+  it("supports late missions and rejects unfinished preparation without mutating input", () => {
     const state = room();
     state.settings.startMission = 50;
-    expect(() => start(state)).toThrow("미션 1~4");
+    expect(start(state).missionId).toBe(50);
     expect(state.phase).toBe("lobby");
     state.settings.startMission = 1;
     state.players[1].ready = false;
@@ -163,11 +163,11 @@ describe("authoritative demo rules", () => {
     expect(state.missionId).toBe(first);
     expect(state.attemptId).not.toBe(attempt);
     expect(state.drawnMissionIds).toHaveLength(1);
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 49; i++) {
       state.phase = "success";
       state = applyCommand(state, host, { type: "next_mission" });
     }
-    expect(new Set(state.drawnMissionIds).size).toBe(4);
+    expect(new Set(state.drawnMissionIds).size).toBe(50);
     state.phase = "success";
     expect(applyCommand(state, host, { type: "next_mission" }).phase).toBe(
       "campaign_complete",
@@ -185,11 +185,11 @@ describe("authoritative demo rules", () => {
     const advanced = applyCommand(state, nonHost, { type: "advance_trick" });
     expect(advanced.phase).toBe("playing");
   });
-  it("moves sequential mode to campaign_complete when the next mission is not playable", () => {
+  it("moves sequential mode to campaign_complete after mission 50", () => {
     const input = room();
-    input.settings.startMission = 4;
+    input.settings.startMission = 50;
     let state = start(input);
-    expect(state.missionId).toBe(4);
+    expect(state.missionId).toBe(50);
     state.phase = "success";
     const next = applyCommand(state, host, { type: "next_mission" });
     expect(next.phase).toBe("campaign_complete");

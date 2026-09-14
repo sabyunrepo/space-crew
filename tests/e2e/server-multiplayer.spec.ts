@@ -77,6 +77,8 @@ async function tick(
         illegalCheck.done = true;
       }
     }
+    const playedLabel = await legalCards.first().getAttribute("aria-label");
+    const actorId = await page.locator(".seat-south").getAttribute("data-player-id");
     await tapCard(legalCards.first());
     const submit = page.getByRole("button", { name: "선택한 카드 내기" });
     await expect(submit).toBeEnabled();
@@ -89,8 +91,10 @@ async function tick(
       if (peer) {
         wsCheck.done = true;
         await expect(
-          peer.page.locator(".played-cards .played-slot .card"),
-        ).not.toHaveCount(0, { timeout: 5000 });
+          peer.page.locator(`.central-play[data-player-id="${actorId}"] .card img`),
+        ).toHaveAttribute("alt", playedLabel!, { timeout: 5000 });
+        await expect(peer.page.locator(".player-seat .played-card")).toHaveCount(0);
+        await peer.page.screenshot({ path: "artifacts/qa/characters/server-central-play.png" });
       }
     }
     return true;
@@ -194,6 +198,7 @@ test.describe("서버 모드 다인 플레이", () => {
 
       // --- A: 방 생성 (3인, 미션 1은 기본값) ---
       await pageA.goto("/");
+      await pageA.getByRole("button", { name: "요시 선택", exact: true }).click();
       await pageA
         .getByRole("textbox", { name: "대원 이름", exact: true })
         .fill("선장A");
@@ -218,6 +223,7 @@ test.describe("서버 모드 다인 플레이", () => {
         [pageC, "대원C"],
       ] as const) {
         await page.goto(invite);
+        await page.getByRole("button", { name: page === pageB ? "일루 선택" : "베이 선택", exact: true }).click();
         await page
           .getByRole("textbox", { name: "대원 이름", exact: true })
           .fill(nickname);
@@ -225,6 +231,12 @@ test.describe("서버 모드 다인 플레이", () => {
           .getByRole("button", { name: "탐사선 탑승하기", exact: true })
           .click();
         await expect(page).toHaveURL(roomUrl);
+      }
+
+      for (const page of [pageA, pageB, pageC]) {
+        await expect(page.locator('.crew-member img[alt="요시"]')).toHaveCount(1);
+        await expect(page.locator('.crew-member img[alt="일루"]')).toHaveCount(1);
+        await expect(page.locator('.crew-member img[alt="베이"]')).toHaveCount(1);
       }
 
       // --- 전원 준비 ---
@@ -258,7 +270,7 @@ test.describe("서버 모드 다인 플레이", () => {
           if (reloadedB || trickAdvanceCount !== 1) return;
           reloadedB = true;
           const nicknameLocator = pageB
-            .locator(".crew-member")
+            .locator(".player-seat")
             .filter({ hasText: "대원B" });
           await expect(nicknameLocator).toBeVisible();
           const handCountBefore = await pageB
@@ -268,13 +280,14 @@ test.describe("서버 모드 다인 플레이", () => {
           await pageB.reload();
 
           await expect(
-            pageB.locator(".crew-member").filter({ hasText: "대원B" }),
+            pageB.locator(".player-seat").filter({ hasText: "대원B" }),
           ).toBeVisible();
           await expect(pageB.locator(".hand-dock")).toBeVisible();
           const handCountAfter = await pageB
             .locator(".hand-cards button")
             .count();
           expect(handCountAfter).toBe(handCountBefore);
+          await expect(pageB.locator(".seat-south .character-card")).toHaveAttribute("data-character-id", "ilu");
         },
       });
 
@@ -357,3 +370,197 @@ test.describe("서버 모드 다인 플레이", () => {
     }
   });
 });
+
+for (const capacity of [4, 5]) test(`${capacity} real players retain their characters and directional seats through a mission`, async ({ browser }) => {
+  const identities = [
+    ["요시", "green-dino"], ["일루", "ilu"], ["베이", "bay"], ["콜드", "snow"], ["트리", "tree"],
+  ];
+  const contexts: BrowserContext[] = [];
+  const crew: Ctx[] = [];
+  try {
+    for (let i = 0; i < capacity; i++) {
+      const context = await browser.newContext({ viewport: i % 2 ? { width: 390, height: 844 } : { width: 1440, height: 900 } });
+      contexts.push(context); crew.push({ label: String(i), page: await context.newPage(), isHost: i === 0 });
+    }
+    const host = crew[0].page;
+    await contexts[0].grantPermissions(["clipboard-read", "clipboard-write"]);
+    await host.goto("/");
+    await host.getByRole("button", { name: `${capacity}명`, exact: true }).click();
+    await host.locator(".mission-select select").selectOption(capacity === 5 ? "7" : "4");
+    await host.getByRole("button", { name: "요시 선택", exact: true }).click();
+    await host.getByRole("textbox", { name: "대원 이름", exact: true }).fill("대원0");
+    // Consecutive browser cases share localhost's production rate-limit bucket.
+    await expect(async () => {
+      if (!host.url().includes("/rooms/"))
+        await host.getByRole("button", { name: "탐사선 만들기", exact: true }).click();
+      await expect(host).toHaveURL(/\/rooms\//, { timeout: 1000 });
+    }).toPass({ intervals: [6500], timeout: 30000 });
+    await host.getByRole("button", { name: "초대 링크", exact: true }).click();
+    await expect(host.getByRole("status")).toContainText("복사했습니다");
+    const invite = await host.evaluate(() => navigator.clipboard.readText());
+    for(let i=1;i<capacity;i++) {
+      const page = crew[i].page; await page.goto(invite);
+      await page.getByRole("textbox", { name: "대원 이름", exact: true }).fill(`대원${i}`);
+      await page.getByRole("button", { name: `${identities[i][0]} 선택`, exact: true }).click();
+      // All contexts share localhost's IP. Previous cases consume the production
+      // join bucket; retry the same idempotent entry after its refill interval.
+      await expect(async () => {
+        if (page.url().includes("/join"))
+          await page.getByRole("button", { name: "탐사선 탑승하기", exact: true }).click();
+        await expect(page).toHaveURL(host.url(), { timeout: 1000 });
+      }).toPass({ intervals: [6500], timeout: 30000 });
+    }
+    for(const {page} of crew) await step(page, page.getByRole("button", {name:"탑승 준비 완료",exact:true}));
+    await step(host,host.getByRole("button",{name:"임무 시작",exact:true}));
+    for(let i=0;i<capacity;i++) {
+      const page = crew[i].page;
+      await expect(page.locator(".player-seat")).toHaveCount(capacity);
+      await expect(page.locator(".seat-south .character-card")).toHaveAttribute("data-character-id",identities[i][1]);
+      for(const [,id] of identities.slice(0,capacity)) await expect(page.locator(`.character-card[data-character-id="${id}"]`)).toHaveCount(1);
+    }
+    const positions = await crew[1].page.locator(".player-seat").evaluateAll(els=>els.map(el=>[el.getAttribute("data-player-id"),el.getAttribute("data-position")]));
+    await crew[1].page.reload();
+    await expect(crew[1].page.locator(".seat-south .character-card")).toHaveAttribute("data-character-id","ilu");
+    expect(await crew[1].page.locator(".player-seat").evaluateAll(els=>els.map(el=>[el.getAttribute("data-player-id"),el.getAttribute("data-position")]))).toEqual(positions);
+    await playUntilResult(crew,{done:false});
+    const results = await Promise.all(crew.map(({page})=>page.locator(".result-box h2").innerText()));
+    expect(new Set(results).size).toBe(1);
+    for (const { page } of crew) await expect(page.locator(".mission-result-modal")).toBeVisible();
+    await expect(crew[1].page.locator(".result-continue")).toHaveCount(0);
+    await expect(crew[1].page.locator(".result-modal-actions")).toContainText("방장이");
+    const failed = await host.locator(".mission-result-modal.failure").count() > 0;
+    await crew[1].page.reload();
+    await expect(crew[1].page.locator(".mission-result-modal")).toBeVisible();
+    await host.screenshot({ path: `artifacts/qa/missions/result-${capacity}-host.png` });
+    await crew[1].page.screenshot({ path: `artifacts/qa/missions/result-${capacity}-guest.png` });
+    await step(host, host.locator(".result-continue"));
+    for (const { page } of crew) {
+      await expect(page.locator(".mission-result-modal")).toHaveCount(0);
+      await expect(page.locator(".mission-setup-modal")).toBeVisible();
+      if (failed) await expect(page.locator(".attempt")).toContainText("2번째 시도");
+    }
+
+  } finally { for(const context of contexts) await context.close(); }
+});
+
+// Real REST setup establishes independent seats; every preparation decision and
+// subsequent play uses rendered controls, with public snapshots only for turn selection.
+for (const [mission, capacity] of [[22, 3], [5, 3], [17, 3], [33, 4], [11, 4], [20, 3], [23, 4], [24, 5], [27, 5], [36, 5], [40, 3], [41, 4], [46, 5], [48, 3], [50, 5]] as const) {
+  test(`미션 ${mission}: ${capacity}개 독립 화면에서 준비·복귀·실제 플레이`, async ({ browser, request }, info) => {
+    test.setTimeout(240_000);
+    const { suggestDemoCommand } = await import("../../src/game/demoPolicy.ts");
+    async function entryRequest(path: string, data: unknown) {
+      for (let retry = 0; retry < 12; retry++) {
+        const result = await request.post(path, { data });
+        if (result.status() !== 429) return result;
+        // Keep the production per-IP limit enabled. One runner represents many
+        // independent people on the same IP, so wait for its token to refill.
+        await new Promise(resolve => setTimeout(resolve, 6100));
+      }
+      throw new Error("Entry rate limiter did not refill");
+    }
+    const created = await entryRequest("/api/rooms", {
+      commandId: crypto.randomUUID(), nickname: "선장",
+      settings: { name: "미션 준비 검증", capacity, missionMode: "sequential", startMission: mission },
+    });
+    expect(created.ok()).toBe(true);
+    const first = await created.json();
+    const roomId = first.entry.snapshot.roomId;
+    const entries = [first];
+    for (let i = 1; i < capacity; i++) {
+      const res = await entryRequest("/api/join", { commandId: crypto.randomUUID(), nickname: `대원${i}`, inviteToken: first.entry.inviteToken });
+      expect(res.ok()).toBe(true);
+      entries.push(await res.json());
+    }
+    const contexts: BrowserContext[] = [];
+    const pages: Page[] = [];
+    const errors: string[] = [];
+    try {
+      for (const [i, entry] of entries.entries()) {
+        const ctx = await browser.newContext({ viewport: i % 2 ? { width: 390, height: 844 } : { width: 1440, height: 900 } });
+        contexts.push(ctx);
+        await ctx.addInitScript(({ roomId, token }) => localStorage.setItem(`crew.server.v1.token.${roomId}`, token), { roomId, token: entry.playerToken });
+        const page = await ctx.newPage(); pages.push(page);
+        page.on("pageerror", error => errors.push(error.message));
+        await page.goto(`/rooms/${roomId}`);
+        await step(page, page.getByRole("button", { name: "탑승 준비 완료", exact: true }));
+      }
+      await step(pages[0], pages[0].getByRole("button", { name: "임무 시작", exact: true }));
+      const restored = new Set<string>();
+      let actions = 0;
+      let reachedResult = false;
+      while (actions++ < 220) {
+        let acted = false;
+        for (const [i, page] of pages.entries()) {
+          const response = await request.get(`/api/rooms/${roomId}`, { headers: { Authorization: `Bearer ${entries[i].playerToken}` } });
+          expect(response.ok()).toBe(true);
+          const view = await response.json();
+          if (["success", "failure"].includes(view.phase)) { reachedResult = true; break; }
+          await expect(page.locator(".room-view")).toHaveAttribute("data-revision", String(view.revision));
+          let command = suggestDemoCommand(view);
+          if (mission === 27 && view.preparation?.stage === "task_transfer") {
+            const own = view.tasks.find((task: { ownerId: string }) => task.ownerId === view.me.playerId);
+            command = own ? { type: "transfer_task", taskId: own.id, playerId: view.players.find((p: { id: string }) => p.id !== view.me.playerId).id } : null;
+          }
+          if (view.phase === "preparation") {
+            const stage = view.preparation.stage;
+            if (!restored.has(stage) && view.preparation.answeredPlayerIds.length > 0) {
+              await page.reload();
+              await expect(page.locator(".room-view")).toHaveAttribute("data-revision", String(view.revision));
+              await expect(page.getByRole("region", { name: "미션 준비", exact: true })).toBeVisible();
+              expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+              await expect(pages[1].locator(".room-view")).toHaveAttribute("data-revision", String(view.revision));
+              expect(await pages[1].evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+              await pages[1].screenshot({ path: `artifacts/qa/missions/m${mission}-${stage}-mobile.png`, fullPage: true });
+              restored.add(stage);
+              await page.screenshot({ path: `artifacts/qa/missions/m${mission}-${stage}-${i % 2 ? "mobile" : "desktop"}.png`, fullPage: true });
+            }
+            if (!command) continue;
+            const panel = page.getByRole("region", { name: "미션 준비", exact: true });
+            switch (command.type) {
+              case "preparation_response": {
+                const label = { yes: mission === 5 && stage === "role" ? "좋음" : "예", no: mission === 5 && stage === "role" ? "나쁨" : "아니오", unknown: "모르겠어요", first: "첫 4트릭", middle: "중간 트릭", last: "마지막 트릭" }[command.answer];
+                await step(page, panel.getByRole("button", { name: label, exact: true })); break;
+              }
+              case "select_crew":
+              case "assign_task":
+                await panel.getByRole("combobox", { name: mission === 50 ? "첫 4트릭 담당 A" : "담당 대원", exact: true }).selectOption(command.playerId);
+                if (command.type === "select_crew" && command.secondaryPlayerId)
+                  await panel.getByRole("combobox", { name: "마지막 트릭 담당 B", exact: true }).selectOption(command.secondaryPlayerId);
+                await step(page, panel.getByRole("button", { name: command.type === "assign_task" ? "목표 배정" : "담당자 확정", exact: true })); break;
+              case "confirm_tokens":
+                await panel.getByRole("combobox", { name: "이동할 토큰", exact: true }).selectOption({ index: 1 });
+                await panel.getByRole("combobox", { name: mission === 23 ? "교환할 토큰" : "토큰 없는 목표", exact: true }).selectOption({ index: 1 });
+                await step(page, panel.getByRole("button", { name: "토큰 변경", exact: true }));
+                await step(page, panel.getByRole("button", { name: "원래 배치로 되돌리기", exact: true }));
+                await step(page, panel.getByRole("button", { name: "현재 토큰 배치 확정", exact: true })); break;
+              case "transfer_task":
+                await panel.getByRole("combobox", { name: "내 목표", exact: true }).selectOption(command.taskId);
+                await panel.getByRole("combobox", { name: "받을 대원", exact: true }).selectOption(command.playerId);
+                await step(page, panel.getByRole("button", { name: "목표 양도 확정", exact: true })); break;
+              case "skip_transfer": await step(page, panel.getByRole("button", { name: "양도 없이 시작", exact: true })); break;
+              case "select_distress_card": {
+                const { cardLabel } = await import("../../shared/cards.ts");
+                await panel.getByRole("button", { name: cardLabel(command.cardId), exact: true }).click();
+                await step(page, panel.getByRole("button", { name: "교환 카드 확정", exact: true })); break;
+              }
+              default: throw new Error(`Unexpected preparation command ${command.type}`);
+            }
+            acted = true; break;
+          }
+          if (await tick({ label: String(i), page, isHost: i === 0 }, { done: true })) { acted = true; break; }
+        }
+        if (reachedResult) break;
+        if (!acted) await pages[0].waitForTimeout(150);
+      }
+      expect(reachedResult).toBe(true);
+      const expected = await pages[0].locator(".result-box h2").innerText();
+      for (const page of pages) {
+        await expect(page.locator(".result-box h2")).toHaveText(expected);
+        await expect(page.getByRole("alert")).toHaveCount(0);
+      }
+      expect(errors).toEqual([]);
+      await info.attach("mission-network-result.json", { body: JSON.stringify({ mission, capacity, actions, result: expected, restoredStages: [...restored] }), contentType: "application/json" });
+    } finally { for (const ctx of contexts) await ctx.close(); }
+  });
+}

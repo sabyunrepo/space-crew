@@ -14,6 +14,7 @@ it("applies the migration and restricts Realtime rows to members; private hands 
         "utf8",
       ),
     );
+    await db.exec(await readFile("supabase/migrations/20260911114343_player_characters.sql", "utf8"));
     const user = "10000000-0000-4000-8000-000000000001",
       stranger = "10000000-0000-4000-8000-000000000002",
       player = "20000000-0000-4000-8000-000000000001",
@@ -52,6 +53,9 @@ it("applies the migration and restricts Realtime rows to members; private hands 
         `insert into crew_private.room_members(room_id,player_id,seat) values ('${room}','${player}',5)`,
       ),
     ).rejects.toThrow(/check constraint/);
+    await db.query(`insert into crew_private.room_members(room_id,player_id,seat,character_id) values ('${room}','${player}',0,'green-dino')`);
+    expect((await db.query(`select character_id from crew_private.room_members where room_id='${room}'`)).rows).toEqual([{ character_id: "green-dino" }]);
+    await expect(db.query(`update crew_private.room_members set character_id='../../bad' where room_id='${room}'`)).rejects.toThrow(/check constraint/);
   } finally {
     await db.close();
   }

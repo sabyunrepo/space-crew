@@ -2,7 +2,7 @@
 import { z } from "zod";
 
 export const API_VERSION = "1";
-export const RULESET_VERSION = "crew-p9-demo-1";
+export const RULESET_VERSION = "crew-p9-50-3";
 export const SuitSchema = z.enum([
   "blue",
   "green",
@@ -15,6 +15,11 @@ export const CardIdSchema = z
   .regex(/^(blue|green|yellow|black)-[1-9]$|^rocket-[1-4]$/);
 export type CardId = z.infer<typeof CardIdSchema>;
 export const MissionIdSchema = z.number().int().min(1).max(50);
+export const CharacterIdSchema = z.enum([
+  "otter", "gary", "moby-dick", "spongebob", "green-dino", "coral", "komodo",
+  "hangyodon", "pingu", "ilu", "snow", "tamama", "sun", "tree", "bay",
+]);
+export type CharacterId = z.infer<typeof CharacterIdSchema>;
 export const NicknameSchema = z.string().trim().min(1).max(16);
 export const RoomSettingsSchema = z
   .object({
@@ -41,7 +46,34 @@ export const CapabilitiesSchema = z.object({
   rulesetVersion: z.string(),
   missions: z.array(MissionSchema),
 });
+export const TaskTokenSchema = z.object({
+  kind: z.enum(["absolute", "relative", "omega"]),
+  value: z.number().int().min(1).max(10).optional(),
+});
+export const PreparationAnswerSchema = z.enum(["yes", "no", "unknown", "first", "middle", "last"]);
+export const PreparationSchema = z.object({
+  stage: z.enum(["role", "captain_decision", "captain_distribution", "token_edit", "task_transfer", "distress_vote", "distress_cards"]),
+  responses: z.record(z.string(), PreparationAnswerSchema),
+  activeTaskId: z.uuid().nullable(),
+  eligiblePlayerIds: z.array(z.uuid()),
+  answeredPlayerIds: z.array(z.uuid()),
+});
+export const MissionProgressSchema = z.object({
+  selectedPlayerId: z.uuid().nullable(),
+  secondaryPlayerId: z.uuid().nullable(),
+  silentPlayerId: z.uuid().nullable(),
+  blackNineHolderId: z.uuid().nullable(),
+  oneWins: z.number().int().nonnegative(),
+  ninesPlayed: z.number().int().min(0).max(4).optional(),
+  rocketsWon: z.array(z.number().int().min(1).max(4)),
+  blackCardsWon: z.number().int().nonnegative(),
+  transferApplied: z.boolean(),
+  distressUsed: z.boolean(),
+  distressActive: z.boolean().optional(),
+  distressDirection: z.enum(["left", "right"]).nullable().optional(),
+});
 export const CommandSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("set_character"), characterId: CharacterIdSchema }).strict(),
   z
     .object({
       type: z.literal("update_settings"),
@@ -51,12 +83,22 @@ export const CommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("set_ready"), ready: z.boolean() }).strict(),
   z.object({ type: z.literal("start_mission") }).strict(),
   z.object({ type: z.literal("briefing_ready") }).strict(),
+  z.object({ type: z.literal("preparation_response"), answer: PreparationAnswerSchema }).strict(),
+  z.object({ type: z.literal("select_crew"), playerId: z.uuid(), secondaryPlayerId: z.uuid().optional() }).strict(),
+  z.object({ type: z.literal("assign_task"), playerId: z.uuid() }).strict(),
+  z.object({ type: z.literal("edit_task_tokens"), firstTaskId: z.uuid(), secondTaskId: z.uuid() }).strict(),
+  z.object({ type: z.literal("reset_tokens") }).strict(),
+  z.object({ type: z.literal("confirm_tokens") }).strict(),
+  z.object({ type: z.literal("transfer_task"), taskId: z.uuid(), playerId: z.uuid() }).strict(),
+  z.object({ type: z.literal("skip_transfer") }).strict(),
+  z.object({ type: z.literal("request_distress"), direction: z.enum(["left", "right"]) }).strict(),
+  z.object({ type: z.literal("select_distress_card"), cardId: CardIdSchema }).strict(),
   z.object({ type: z.literal("choose_task"), taskId: z.uuid() }).strict(),
   z
     .object({
       type: z.literal("communicate"),
       cardId: CardIdSchema,
-      marker: z.enum(["highest", "lowest", "only"]),
+      marker: z.enum(["highest", "lowest", "only", "hidden"]),
     })
     .strict(),
   z.object({ type: z.literal("play_card"), cardId: CardIdSchema }).strict(),
@@ -78,6 +120,7 @@ export const CreateRoomSchema = z
   .object({
     commandId: z.uuid(),
     nickname: NicknameSchema,
+    characterId: CharacterIdSchema.optional(),
     settings: RoomSettingsSchema,
   })
   .strict();
@@ -86,6 +129,7 @@ export const JoinRoomSchema = z
   .object({
     commandId: z.uuid(),
     nickname: NicknameSchema,
+    characterId: CharacterIdSchema.optional(),
     inviteToken: z.string().min(20).max(256),
   })
   .strict();
@@ -93,6 +137,7 @@ export type JoinRoom = z.infer<typeof JoinRoomSchema>;
 export const PlayerSchema = z.object({
   id: z.uuid(),
   nickname: NicknameSchema,
+  characterId: CharacterIdSchema.optional(),
   seat: z.number().int().min(0).max(4),
   ready: z.boolean(),
   briefingReady: z.boolean(),
@@ -102,7 +147,7 @@ export const PlayerSchema = z.object({
   communication: z
     .object({
       cardId: CardIdSchema,
-      marker: z.enum(["highest", "lowest", "only"]),
+      marker: z.enum(["highest", "lowest", "only", "hidden"]),
       played: z.boolean(),
     })
     .nullable(),
@@ -112,6 +157,7 @@ export const TaskSchema = z.object({
   cardId: CardIdSchema,
   ownerId: z.uuid().nullable(),
   order: z.number().int().positive().nullable(),
+  token: TaskTokenSchema.nullable().optional(),
   status: z.enum(["pending", "success", "failed"]),
 });
 export const PlaySchema = z.object({
@@ -127,6 +173,7 @@ export const SnapshotSchema = z.object({
     "lobby",
     "briefing",
     "task_selection",
+    "preparation",
     "playing",
     "trick_result",
     "success",
@@ -148,6 +195,9 @@ export const SnapshotSchema = z.object({
     canCommunicate: z.boolean(),
   }),
   tasks: z.array(TaskSchema),
+  preparation: PreparationSchema.nullable().optional(),
+  missionProgress: MissionProgressSchema.optional(),
+  hiddenTaskCount: z.number().int().nonnegative().optional(),
   trick: z.array(PlaySchema),
   lastTrick: z
     .object({ plays: z.array(PlaySchema), winnerId: z.uuid() })
@@ -183,7 +233,7 @@ export class ApiError extends Error {
 export type Connection =
   "connecting" | "connected" | "reconnecting" | "offline";
 export interface GameService {
-  readonly mode: "mock" | "supabase";
+  readonly mode: "mock" | "supabase" | "server";
   capabilities(): Promise<z.infer<typeof CapabilitiesSchema>>;
   createRoom(input: CreateRoom): Promise<z.infer<typeof EntrySchema>>;
   joinRoom(input: JoinRoom): Promise<z.infer<typeof EntrySchema>>;

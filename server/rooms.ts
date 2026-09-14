@@ -14,6 +14,7 @@ import {
   project,
   type State,
 } from "../src/game/engine.ts";
+import { pendingDemoActor, demoCommand } from "../src/game/demo.ts";
 import {
   listRoomIds,
   pruneStaleRoomFiles,
@@ -64,31 +65,6 @@ function issueToken(): { token: string; hash: string } {
 
 function issueInviteToken(): string {
   return randomBytes(24).toString("base64url");
-}
-
-/** Ports mock.ts's demoStep bot-detection: who (if anyone) must act next. */
-function pendingDemoActor(state: State): string | null {
-  if (state.phase === "briefing")
-    return state.players.find((p) => p.isDemo && !p.briefingReady)?.id ?? null;
-  if (state.phase === "task_selection" || state.phase === "playing")
-    return (
-      state.players.find((p) => p.isDemo && p.id === state.turnPlayerId)
-        ?.id ?? null
-    );
-  return null;
-}
-
-function demoCommand(state: State, botId: string) {
-  if (state.phase === "briefing") return { type: "briefing_ready" as const };
-  if (state.phase === "task_selection") {
-    const task = state.tasks.find((t) => !t.ownerId);
-    return task ? { type: "choose_task" as const, taskId: task.id } : null;
-  }
-  if (state.phase === "playing") {
-    const cardId = project(state, botId).me.legalCardIds[0];
-    return cardId ? { type: "play_card" as const, cardId } : null;
-  }
-  return null;
 }
 
 /**
@@ -389,7 +365,7 @@ export class RoomStore {
       );
     const playerId = crypto.randomUUID();
     const { token, hash } = issueToken();
-    const state = createState(playerId, input.nickname, input.settings);
+    const state = createState(playerId, input.nickname, input.settings, input.characterId);
     const record: RoomRecord = {
       state,
       tokens: { [hash]: playerId },
@@ -454,7 +430,7 @@ export class RoomStore {
         ...record.state,
         players: [
           ...record.state.players,
-          newPlayer(playerId, input.nickname, record.state.players.length),
+          newPlayer(playerId, input.nickname, record.state.players.length, false, input.characterId),
         ],
         hands: { ...record.state.hands, [playerId]: [] },
         revision: record.state.revision + 1,

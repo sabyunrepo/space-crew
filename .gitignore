@@ -12,3 +12,6 @@ assets/
 artifacts/
 graphify-out/
 .omc/
+
+# Node room snapshots contain private hands and authentication receipts
+/data/

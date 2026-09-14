@@ -1,0 +1,159 @@
+/* Shared chrome tokens. The original palette remains the default dark theme. */
+:root {
+  --theme-page: #0c111b;
+  --theme-surface: #141c28;
+  --theme-raised: #1d2a34;
+  --theme-text: #eef0e9;
+  --theme-secondary: #bccbbf;
+  --theme-border: #ffffff26;
+  --theme-selected: #d4ec9c;
+  --theme-selected-text: #18221b;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --theme-page: #f4f7f2;
+  --theme-surface: #ffffff;
+  --theme-raised: #e7eee5;
+  --theme-text: #20352e;
+  --theme-secondary: #52645a;
+  --theme-border: #bdcdbf;
+  --theme-selected: #356331;
+  --theme-selected-text: #ffffff;
+  --muted: #53645e;
+  --line: #cfdbcf;
+  --accent: #356331;
+  --panel: #ffffff;
+  color: var(--theme-text);
+  background: var(--theme-page);
+}
+/* These rules precede React rendering, avoiding a dark page behind a saved light theme. */
+html, body { background-color: var(--theme-page); }
+.theme-picker { display: inline-flex; flex-shrink: 0; gap: 2px; padding: 3px; border: 1px solid var(--theme-border); border-radius: 9px; background: var(--theme-surface); }
+.theme-picker button, .site-header nav .theme-picker button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  min-height: 30px; min-width: 32px; padding: 5px 8px;
+  border-radius: 6px; font-size: 11px; font-weight: 600;
+  color: var(--theme-secondary); background: transparent;
+}
+.theme-picker button[aria-pressed="true"], .site-header nav .theme-picker button[aria-pressed="true"] {
+  background: var(--theme-selected); color: var(--theme-selected-text); box-shadow: 0 1px 3px #0002;
+}
+.theme-picker button:hover:not([aria-pressed="true"]) { background: var(--theme-raised); }
+.theme-picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.guide-tools { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+
+/* Home, join, lobby, catalogue and navigation. */
+:root[data-theme="light"] :is(.launch-panel, .crew-panel, .main-console, dialog) {
+  background: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border);
+  box-shadow: 0 16px 48px #223e2412;
+}
+:root[data-theme="light"] :is(input, select) { background: #fff; color: var(--theme-text); border-color: #a6b9a9; }
+:root[data-theme="light"] input::placeholder { color: #65776d; }
+:root[data-theme="light"] :is(label, .site-header nav button, .hero-stats, .feature-line strong, .panel-heading > span,
+ .mission-modes small, .member-details > span, .member-details strong, .crew-footer p, .card-catalogue span,
+ .mission-catalogue p, .mission-catalogue h3 small, .attempt, .connection, .lobby-stage > p, .target span, .target small) { color: var(--theme-secondary); }
+:root[data-theme="light"] :is(.hero-description, .demo-banner, footer, .resume, .helper, .how-it-works article > span) { color: var(--muted); }
+:root[data-theme="light"] .demo-banner { background: #eaf0e7; }
+:root[data-theme="light"] :is(.mode-tag, .floating-caption) { background: #e6eddf; color: #3c5b31; border-color: #bbcdad; }
+:root[data-theme="light"] .mode-tag i { background: #416e35; }
+:root[data-theme="light"] .hero-stats svg { color: var(--accent); }
+:root[data-theme="light"] .art-number { color: #3658390b; }
+:root[data-theme="light"] :is(.orbit, .brand-icon) { border-color: #72966940; }
+:root[data-theme="light"] :is(.segments button, .mission-modes button, .character-options button) { background: #f1f5ee; color: var(--theme-secondary); border-color: var(--theme-border); }
+:root[data-theme="light"] :is(.segments .active, .mission-modes .active, .character-options button[aria-pressed="true"]) { background: #e3efd9; color: #2a5124; border-color: #567e38; }
+:root[data-theme="light"] .character-options button[aria-pressed="true"] { box-shadow: 0 0 0 2px #5c803626; }
+:root[data-theme="light"] :is(.secondary, .guide-toc-toggle) { background: #edf2e9; border-color: #b9cbb7; color: #304a36; }
+:root[data-theme="light"] .secondary:hover:not(:disabled) { background: #dce8d3; }
+:root[data-theme="light"] .primary { background: #356331; color: #fff; }
+:root[data-theme="light"] .primary:hover:not(:disabled) { background: #284e26; }
+:root[data-theme="light"] :is(.alert, .setup-error, .hand-hint) { background: #fff0e3; color: #7e3d20; border-color: #d5a885; }
+:root[data-theme="light"] .notice { background: #e8f1df; color: #305027; border-color: #b4cba2; }
+:root[data-theme="light"] .warning { color: #875c14; }
+:root[data-theme="light"] :is(.mission-catalogue article, .crew-member, .target) { border-color: var(--line); background: #f8faf5; }
+:root[data-theme="light"] .avatar { background: #e2ecd9; color: #31592a; }
+:root[data-theme="light"] .bot-tag { background: #e5eee0; color: #31592a; }
+:root[data-theme="light"] .crew-member.on-turn { background: #e4f0d7; border-color: #799755; }
+:root[data-theme="light"] .connection.offline,
+:root[data-theme="light"] .connection.reconnecting { color: #8c5517; }
+:root[data-theme="light"] dialog::backdrop { background: #24362d48; }
+
+/* Board surfaces, public information and both kinds of turn highlight. */
+:root[data-theme="light"] .game-table { background: #eaf0e8; border-color: #c0cfc0; }
+:root[data-theme="light"] :is(.status-bar, .hand-dock) { background: #fbfdf9; color: var(--theme-text); border-color: #c0cfc0; }
+:root[data-theme="light"] :is(.status-message span, .status-message strong, .status-back) { color: var(--theme-text); }
+:root[data-theme="light"] :is(.hand-dock-head h3 span, .hand-controls > span, .hand-controls-hint) { color: var(--theme-secondary); }
+:root[data-theme="light"] .table-surface { background: radial-gradient(ellipse, #ccdfcf80, transparent 75%); }
+:root[data-theme="light"] .table-orbit { border-color: #67877526; }
+:root[data-theme="light"] .game-table-body .mission-always-visible { background: #f5f9ee; color: var(--theme-text); border-color: #b9cdb1; }
+:root[data-theme="light"] :is(.mission-panel-strip, .mission-panel-body) { background: #f5f9ee; border-color: #b9cdb1; }
+:root[data-theme="light"] :is(.mission-panel-summary, .mission-panel-strip h2, .mission-panel-hint, .mission-panel-progress) { color: var(--theme-text); }
+:root[data-theme="light"] .mission-modifier { color: #7c5216; }
+:root[data-theme="light"] .mission-task-info strong { color: #356331; }
+:root[data-theme="light"] :is(.mission-task-info span, .mission-public-tasks > span) { color: var(--theme-secondary); }
+:root[data-theme="light"] .player-seat { background: #fcfef9; color: var(--theme-text); border-color: #b9ccbc; box-shadow: 0 2px 6px #21442908; }
+:root[data-theme="light"] :is(.seat-heading strong, .player-seat.on-turn .seat-heading strong) { color: #20352e; }
+:root[data-theme="light"] :is(.seat-heading > span, .seat-column-label, .seat-missions-label, .no-tasks, .seat-submission) { color: #52645a; }
+:root[data-theme="light"] :is(.seat-briefing, .seat-heading strong small, .seat-submission.submitted) { color: #356331; }
+:root[data-theme="light"] .seat-heading svg { color: #876018; }
+:root[data-theme="light"] .seat-missions { border-color: #cedbcc; }
+:root[data-theme="light"] .player-seat.on-turn { --turn-accent: #986611; --turn-surface: #fff3d5; background: var(--turn-surface); border-color: var(--turn-accent); box-shadow: 0 0 0 2px var(--turn-accent), 0 4px 16px #92611212; }
+:root[data-theme="light"] .player-seat.on-turn.is-my-turn { --turn-accent: #46782b; --turn-surface: #e7f3d8; box-shadow: 0 0 0 2px var(--turn-accent), 0 4px 16px #47762c18; }
+:root[data-theme="light"] .seat-turn-badge { color: #fff; }
+:root[data-theme="light"] .player-seat.trick-winner:not(.on-turn) { border-color: #95661e; }
+:root[data-theme="light"] .central-trick { background: #f9fcf4; border-color: #b5cbb8; box-shadow: 0 8px 30px #24482c0a; }
+:root[data-theme="light"] .central-trick > header strong { color: #356331; }
+:root[data-theme="light"] .central-trick > header span { color: #52645a; }
+:root[data-theme="light"] .central-play.played-slot > .central-player-name { color: #20352e; }
+:root[data-theme="light"] .central-play .card-placeholder { color: #586f62; border-color: #8da696; background: #eaf2e8; }
+:root[data-theme="light"] .central-play.awaiting-card .card-placeholder { color: #80510b; border-color: #976116; background: #fff0c8; }
+:root[data-theme="light"] .signal-back { background: repeating-linear-gradient(135deg, #dceae2, #dceae2 5px, #d6e6dd 5px, #d6e6dd 6px); border-color: #95b4a4; }
+:root[data-theme="light"] :is(.signal-back > span, .signal-back > svg) { color: #315d4c; }
+:root[data-theme="light"] .used .signal-back { background: #ede5ec; border-color: #bda8b9; }
+:root[data-theme="light"] .used .signal-back > span { color: #634e60; }
+:root[data-theme="light"] :is(.communication-options, .distress-directions) { background: #f4f8ef; color: var(--theme-text); border-color: #c4d5bd; }
+
+/* Setup, special preparation, results, history and catalogue dialogs. */
+:root[data-theme="light"] :is(.mission-setup-modal, .mission-result-modal, .mission-preparation) { background: #fcfef9; color: var(--theme-text); border-color: #9ebb90; }
+:root[data-theme="light"] .mission-result-modal.failure { background: #fffaf3; border-color: #cdaa7c; }
+:root[data-theme="light"] .setup-modal-heading { border-color: var(--line); }
+:root[data-theme="light"] .setup-mission-conditions > p { color: var(--theme-text); }
+:root[data-theme="light"] .setup-mission-conditions ul { background: #fff1d6; color: #785019; }
+:root[data-theme="light"] :is(.setup-turn-notice, .preparation-heading strong, .preparation-own-response h4, .preparation-decision h4, .preparation-next-action.ready) { color: #356331; }
+:root[data-theme="light"] :is(.preparation-heading span, .preparation-responses, .mission-preparation .helper, .preparation-actions label, .mission-setup-modal .draft-task, .result-modal-actions > p) { color: var(--theme-secondary); }
+:root[data-theme="light"] .preparation-responses span { background: #e9f0e4; }
+:root[data-theme="light"] .preparation-decision { background: #e9f3de; border-color: #93b576; }
+:root[data-theme="light"] .setup-briefing-actions { border-color: var(--line); }
+:root[data-theme="light"] .mission-result-modal .result-box p { color: #66513a; }
+:root[data-theme="light"] .history-cards figure { color: var(--theme-text); }
+:root[data-theme="light"] .mission-setup-modal::backdrop { background: #1c35251a; }
+:root[data-theme="light"] .mission-result-modal::backdrop { background: #24362d48; }
+
+/* Standalone guide has its own header and card examples. */
+:root[data-theme="light"] :is(.guide-topbar, .guide-toc) { background: #f6f9f2f5; border-color: var(--line); }
+:root[data-theme="light"] :is(.guide-content p, .guide-content ol, .guide-content ul, .card-suit-row-head, .mission-summary-list strong) { color: var(--theme-text); }
+:root[data-theme="light"] .guide-toc a.active { background: #e1ecd7; }
+:root[data-theme="light"] .lead-badge { background: #f2f6eb; color: #395031; }
+
+/* Keep theme choices reachable in the compact gameplay header. */
+@media (max-width: 700px) {
+  .theme-picker button span { display: none; }
+  .site-header nav { gap: 7px; }
+  .site-header nav .theme-picker button { min-width: 28px; min-height: 28px; padding: 4px; }
+  .theme-picker { padding: 2px; }
+  .site-header .brand { font-size: 13px; gap: 6px; letter-spacing: .025em; }
+  .site-header .brand-icon { width: 26px; height: 26px; }
+  .site-header { padding-inline: 12px; gap: 8px; }
+  .guide-topbar { grid-template-columns: auto 1fr auto; gap: 8px; }
+  .guide-title { font-size: 12px; }
+  .guide-tools { gap: 5px; }
+  .guide-tools .theme-picker button { min-width: 28px; padding: 4px; }
+}
+@media (max-width: 360px) {
+  .site-header .brand { font-size: 11px; }
+  .site-header nav { gap: 5px; }
+  .guide-title { display: none; }
+  .guide-topbar { grid-template-columns: 1fr auto; }
+}
+:root[data-theme="light"] .theme-picker button[aria-pressed="true"] { color: #fff; background: #356331; }
+.site-header nav .theme-picker button svg { display: block; }
+:root[data-theme="light"] :is(.mission-panel-strip > strong, .mission-progress, .mission-history-button, .member-details strong small) { color: #356331; }
