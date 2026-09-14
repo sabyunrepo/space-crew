@@ -13,6 +13,7 @@ for (const mission of [4, 6]) test(`mission ${mission}: own signal, cancel, conf
     const goal = page.locator('.target-list button:not([aria-disabled="true"])');
     await step(page, await goal.count() ? goal.first() : page.getByRole('button', { name: '데모 대원 진행' }));
   }
+  if (info.project.name === 'mobile') await page.getByRole('button', { name: '상단 안내 펼치기', exact: true }).click();
   await expect(page.locator('.status-bar .mission-panel')).toBeVisible();
   await expect(page.locator('.game-table-body > .mission-panel')).toHaveCount(0);
   const restart = page.getByRole('button', { name: '게임 포기 · 재시작', exact: true });
@@ -22,6 +23,7 @@ for (const mission of [4, 6]) test(`mission ${mission}: own signal, cancel, conf
   const details = page.getByRole('dialog', { name: '미션 조건 상세' });
   await expect(details).toBeVisible(); await expect(details).toContainText(`미션 0${mission}`);
   await details.getByRole('button', { name: '닫기' }).click();
+  if (info.project.name === 'mobile') await page.getByRole('button', { name: '상단 안내 접기', exact: true }).click();
   await expect(page.locator('.player-seat:not(.seat-south) .seat-communication-button')).toHaveCount(0);
   const signal = page.locator('.seat-south .seat-communication-button');
   const beforeToggle = await page.locator('.room-view').getAttribute('data-revision');

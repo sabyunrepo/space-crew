@@ -22,7 +22,7 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
       const areaHeight = available / (snapshot.players.length <= 3 ? 1 : 2);
       seats.forEach(seat => { seat.dataset.goalFlow = areaWidth >= areaHeight ? "horizontal" : "vertical"; });
       let low = 16;
-      let high = Math.min(180, layout.clientWidth * (mobile ? .1 : .07));
+      let high = Math.min(180, layout.clientWidth * (mobile ? .115 : .07));
       const required = (size: number) => {
         layout.style.setProperty("--seat-card", `${size}px`);
         const rows = [0, 0, 0];

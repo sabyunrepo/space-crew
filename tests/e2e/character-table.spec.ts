@@ -38,7 +38,8 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   await expect(page.locator(".player-seat[aria-current='true']")).toHaveCount(1);
   await expect(page.locator(".seat-turn-badge")).toBeVisible();
   await expect(page.locator(".seat-south .character-card")).toHaveAttribute("data-character-id", "green-dino");
-  await expect(page.locator(".status-bar .mission-progress")).toBeVisible();
+  if (info.project.name === "desktop") await expect(page.locator(".status-bar .mission-progress")).toBeVisible();
+  else await expect(page.locator(".status-bar .mission-progress")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "자세히", exact: true })).toHaveCount(0);
   const before = await page.locator(".player-seat").evaluateAll(els => els.map(el => [el.getAttribute("data-player-id"), el.getAttribute("data-position")]));
   await page.reload(); await expect(page.locator(".player-seat")).toHaveCount(capacity);
@@ -72,6 +73,20 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   expect(ownSignal!.width).toBeGreaterThanOrEqual(bounds.width > 700 ? 64 : 48);
   const ownGoals = await page.locator('.own-seat-dock .seat-task').all();
   for (const goal of ownGoals) expect((await goal.boundingBox())!.width).toBeGreaterThanOrEqual(bounds.width > 700 ? 64 : 48);
+  if (info.project.name === "mobile") {
+    const toggle = page.getByRole("button", { name: "상단 안내 펼치기", exact: true });
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    const compactStatus = (await page.locator(".status-bar").boundingBox())!;
+    expect(compactStatus.height).toBeLessThanOrEqual(48);
+    expect((await page.locator(".hand-card").first().boundingBox())!.width).toBeGreaterThanOrEqual(62);
+    expect((await page.locator(".central-play .card-placeholder").first().boundingBox())!.width).toBeGreaterThanOrEqual(36);
+    await toggle.click();
+    await expect(page.getByRole("button", { name: "상단 안내 접기", exact: true })).toHaveAttribute("aria-expanded", "true");
+    expect((await page.locator(".status-bar").boundingBox())!.height).toBeGreaterThan(compactStatus.height);
+    await page.getByRole("button", { name: "상단 안내 접기", exact: true }).click();
+    await expect(page.getByRole("button", { name: "상단 안내 펼치기", exact: true })).toBeVisible();
+  }
   for (const seat of bounds.seats) { expect(seat.top).toBeGreaterThanOrEqual(bounds.mission.bottom); expect(seat.bottom).toBeLessThanOrEqual(bounds.hand.top); expect(seat.left).toBeGreaterThanOrEqual(0); expect(seat.right).toBeLessThanOrEqual(bounds.width); }
   for (const { columns, goals } of bounds.rows) { expect(columns).toHaveLength(1); expect(columns[0].right).toBeLessThanOrEqual(goals.left); }
   await expect(page.locator(".central-play")).toHaveCount(capacity);

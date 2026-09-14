@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { ArrowLeft, Copy, RotateCcw, Wifi } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, ChevronDown, ChevronUp, Copy, RotateCcw, Wifi } from "lucide-react";
 import type { Connection, GameService } from "../../../shared/contracts.ts";
 
 /**
@@ -37,8 +38,9 @@ export function StatusBar({
   onRestart?(): void;
   restartDisabled?: boolean;
 }) {
+  const [mobileCompact, setMobileCompact] = useState(true);
   return (
-    <header className="status-bar">
+    <header className={`status-bar ${mobileCompact ? "mobile-collapsed" : "mobile-expanded"}`}>
       <button
         type="button"
         className="status-back"
@@ -47,11 +49,24 @@ export function StatusBar({
       >
         <ArrowLeft size={18} />
       </button>
-      <div className="status-overview"><div className="status-message">
-        <strong>{title}</strong>
-        <span>{message}</span>
+      <div className="status-overview">
+        <div className="status-message">
+          <strong>{title}</strong>
+          <span>{message}</span>
+        </div>
+        {mission}
       </div>
-      {mission}</div>
+      {mission && (
+        <button
+          type="button"
+          className="status-mobile-toggle"
+          aria-expanded={!mobileCompact}
+          aria-label={mobileCompact ? "상단 안내 펼치기" : "상단 안내 접기"}
+          onClick={() => setMobileCompact((compact) => !compact)}
+        >
+          {mobileCompact ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+        </button>
+      )}
       <div className="status-actions">
         <span className={`connection ${connection}`}>
           <Wifi size={13} />
