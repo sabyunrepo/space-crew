@@ -24,6 +24,14 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   }
   await expect(page.locator(".player-seat")).toHaveCount(capacity);
   await expect(page.locator(".seat-task")).toHaveCount(3);
+  const cardSizes = await page.locator('.player-seat').filter({ has: page.locator('.seat-task') }).evaluateAll(seats => seats.map(seat => ({
+    signal: seat.querySelector('.communication-card')!.getBoundingClientRect().toJSON(),
+    goals: [...seat.querySelectorAll('.seat-task')].map(card => card.getBoundingClientRect().toJSON()),
+  })));
+  for (const {signal, goals} of cardSizes) for (const goal of goals) {
+    expect(Math.abs(signal.width - goal.width)).toBeLessThan(1);
+    expect(Math.abs(signal.height - goal.height)).toBeLessThan(1);
+  }
   const goalRatio = await page.locator(".player-seat").filter({ has: page.locator(".seat-task") }).first().evaluate(el => el.querySelector(".seat-task")!.getBoundingClientRect().width / el.querySelector(".character-card")!.getBoundingClientRect().width);
   expect(goalRatio).toBeGreaterThan(.9);
   await expect(page.locator(".mission-public-tasks")).toHaveCount(0);
@@ -65,8 +73,13 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   const ownGoals = await page.locator('.own-seat-dock .seat-task').all();
   for (const goal of ownGoals) expect((await goal.boundingBox())!.width).toBeGreaterThanOrEqual(bounds.width > 700 ? 64 : 48);
   for (const seat of bounds.seats) { expect(seat.top).toBeGreaterThanOrEqual(bounds.mission.bottom); expect(seat.bottom).toBeLessThanOrEqual(bounds.hand.top); expect(seat.left).toBeGreaterThanOrEqual(0); expect(seat.right).toBeLessThanOrEqual(bounds.width); }
-  for (const { columns, goals } of bounds.rows) { expect(columns[0].right).toBeLessThan(columns[1].left); expect(columns).toHaveLength(2); expect(goals.top).toBeGreaterThanOrEqual(columns[0].bottom); }
+  for (const { columns, goals } of bounds.rows) { expect(columns).toHaveLength(1); expect(columns[0].right).toBeLessThanOrEqual(goals.left); }
   await expect(page.locator(".central-play")).toHaveCount(capacity);
+  await expect(page.locator('.seat-connections g')).toHaveCount(capacity - 1);
+  for (const line of await page.locator('.seat-link').all()) await expect(line).toHaveAttribute('d', /^M .* C /);
+  const avatar = await page.locator('.seat-layout .own-avatar').first().boundingBox();
+  expect(avatar!.width).toBeLessThanOrEqual(40);
+  expect(avatar!.width).toBeCloseTo(avatar!.height, 0);
   for (const seat of bounds.seats) {
     const center = bounds.central;
     expect(seat.right <= center.left || center.right <= seat.left || seat.bottom <= center.top || center.bottom <= seat.top).toBe(true);

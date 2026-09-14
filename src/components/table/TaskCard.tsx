@@ -1,14 +1,13 @@
 import type { Snapshot } from "../../../shared/contracts.ts";
-import { cardImage, cardLabel, rankOf, suitOf } from "../../../shared/cards.ts";
+import { cardImage, cardLabel } from "../../../shared/cards.ts";
 import { taskTokenDescription, taskTokenLabel } from "./taskToken.ts";
-export function TaskCard({ task, focusable = true }: { task: Snapshot["tasks"][number]; focusable?: boolean }) {
-  const status = task.status === "success" ? "완료" : task.status === "failed" ? "실패" : "대기";
-  return <div tabIndex={focusable ? 0 : undefined} className={`seat-task ${task.status}`} data-task-id={task.id}
+export function TaskCard({ task, focusable = true, priority = false }: { task: Snapshot["tasks"][number]; focusable?: boolean; priority?: boolean }) {
+  const status = task.status === "success" ? "완료" : task.status === "failed" ? "실패" : priority ? "현재 우선 목표" : "대기";
+  return <div tabIndex={focusable ? 0 : undefined} className={`seat-task ${task.status} ${priority && task.status === "pending" ? "current-goal" : ""}`} data-task-id={task.id}
     title={`${cardLabel(task.cardId)} · ${taskTokenDescription(task)} · ${status}`}
     aria-label={`${cardLabel(task.cardId)} 목표 · ${taskTokenDescription(task)} · ${status}`}>
     <img src={cardImage(task.cardId)} alt={cardLabel(task.cardId)} draggable={false} />
-    <b className={`card-value suit-${suitOf(task.cardId)}`}>{rankOf(task.cardId)}</b>
-    {taskTokenLabel(task) && <span className="task-order">{taskTokenLabel(task)}</span>}
+    {taskTokenLabel(task) && <span className={`task-order ${task.token?.kind === "relative" ? "relative-order" : ""}`}>{taskTokenLabel(task)}</span>}
     {task.status !== "pending" && <span className="task-outcome">{task.status === "success" ? "✓" : "✕"}</span>}
   </div>;
 }

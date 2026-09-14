@@ -91,7 +91,6 @@
 .seat-missions-label { font-size: 8px; color: #b7c2ae; white-space: nowrap; }
 .seat-task-list { display: flex; gap: 4px; flex-wrap: wrap; max-width: calc(var(--seat-card) * 3 - 20px); min-height: 18px; align-items: center; }
 .seat-task { position: relative; width: var(--task-card); aspect-ratio: 2/3; border-radius: 3px; border: 1px solid #8b9aa766; }
-.card-value { position: absolute; top: 1px; left: 1px; padding: 0 3px; border-radius: 2px; font-size: 12px; line-height: 1.35; color: white; text-shadow: 0 1px 2px #000; }
 .suit-blue { background: #216eba; }.suit-green { background: #257647; }.suit-yellow { background: #e6b728; color: #271f10; text-shadow: none; }.suit-black { background: #20222e; }.suit-rocket { background: #f4f3ed; color: #232b32; text-shadow: none; }
 .task-order { position: absolute; bottom: -3px; right: -3px; border-radius: 50%; min-width: 15px; height: 15px; display: grid; place-items: center; background: #ead591; color: #322c1f; border: 1px solid #fff3; font-size: 10px; font-weight: 700; }
 .seat-task.success { outline: 2px solid #b8e591; }.seat-task.failed { outline: 2px solid #ee9e8a; }
@@ -202,7 +201,6 @@
 .seat-missions-label, .no-tasks { font-size: max(8px, calc(var(--seat-card) * .172)); }
 .no-tasks { display: inline; }
 .seat-task-list { gap: calc(var(--seat-card) * .0625); min-height: calc(var(--seat-card) * .28); }
-.player-seat .card-value { font-size: max(10px, calc(var(--seat-card) * .1875)); }
 .player-seat .task-order { font-size: max(8px, calc(var(--seat-card) * .15625)); min-width: calc(var(--seat-card) * .234); height: calc(var(--seat-card) * .234); }
 .player-seat .task-outcome { font-size: max(10px, calc(var(--seat-card) * .1875)); }
 .seat-north, .seat-north-west, .seat-north-east { align-self: start; }
@@ -410,8 +408,6 @@
 .central-play .card-placeholder { gap: 4px; }
 .central-play .card-placeholder span { font-size: max(8px, calc(var(--trick-card) * .16)); }
 .central-play.awaiting-card .card-placeholder { border-color: #ffd166; color: #ffd166; background: #ffd1660d; }
-.central-play .card-value { font-size: max(12px, calc(var(--trick-card) * .23)); }
-.lead-card-label { position: absolute; right: 3px; bottom: 3px; padding: 2px 4px; border-radius: 4px; color: #17200f; background: #ffd166; font-size: max(8px, calc(var(--trick-card) * .15)); font-weight: 700; }
 @media (max-width: 700px) {
   .central-trick { grid-column: 1 / 7; --trick-card: clamp(36px, 11cqw, 64px); }
   .seat-layout.seats-4, .seat-layout.seats-5 { grid-template-rows: repeat(4, minmax(min-content, 1fr)); }
@@ -593,7 +589,6 @@
 .player-seat .seat-missions-label { display: block; margin-bottom: 4px; }
 .player-seat .seat-task-list { gap: calc(var(--seat-card) * .08); }
 .player-seat .seat-task { --task-card: calc(var(--seat-card) * .95); flex: 0 0 var(--task-card); border-radius: 6px; }
-.player-seat .seat-task .card-value { font-size: max(14px, calc(var(--task-card) * .32)); }
 .player-seat .seat-task .task-order { font-size: max(12px, calc(var(--task-card) * .25)); min-width: max(18px, calc(var(--task-card) * .38)); height: max(18px, calc(var(--task-card) * .38)); }
 .token-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 10px; margin: 12px 0; }
 .token-choice { min-width: 0; padding: 7px; border: 2px solid transparent; border-radius: 10px; background: var(--theme-panel, #18252e); color: inherit; text-align: center; }

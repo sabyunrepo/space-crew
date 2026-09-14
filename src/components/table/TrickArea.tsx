@@ -1,7 +1,7 @@
 import { Orbit } from "lucide-react";
 import { useLayoutEffect, useRef } from "react";
 import type { Snapshot } from "../../../shared/contracts.ts";
-import { cardImage, cardLabel, rankOf, suitOf, SUIT_META } from "../../../shared/cards.ts";
+import { cardImage, cardLabel, suitOf, SUIT_META } from "../../../shared/cards.ts";
 import { PlayerSeat } from "./PlayerSeat.tsx";
 import { arrangeSeats } from "./seatLayout.ts";
 
@@ -18,6 +18,9 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
       const mobile = window.innerWidth <= 700;
       const available = layout.clientHeight - 18;
       const seats = [...layout.querySelectorAll<HTMLElement>(".player-seat")];
+      const areaWidth = layout.clientWidth / 3;
+      const areaHeight = available / (snapshot.players.length <= 3 ? 1 : 2);
+      seats.forEach(seat => { seat.dataset.goalFlow = areaWidth >= areaHeight ? "horizontal" : "vertical"; });
       let low = 16;
       let high = Math.min(180, layout.clientWidth * (mobile ? .1 : .07));
       const required = (size: number) => {
@@ -58,6 +61,7 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
         else cardHigh = mid;
       }
       layout.style.setProperty("--trick-card", `${cardLow}px`);
+      updateSeatConnections(layout);
     };
     fit();
     const observer = new ResizeObserver(fit);
@@ -71,23 +75,51 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
     <div className="table-orbit" />
     <div className={`seat-layout played-cards opponents-layout seats-${snapshot.players.length}`}>
       {seats.filter(({ player }) => player.id !== mineId).map(({ player, position }) =>
-        <PlayerSeat key={player.id} snapshot={snapshot} player={player} position={position} mineId={mineId} />)}
+        <PlayerSeat key={player.id} snapshot={snapshot} player={player} position={position} mineId={mineId} compactIdentity />)}
+      <svg className="seat-connections" aria-hidden="true">{seats.filter(({player}) => player.id !== mineId).map(({player}) =>
+        <g key={player.id} data-player-id={player.id} data-seat-index={player.seat}><path className="seat-link"/><rect className="seat-zone-outline" rx="10"/></g>)}</svg>
       <section className={`central-trick seats-${snapshot.players.length}`} aria-label="중앙 트릭">
         <header><strong>TRICK {snapshot.trickNumber}</strong><span>{led ? `${SUIT_META[suitOf(led)].color} 선도` : "대원들의 카드를 모아 봅니다"}</span></header>
         <div className="central-trick-cards">{seats.map(({ player, position }) => {
           const play = snapshot.trick.find(card => card.playerId === player.id);
           const current = snapshot.phase === "playing" && snapshot.turnPlayerId === player.id;
           return <div className={`central-play played-slot from-${position} ${current ? "awaiting-card" : ""}`}
-            key={player.id} data-player-id={player.id} data-position={position} aria-label={`${player.nickname} 낸 카드`}>
+            key={player.id} data-player-id={player.id} data-seat-index={player.seat} data-position={position} aria-label={`${player.nickname} 낸 카드`}>
             <span className="central-player-name">{player.nickname}{player.id === mineId ? " · 나" : ""}</span>
-            {play ? <div tabIndex={0} className="card played-card" key={play.cardId}>
+            {play ? <div tabIndex={0} className={`card played-card ${led === play.cardId ? "lead-card" : ""}`} aria-label={`${cardLabel(play.cardId)}${led === play.cardId ? " · 선도 카드" : ""}`} key={play.cardId}>
               <img src={cardImage(play.cardId)} alt={cardLabel(play.cardId)} draggable={false} />
-              <b className={`card-value suit-${suitOf(play.cardId)}`}>{rankOf(play.cardId)}</b>
-              {snapshot.trick[0]?.playerId === player.id && <small className="lead-card-label">선도</small>}
             </div> : <div className={`card-placeholder ${current ? "active" : ""}`}><Orbit size={18} /><span>{current ? "차례" : "대기"}</span></div>}
           </div>;
         })}</div>
       </section>
     </div>
   </div>;
+}
+
+/** Join each crew panel to its own central slot after both have been fitted. */
+function updateSeatConnections(layout: HTMLElement) {
+  const origin = layout.getBoundingClientRect();
+  for (const group of layout.querySelectorAll<SVGGElement>(".seat-connections g")) {
+    const id = group.dataset.playerId;
+    const seat = layout.querySelector<HTMLElement>(`.player-seat[data-player-id="${id}"]`);
+    const slot = layout.querySelector<HTMLElement>(`.central-play[data-player-id="${id}"]`);
+    if (!seat || !slot) continue;
+    const a = seat.getBoundingClientRect(), b = slot.getBoundingClientRect();
+    let x1: number, y1: number, x2: number, y2: number;
+    const horizontal = a.right <= b.left || b.right <= a.left;
+    if (horizontal) {
+      x1 = a.right <= b.left ? a.right : a.left; x2 = a.right <= b.left ? b.left : b.right;
+      y1 = a.top + a.height / 2; y2 = b.top + b.height / 2;
+    } else {
+      x1 = a.left + a.width / 2; x2 = b.left + b.width / 2;
+      y1 = a.bottom <= b.top ? a.bottom : a.top; y2 = a.bottom <= b.top ? b.top : b.bottom;
+    }
+    x1 -= origin.left; x2 -= origin.left; y1 -= origin.top; y2 -= origin.top;
+    const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
+    group.querySelector('path')!.setAttribute('d', horizontal
+      ? `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`
+      : `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`);
+    const outline = group.querySelector('rect')!;
+    for (const [key,value] of Object.entries({ x:b.left-origin.left-3, y:b.top-origin.top-3, width:b.width+6, height:b.height+6 })) outline.setAttribute(key,String(value));
+  }
 }
