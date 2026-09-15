@@ -289,6 +289,8 @@ html, body { background-color: var(--theme-page); }
 /* Compact crew profiles reserve the panel for communication and goals. */
 .seat-layout .compact-seat { --panel-card: calc(var(--seat-card) * .95); display: grid; grid-template-columns: var(--panel-card) minmax(0, 1fr); grid-template-rows: auto 1fr; gap: var(--seat-gap); width: calc(var(--seat-card) * 3.55 + var(--seat-gap) * 3); border-left: 3px solid var(--crew-color); }
 .seat-layout .compact-seat[data-goal-flow="vertical"] { width: calc(var(--seat-card) * 2.45 + var(--seat-gap) * 3); }
+.seat-layout.seats-3 .compact-seat,
+.seat-layout.seats-3 .compact-seat[data-goal-flow="vertical"] { width: calc(var(--seat-card) * 2.7 + var(--seat-gap) * 3); }
 .seat-layout .compact-seat .seat-heading { grid-column: 1 / -1; display: grid; grid-template-columns: clamp(24px, calc(var(--seat-card) * .4), 40px) minmax(0, 1fr); gap: 2px 6px; align-items: center; }
 .seat-layout .compact-seat .own-avatar { grid-row: 1 / 3; width: clamp(24px, calc(var(--seat-card) * .4), 40px); height: clamp(24px, calc(var(--seat-card) * .4), 40px); border-radius: 50%; }
 .seat-layout .compact-seat .seat-heading strong { font-size: max(11px, calc(var(--seat-card) * .2)); }
@@ -399,8 +401,14 @@ html, body { background-color: var(--theme-page); }
   .central-play.from-west { grid-area: 2 / 1; }
   .central-play.from-east { grid-area: 2 / 2; }
   .central-play.from-south { grid-area: 3 / 1 / 4 / 3; justify-self: center; }
-  .central-trick.seats-3 .from-south { grid-area: 2 / 1 / 3 / 3; }
 }
+.central-trick.seats-3 .central-trick-cards {
+  grid-template-columns: repeat(3, var(--trick-card));
+  grid-template-rows: auto;
+}
+.central-trick.seats-3 .central-play.from-north-west { grid-area: 1 / 1; }
+.central-trick.seats-3 .central-play.from-south { grid-area: 1 / 2; justify-self: auto; }
+.central-trick.seats-3 .central-play.from-north-east { grid-area: 1 / 3; }
 [data-seat-index="0"] { --crew-color: #76becb; }
 [data-seat-index="1"] { --crew-color: #ae9bdf; }
 [data-seat-index="2"] { --crew-color: #d7b275; }

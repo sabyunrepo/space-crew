@@ -19,11 +19,13 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
       const mobile = window.innerWidth <= 700;
       const available = layout.clientHeight - 18;
       const seats = [...layout.querySelectorAll<HTMLElement>(".player-seat")];
+      const threePlayers = snapshot.players.length === 3;
       const areaWidth = layout.clientWidth / 3;
-      const areaHeight = available / (snapshot.players.length <= 3 ? 1 : 2);
+      const areaHeight = available / (threePlayers ? 1 : 2);
       seats.forEach(seat => { seat.dataset.goalFlow = areaWidth >= areaHeight ? "horizontal" : "vertical"; });
       let low = 16;
-      let high = Math.min(180, layout.clientWidth * (mobile ? .115 : .07));
+      const seatScale = threePlayers ? (mobile ? .09 : .052) : (mobile ? .115 : .07);
+      let high = Math.min(180, layout.clientWidth * seatScale);
       const required = (size: number) => {
         layout.style.setProperty("--seat-card", `${size}px`);
         const rows = [0, 0, 0];
@@ -43,6 +45,10 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
       if (!center) return;
       const board = layout.getBoundingClientRect();
       const occupied = seats.map(seat => seat.getBoundingClientRect());
+      if (threePlayers) {
+        const freeTop = Math.max(...occupied.map(seat => seat.bottom)) + (mobile ? 4 : 12);
+        center.style.top = `${(freeTop + board.bottom) / 2 - board.top}px`;
+      } else center.style.removeProperty("top");
       // Measure the complete group (names, header, spacing and actual cards).
       // Grow into the free board space instead of capping every card at 88px.
       let cardLow = 16;

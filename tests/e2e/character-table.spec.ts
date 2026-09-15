@@ -32,6 +32,13 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
     expect(Math.abs(signal.width - goal.width)).toBeLessThan(1);
     expect(Math.abs(signal.height - goal.height)).toBeLessThan(1);
   }
+  if (capacity === 3) {
+    const opponentCard = cardSizes[0].signal.width;
+    const trickCard = (await page.locator('.central-play .card-placeholder').first().boundingBox())!.width;
+    expect(trickCard / opponentCard).toBeGreaterThan(1.5);
+    const opponentPanel = (await page.locator('.seat-layout .player-seat').first().boundingBox())!;
+    expect(opponentPanel.width / page.viewportSize()!.width).toBeLessThan(.3);
+  }
   const goalRatio = await page.locator(".player-seat").filter({ has: page.locator(".seat-task") }).first().evaluate(el => el.querySelector(".seat-task")!.getBoundingClientRect().width / el.querySelector(".character-card")!.getBoundingClientRect().width);
   expect(goalRatio).toBeGreaterThan(.9);
   await expect(page.locator(".mission-public-tasks")).toHaveCount(0);
