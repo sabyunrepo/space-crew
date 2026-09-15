@@ -46,8 +46,20 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   await expect(page.locator(".player-seat[aria-current='true']")).toHaveCount(1);
   await expect(page.locator(".seat-turn-badge")).toBeVisible();
   await expect(page.locator(".seat-south .character-card")).toHaveAttribute("data-character-id", "green-dino");
-  if (info.project.name === "desktop") await expect(page.locator(".status-bar .mission-progress")).toBeVisible();
-  else await expect(page.locator(".status-bar .mission-progress")).toHaveCount(1);
+  if (info.project.name === "desktop") {
+    await expect(page.locator(".status-bar .mission-progress")).toBeVisible();
+    const statusLayout = await page.evaluate(() => ({
+      bar: document.querySelector(".status-bar")!.getBoundingClientRect().toJSON(),
+      message: document.querySelector(".status-message")!.getBoundingClientRect().toJSON(),
+      mission: document.querySelector(".status-mission .mission-panel-strip")!.getBoundingClientRect().toJSON(),
+    }));
+    expect(statusLayout.bar.height).toBeLessThanOrEqual(60);
+    expect(Math.abs(
+      statusLayout.message.y + statusLayout.message.height / 2
+      - statusLayout.mission.y - statusLayout.mission.height / 2,
+    )).toBeLessThan(4);
+    expect(statusLayout.mission.left).toBeGreaterThanOrEqual(statusLayout.message.left);
+  } else await expect(page.locator(".status-bar .mission-progress")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "자세히", exact: true })).toHaveCount(0);
   const before = await page.locator(".player-seat").evaluateAll(els => els.map(el => [el.getAttribute("data-player-id"), el.getAttribute("data-position")]));
   await page.reload(); await expect(page.locator(".player-seat")).toHaveCount(capacity);
@@ -113,6 +125,11 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   for (const seat of bounds.seats) { expect(seat.top).toBeGreaterThanOrEqual(bounds.mission.bottom); expect(seat.bottom).toBeLessThanOrEqual(bounds.hand.top); expect(seat.left).toBeGreaterThanOrEqual(0); expect(seat.right).toBeLessThanOrEqual(bounds.width); }
   for (const { columns, goals } of bounds.rows) { expect(columns).toHaveLength(1); expect(columns[0].right).toBeLessThanOrEqual(goals.left); }
   await expect(page.locator(".central-play")).toHaveCount(capacity);
+  if (capacity === 3) {
+    const slotLefts = await page.locator(".central-play").evaluateAll(slots => slots.map(slot => slot.getBoundingClientRect().left));
+    expect(slotLefts[0]).toBeCloseTo(Math.min(...slotLefts), 0);
+    expect(slotLefts).toEqual([...slotLefts].sort((a, b) => a - b));
+  }
   await expect(page.locator('.seat-connections, .seat-link')).toHaveCount(0);
   const avatar = await page.locator('.seat-layout .own-avatar').first().boundingBox();
   expect(avatar!.width).toBeLessThanOrEqual(40);
@@ -167,6 +184,7 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   if (info.project.name === "desktop") {
     const compactWidth = (await page.locator(".central-play .played-card").boundingBox())!.width;
     const compactNameSize = await page.locator(".central-player-name").first().evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+    await page.screenshot({ path: `artifacts/qa/characters/desktop-1189x779-${capacity}-table.png` });
     await page.setViewportSize({ width: 1470, height: 956 });
     await expect.poll(async () => (await page.locator(".central-play .played-card").boundingBox())!.width).toBeGreaterThan(compactWidth * 1.1);
     const targetViewport = await page.locator('.seat-layout').evaluate(layout => {

@@ -169,6 +169,35 @@ html, body { background-color: var(--theme-page); }
 .status-mission .mission-panel-strip .eyebrow, .status-mission .mission-panel-strip .mission-progress { color: var(--theme-selected); font-weight: 700; }
 .status-mission .mission-history-button { min-height: 36px; padding: 6px 10px; font-size: 13px; color: var(--theme-text); background: var(--theme-raised); border: 1px solid var(--theme-border); border-radius: 8px; }
 .status-actions .status-restart { min-height: 44px; padding: 10px 14px; font-size: 13px; white-space: nowrap; }
+@media (min-width: 701px) {
+  .app-shell.gameplay-fixed .status-overview {
+    display: grid;
+    grid-template-columns: minmax(210px, 1fr) auto;
+    align-items: center;
+    gap: 8px 16px;
+  }
+  .app-shell.gameplay-fixed .status-message {
+    min-width: 0;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .app-shell.gameplay-fixed .status-message strong { flex: 0 0 auto; }
+  .app-shell.gameplay-fixed .status-message > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .app-shell.gameplay-fixed .status-mission { margin: 0; min-width: 0; }
+  .app-shell.gameplay-fixed .status-mission .mission-panel-strip {
+    width: auto;
+    min-height: 36px;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 6px 8px;
+  }
+}
 .seat-communication-button { display: block; width: 100%; min-height: 44px; padding: 0; background: transparent; border: 0; border-radius: 7px; cursor: pointer; }
 .seat-communication-button .communication-card { margin-inline: auto; }
 .seat-communication-button .signal-back { border: 2px solid var(--theme-selected); background: var(--theme-raised); color: var(--theme-text); }
@@ -479,7 +508,7 @@ html, body { background-color: var(--theme-page); }
 .central-trick[data-trick-layout="tall-5"] .central-play.from-east { grid-area: 2 / 2; }
 .central-trick[data-trick-layout="tall-5"] .central-play.from-south { grid-area: 3 / 1 / 4 / 3; justify-self: center; }
 .central-trick[data-trick-layout] .central-trick-cards { justify-content: center; }
-.central-trick[data-sequential-order="true"] .central-play { grid-area: auto; justify-self: auto; }
+.central-trick[data-sequential-order="true"] .central-play.played-slot { grid-area: auto; justify-self: auto; }
 [data-seat-index="0"] { --crew-color: #76becb; }
 [data-seat-index="1"] { --crew-color: #ae9bdf; }
 [data-seat-index="2"] { --crew-color: #d7b275; }

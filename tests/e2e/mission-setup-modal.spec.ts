@@ -43,6 +43,14 @@ for (const [mission, tasks, condition] of [[7, 3, "Ω"], [22, 5, "상대 순서 
     await expect(page.locator(".mission-setup-modal")).toHaveCount(0);
     await expect(page.locator(".seat-task")).toHaveCount(tasks);
     await expect(page.locator(".hand-dock .hand-card")).toHaveCount(8);
+    if (info.project.name === "desktop") {
+      const tokenTask = page.locator(".seat-task:has(.task-order)").first();
+      const tokenLabel = (await tokenTask.locator(".task-order").textContent())!.trim();
+      await tokenTask.hover();
+      const previewToken = page.getByRole("tooltip", { name: "카드 정보" }).locator(".task-order");
+      await expect(previewToken).toHaveText(tokenLabel);
+      expect((await previewToken.boundingBox())!.height).toBeGreaterThanOrEqual(38);
+    }
   });
 }
 

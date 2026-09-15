@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 
 const cards = ".card, .seat-task, .draft-task, .character-card, .communication-card, .character-options button, .token-choice";
 export function CardHoverInfo() {
-  const [info, setInfo] = useState<{ src: string; label: string; detail: string; left: number; top: number } | null>(null);
+  const [info, setInfo] = useState<{ src: string; label: string; detail: string; tokenLabel: string; tokenClass: string; left: number; top: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const show = (event: Event) => {
@@ -12,8 +12,10 @@ export function CardHoverInfo() {
       const img = target?.querySelector<HTMLImageElement>("img");
       if (!target || !img) { setInfo(null); return; }
       const rect = target.getBoundingClientRect();
+      const token = target.querySelector<HTMLElement>(".task-order");
       setInfo({ src: img.src, label: img.alt || target.getAttribute("aria-label") || "카드",
         detail: target.getAttribute("title") || target.getAttribute("aria-label") || "",
+        tokenLabel: token?.textContent?.trim() || "", tokenClass: token?.className || "",
         left: rect.right + 200 < innerWidth ? rect.right + 10 : Math.max(8, rect.left - 200),
         top: Math.max(8, Math.min(rect.top, innerHeight - 365)) });
     };
@@ -41,6 +43,6 @@ export function CardHoverInfo() {
   }, [info]);
   return createPortal(<div ref={ref} popover="manual" role="tooltip" aria-label="카드 정보" className="card-hover-info"
     style={{ left: info?.left, top: info?.top }}>
-    {info && <><img src={info.src} alt="" /><strong>{info.label}</strong>{info.detail && info.detail !== info.label && <p>{info.detail}</p>}</>}
+    {info && <><div className="card-hover-preview"><img src={info.src} alt="" />{info.tokenLabel && <span className={info.tokenClass}>{info.tokenLabel}</span>}</div><strong>{info.label}</strong>{info.detail && info.detail !== info.label && <p>{info.detail}</p>}</>}
   </div>, document.body);
 }
