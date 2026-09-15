@@ -22,6 +22,11 @@ for (const mission of [4, 6]) test(`mission ${mission}: own signal, cancel, conf
   await page.getByRole('button', { name: '미션 조건', exact: true }).click();
   const details = page.getByRole('dialog', { name: '미션 조건 상세' });
   await expect(details).toBeVisible(); await expect(details).toContainText(`미션 0${mission}`);
+  const crew = details.getByRole('region', { name: '참가 대원 3명' });
+  await expect(crew.getByRole('listitem')).toHaveCount(3);
+  await expect(crew.locator('img')).toHaveCount(3);
+  await expect(crew).toContainText('사령관');
+  await expect(crew).toContainText('나');
   await details.getByRole('button', { name: '닫기' }).click();
   if (info.project.name === 'mobile') await page.getByRole('button', { name: '상단 안내 접기', exact: true }).click();
   await expect(page.locator('.player-seat:not(.seat-south) .seat-communication-button')).toHaveCount(0);

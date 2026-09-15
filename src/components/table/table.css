@@ -477,7 +477,6 @@
 }
 
 .seat-layout.played-cards .central-trick { --trick-card: inherit; }
-.seat-layout.played-cards .central-trick.seats-4 { top: auto; bottom: 0; transform: translateX(-50%); }
 .player-seat { min-width: min(96px, 100%); }
 .seat-turn-badge { white-space: nowrap; }
 @media (max-width: 700px) {

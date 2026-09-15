@@ -32,9 +32,10 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
     expect(Math.abs(signal.width - goal.width)).toBeLessThan(1);
     expect(Math.abs(signal.height - goal.height)).toBeLessThan(1);
   }
+  const opponentCard = cardSizes[0].signal.width;
+  const trickCard = (await page.locator('.central-play .card-placeholder').first().boundingBox())!.width;
+  expect(trickCard / opponentCard).toBeGreaterThan(1.45);
   if (capacity === 3) {
-    const opponentCard = cardSizes[0].signal.width;
-    const trickCard = (await page.locator('.central-play .card-placeholder').first().boundingBox())!.width;
     expect(trickCard / opponentCard).toBeGreaterThan(1.5);
     const opponentPanel = (await page.locator('.seat-layout .player-seat').first().boundingBox())!;
     expect(opponentPanel.width / page.viewportSize()!.width).toBeLessThan(.3);
@@ -121,6 +122,22 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
     const center = bounds.central;
     expect(seat.right <= center.left || center.right <= seat.left || seat.bottom <= center.top || center.bottom <= seat.top).toBe(true);
   }
+  const corridor = await page.locator('.seat-layout').evaluate(layout => {
+    const center = layout.querySelector('.central-trick')!.getBoundingClientRect();
+    const middle = center.left + center.width / 2;
+    const band = [...layout.querySelectorAll(':scope > .player-seat')].map(seat => seat.getBoundingClientRect())
+      .filter(seat => seat.bottom > center.top + 2 && seat.top < center.bottom - 2);
+    const left = band.filter(seat => seat.right <= middle);
+    const right = band.filter(seat => seat.left >= middle);
+    return {
+      leftGap: left.length ? center.left - Math.max(...left.map(seat => seat.right)) : null,
+      rightGap: right.length ? Math.min(...right.map(seat => seat.left)) - center.right : null,
+    };
+  });
+  if (corridor.leftGap !== null) expect(corridor.leftGap).toBeGreaterThanOrEqual(1.5);
+  if (corridor.leftGap !== null) expect(corridor.leftGap).toBeLessThanOrEqual(2.5);
+  if (corridor.rightGap !== null) expect(corridor.rightGap).toBeGreaterThanOrEqual(1.5);
+  if (corridor.rightGap !== null) expect(corridor.rightGap).toBeLessThanOrEqual(2.5);
   for (let i=0;i<bounds.seats.length;i++) for(let j=i+1;j<bounds.seats.length;j++) {
     const a=bounds.seats[i],b=bounds.seats[j];
     expect(a.right<=b.left || b.right<=a.left || a.bottom<=b.top || b.bottom<=a.top).toBe(true);
@@ -149,8 +166,34 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   expect(Math.abs(submitBounds!.x + submitBounds!.width / 2 - handBounds!.x - handBounds!.width / 2)).toBeLessThan(1);
   if (info.project.name === "desktop") {
     const compactWidth = (await page.locator(".central-play .played-card").boundingBox())!.width;
+    const compactNameSize = await page.locator(".central-player-name").first().evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+    await page.setViewportSize({ width: 1470, height: 956 });
+    await expect.poll(async () => (await page.locator(".central-play .played-card").boundingBox())!.width).toBeGreaterThan(compactWidth * 1.1);
+    const targetViewport = await page.locator('.seat-layout').evaluate(layout => {
+      const center = layout.querySelector('.central-trick')!.getBoundingClientRect();
+      const middle = center.left + center.width / 2;
+      const seats = [...layout.querySelectorAll(':scope > .player-seat')].map(seat => seat.getBoundingClientRect());
+      const band = seats.filter(seat => seat.bottom > center.top + 2 && seat.top < center.bottom - 2);
+      const left = band.filter(seat => seat.right <= middle);
+      const right = band.filter(seat => seat.left >= middle);
+      return {
+        scrollFree: document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth,
+        central: center.toJSON(),
+        hand: document.querySelector('.hand-dock')!.getBoundingClientRect().toJSON(),
+        leftGap: left.length ? center.left - Math.max(...left.map(seat => seat.right)) : null,
+        rightGap: right.length ? Math.min(...right.map(seat => seat.left)) - center.right : null,
+      };
+    });
+    expect(targetViewport.scrollFree).toBe(true);
+    expect(targetViewport.central.bottom).toBeLessThanOrEqual(targetViewport.hand.top);
+    if (targetViewport.leftGap !== null) expect(targetViewport.leftGap).toBeGreaterThanOrEqual(1.5);
+    if (targetViewport.leftGap !== null) expect(targetViewport.leftGap).toBeLessThanOrEqual(2.5);
+    if (targetViewport.rightGap !== null) expect(targetViewport.rightGap).toBeGreaterThanOrEqual(1.5);
+    if (targetViewport.rightGap !== null) expect(targetViewport.rightGap).toBeLessThanOrEqual(2.5);
+    await page.screenshot({ path: `artifacts/qa/characters/desktop-1470x956-${capacity}-table.png` });
     await page.setViewportSize({ width: 2279, height: 1456 });
     await expect.poll(async () => (await page.locator(".central-play .played-card").boundingBox())!.width).toBeGreaterThan(compactWidth * 1.5);
+    await expect.poll(async () => page.locator(".central-player-name").first().evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(Math.min(30, compactNameSize * 1.25) - .1);
     const expanded = await page.locator(".central-trick").boundingBox();
     const dock = await page.locator(".hand-dock").boundingBox();
     expect(expanded!.y + expanded!.height).toBeLessThanOrEqual(dock!.y);

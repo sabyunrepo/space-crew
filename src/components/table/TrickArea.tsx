@@ -24,8 +24,8 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
       const areaHeight = available / (threePlayers ? 1 : 2);
       seats.forEach(seat => { seat.dataset.goalFlow = areaWidth >= areaHeight ? "horizontal" : "vertical"; });
       let low = 16;
-      const seatScale = threePlayers ? (mobile ? .09 : .052) : (mobile ? .115 : .07);
-      let high = Math.min(180, layout.clientWidth * seatScale);
+      const seatScale = mobile ? .075 : .045;
+      let high = Math.min(104, layout.clientWidth * seatScale);
       const required = (size: number) => {
         layout.style.setProperty("--seat-card", `${size}px`);
         const rows = [0, 0, 0];
@@ -45,29 +45,72 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
       if (!center) return;
       const board = layout.getBoundingClientRect();
       const occupied = seats.map(seat => seat.getBoundingClientRect());
-      if (threePlayers) {
-        const freeTop = Math.max(...occupied.map(seat => seat.bottom)) + (mobile ? 4 : 12);
-        center.style.top = `${(freeTop + board.bottom) / 2 - board.top}px`;
-      } else center.style.removeProperty("top");
-      // Measure the complete group (names, header, spacing and actual cards).
-      // Grow into the free board space instead of capping every card at 88px.
-      let cardLow = 16;
-      let cardHigh = Math.min(board.width / 3, board.height / 2);
-      const fits = (size: number) => {
-        layout.style.setProperty("--trick-card", `${size}px`);
-        const rect = center.getBoundingClientRect();
-        const gap = mobile ? 4 : 12;
-        return rect.left >= board.left + gap && rect.right <= board.right - gap &&
-          rect.top >= board.top + gap && rect.bottom <= board.bottom + .5 &&
-          occupied.every(seat => rect.right + gap <= seat.left || seat.right + gap <= rect.left ||
-            rect.bottom + gap <= seat.top || seat.bottom + gap <= rect.top);
+      // Try every useful card arrangement and place its complete bounding box in
+      // the largest free rectangle. This uses side/corner space that a fixed
+      // center point misses, especially with four or five players.
+      const layouts = snapshot.players.length === 3 ? ["row-3"]
+        : snapshot.players.length === 4 ? ["row-4", "grid-2"] : ["row-5", "wide-5", "tall-5"];
+      const gap = mobile ? 3 : 6;
+      center.style.transform = "none";
+      center.style.bottom = "auto";
+      center.style.removeProperty("width");
+      const place = (x: number, y: number) => {
+        center.style.left = `${x}px`;
+        center.style.top = `${y}px`;
       };
-      for (let i = 0; i < 12; i++) {
-        const mid = (cardLow + cardHigh) / 2;
-        if (fits(mid)) cardLow = mid;
-        else cardHigh = mid;
+      const findPlacement = (size: number) => {
+        layout.style.setProperty("--trick-card", `${size}px`);
+        place(0, 0);
+        const measured = center.getBoundingClientRect();
+        const width = measured.width, height = measured.height;
+        const xs = new Set([gap, (board.width - width) / 2, board.width - width - gap]);
+        const ys = new Set([gap, (board.height - height) / 2, board.height - height - gap]);
+        for (const seat of occupied) {
+          xs.add(seat.left - board.left - width - gap);
+          xs.add(seat.right - board.left + gap);
+          ys.add(seat.top - board.top - height - gap);
+          ys.add(seat.bottom - board.top + gap);
+        }
+        const candidates = [...xs].flatMap(x => [...ys].map(y => ({ x, y })))
+          .filter(({ x, y }) => x >= gap - .5 && y >= gap - .5 && x + width <= board.width - gap + .5 && y + height <= board.height - gap + .5)
+          .sort((a, b) => Math.hypot(a.x + width / 2 - board.width / 2, a.y + height / 2 - board.height / 2)
+            - Math.hypot(b.x + width / 2 - board.width / 2, b.y + height / 2 - board.height / 2));
+        for (const candidate of candidates) {
+          place(candidate.x, candidate.y);
+          const rect = center.getBoundingClientRect();
+          if (occupied.every(seat => rect.right + gap <= seat.left || seat.right + gap <= rect.left ||
+            rect.bottom + gap <= seat.top || seat.bottom + gap <= rect.top)) return candidate;
+        }
+        return undefined;
+      };
+      let best: { layout: string; size: number; position: { x: number; y: number } } | undefined;
+      for (const candidateLayout of layouts) {
+        center.dataset.trickLayout = candidateLayout;
+        let cardLow = 16;
+        let cardHigh = Math.min(400, board.width / 2, board.height / 1.5);
+        let position = findPlacement(cardLow);
+        for (let i = 0; i < 13; i++) {
+          const mid = (cardLow + cardHigh) / 2;
+          const next = findPlacement(mid);
+          if (next) { cardLow = mid; position = next; }
+          else cardHigh = mid;
+        }
+        if (position && (!best || cardLow > best.size)) best = { layout: candidateLayout, size: cardLow, position };
       }
-      layout.style.setProperty("--trick-card", `${cardLow}px`);
+      if (best) {
+        center.dataset.trickLayout = best.layout;
+        layout.style.setProperty("--trick-card", `${best.size}px`);
+        place(best.position.x, best.position.y);
+        const rect = center.getBoundingClientRect();
+        const middle = rect.left + rect.width / 2;
+        const sameBand = occupied.filter(seat => seat.bottom > rect.top + 2 && seat.top < rect.bottom - 2);
+        const leftEdge = Math.max(board.left + 2, ...sameBand.filter(seat => seat.right <= middle).map(seat => seat.right + 2));
+        const rightEdge = Math.min(board.right - 2, ...sameBand.filter(seat => seat.left >= middle).map(seat => seat.left - 2));
+        if (rightEdge - leftEdge >= rect.width) {
+          center.style.left = `${leftEdge - board.left}px`;
+          center.style.width = `${rightEdge - leftEdge}px`;
+        }
+      }
       updateSeatConnections(layout);
     };
     fit();

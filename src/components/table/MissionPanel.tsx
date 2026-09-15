@@ -3,6 +3,7 @@ import { missionRules } from "../../../shared/missionRules.ts";
 import { useRef } from "react";
 import type { Mission, Snapshot } from "../../../shared/contracts.ts";
 import { cardImage, cardLabel } from "../../../shared/cards.ts";
+import { characterFor, characterImage } from "../../../shared/characters.ts";
 
 /** Compact status summary; full conditions and public roles live in the details dialog. */
 export function MissionPanel({ snapshot, currentMission }: {
@@ -42,6 +43,17 @@ export function MissionPanel({ snapshot, currentMission }: {
     </div>
     <dialog ref={detailsRef} className="mission-history mission-details" aria-label="미션 조건 상세">
       <div className="modal-head"><h2>{currentMission?.title} · 미션 조건</h2><button type="button" onClick={() => detailsRef.current?.close()}>닫기</button></div>
+      <section className="mission-crew-summary" aria-label={`참가 대원 ${snapshot.players.length}명`}>
+        <header><strong>참가 대원</strong><span>{snapshot.players.length}명</span></header>
+        <div className="mission-crew-list" role="list">{[...snapshot.players].sort((a, b) => a.seat - b.seat).map(player => {
+          const character = characterFor(player.characterId);
+          return <div className={`mission-crew-chip ${player.id === snapshot.turnPlayerId ? "is-current" : ""}`} role="listitem" key={player.id}>
+            <img src={characterImage(player.characterId)} alt="" draggable={false} />
+            <span><b>{player.nickname}{player.id === snapshot.me.playerId ? " · 나" : ""}</b><small>{character.name}</small></span>
+            <em>{player.id === snapshot.commanderId ? "사령관" : player.id === snapshot.turnPlayerId ? "차례" : "대원"}</em>
+          </div>;
+        })}</div>
+      </section>
     <p className="mission-panel-summary">{snapshot.tasks.length || snapshot.hiddenTaskCount ? "각 담당자가 자신의 목표 카드를 획득하세요." : currentMission?.summary}
       {rules.tokens.length > 0 && <span> · {rules.tokens.some(t => t.kind === "absolute") ? "숫자 순서" : rules.tokens.some(t => t.kind === "relative") ? "상대 순서" : "Ω 마지막 목표"} 준수</span>}
       {rules.communication.hidden && <span> · 교신 위치 비공개</span>}
