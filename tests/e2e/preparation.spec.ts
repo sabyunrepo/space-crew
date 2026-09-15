@@ -44,6 +44,7 @@ test("mission preparation remains actionable on desktop and mobile", async ({ pa
 
   await expect(preparation).toHaveCount(0);
   await expect(page.locator(".table-surface")).toBeVisible();
+  if (page.viewportSize()!.width <= 700) await page.getByRole("button", { name: "상단 안내 펼치기", exact: true }).click();
   await expect(page.locator(".mission-panel")).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
@@ -87,6 +88,7 @@ test('local demo restart vote keeps AI responses accessible inside the dialog', 
   await page.getByRole('button',{name:'탐사선 만들기',exact:true}).click();
   for(const name of ['데모 대원 채우기','탑승 준비 완료','임무 시작']) await step(page,page.getByRole('button',{name,exact:true}));
   await page.getByRole('button',{name:'테이블 보기',exact:true}).click();
+  if (page.viewportSize()!.width <= 700) await page.getByRole('button',{name:'상단 안내 펼치기',exact:true}).click();
   await step(page,page.getByRole('button',{name:'게임 포기 · 재시작',exact:true}));
   const modal=page.getByRole('dialog',{name:'게임 포기 및 재시작 동의'});
   await expect(modal).toBeVisible();

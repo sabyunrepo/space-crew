@@ -11,8 +11,8 @@ describe('public task priorities', () => {
     expect([...priorityTaskIds(view(tasks))]).toEqual(['a','free']);
     tasks[0].status='success';
     expect([...priorityTaskIds(view(tasks))]).toEqual(['b','free']);
-    expect(taskTokenLabel(tasks[1])).toBe('>>');
-    expect(taskTokenLabel(task('four',{kind:'relative',value:4}))).toBe('>>>>');
+    expect(taskTokenLabel(tasks[1])).toBe('››');
+    expect(taskTokenLabel(task('four',{kind:'relative',value:4}))).toBe('››››');
   });
   it('reserves the next absolute slot and permits free goals in unnumbered slots', () => {
     const tasks = [task('first',{kind:'absolute',value:1}), task('third',{kind:'absolute',value:3}), task('free')];

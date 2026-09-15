@@ -89,8 +89,8 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   expect(compactStates.length).toBeGreaterThan(0);
   for (const card of compactStates) {
     if (card.width <= 56) {
-      expect(card.art).toBe('hidden');
-      expect(card.face).toBe('grid');
+      expect(card.art).toBe(info.project.name === 'mobile' ? 'hidden' : 'visible');
+      expect(card.face).toBe(info.project.name === 'mobile' ? 'grid' : 'none');
     } else if (card.width >= 60) {
       expect(card.art).toBe('visible');
       expect(card.face).toBe('none');
@@ -113,8 +113,7 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   for (const seat of bounds.seats) { expect(seat.top).toBeGreaterThanOrEqual(bounds.mission.bottom); expect(seat.bottom).toBeLessThanOrEqual(bounds.hand.top); expect(seat.left).toBeGreaterThanOrEqual(0); expect(seat.right).toBeLessThanOrEqual(bounds.width); }
   for (const { columns, goals } of bounds.rows) { expect(columns).toHaveLength(1); expect(columns[0].right).toBeLessThanOrEqual(goals.left); }
   await expect(page.locator(".central-play")).toHaveCount(capacity);
-  await expect(page.locator('.seat-connections g')).toHaveCount(capacity - 1);
-  for (const line of await page.locator('.seat-link').all()) await expect(line).toHaveAttribute('d', /^M .* C /);
+  await expect(page.locator('.seat-connections, .seat-link')).toHaveCount(0);
   const avatar = await page.locator('.seat-layout .own-avatar').first().boundingBox();
   expect(avatar!.width).toBeLessThanOrEqual(40);
   expect(avatar!.width).toBeCloseTo(avatar!.height, 0);
@@ -148,14 +147,15 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
     await step(page.getByRole("button", { name: "선택한 카드 내기", exact: true }));
   } else await step(page.getByRole("button", { name: "데모 대원 진행", exact: true }));
   await expect(page.locator(".central-play .played-card")).toHaveCount(1);
+  await expect(page.locator(".central-play").first().locator(".played-card")).toHaveCount(1);
   const playedRepresentation = await page.locator('.central-play .played-card').evaluate(card => ({
     width: card.getBoundingClientRect().width,
     art: getComputedStyle(card.querySelector<HTMLElement>('.compact-card-art')!).visibility,
     face: getComputedStyle(card.querySelector<HTMLElement>('.compact-card-face')!).display,
   }));
   if (playedRepresentation.width <= 56) {
-    expect(playedRepresentation.art).toBe('hidden');
-    expect(playedRepresentation.face).toBe('grid');
+    expect(playedRepresentation.art).toBe(info.project.name === 'mobile' ? 'hidden' : 'visible');
+    expect(playedRepresentation.face).toBe(info.project.name === 'mobile' ? 'grid' : 'none');
   } else if (playedRepresentation.width >= 60) {
     expect(playedRepresentation.art).toBe('visible');
     expect(playedRepresentation.face).toBe('none');

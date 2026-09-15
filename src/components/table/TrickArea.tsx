@@ -20,12 +20,13 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
       const available = layout.clientHeight - 18;
       const seats = [...layout.querySelectorAll<HTMLElement>(".player-seat")];
       const threePlayers = snapshot.players.length === 3;
+      const fivePlayers = snapshot.players.length === 5;
       const areaWidth = layout.clientWidth / 3;
       const areaHeight = available / (threePlayers ? 1 : 2);
       seats.forEach(seat => { seat.dataset.goalFlow = areaWidth >= areaHeight ? "horizontal" : "vertical"; });
       let low = 16;
-      const seatScale = mobile ? .075 : .045;
-      let high = Math.min(104, layout.clientWidth * seatScale);
+      const seatScale = mobile ? .075 : fivePlayers ? .055 : .045;
+      let high = Math.min(fivePlayers ? 120 : 104, layout.clientWidth * seatScale);
       const required = (size: number) => {
         layout.style.setProperty("--seat-card", `${size}px`);
         const rows = [0, 0, 0];
@@ -111,7 +112,6 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
           center.style.width = `${rightEdge - leftEdge}px`;
         }
       }
-      updateSeatConnections(layout);
     };
     fit();
     const observer = new ResizeObserver(fit);
@@ -121,16 +121,18 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
   }, [snapshot]);
   const led = snapshot.trick[0]?.cardId;
   const seats = arrangeSeats(snapshot.players, mineId);
+  const firstPlayerId = snapshot.trick[0]?.playerId ?? snapshot.turnPlayerId;
+  const seatOrder = [...seats].sort((a, b) => a.player.seat - b.player.seat);
+  const firstIndex = Math.max(0, seatOrder.findIndex(({ player }) => player.id === firstPlayerId));
+  const trickOrder = [...seatOrder.slice(firstIndex), ...seatOrder.slice(0, firstIndex)];
   return <div ref={tableRef} className={`crew-table ${snapshot.phase === "task_selection" || snapshot.phase === "briefing" ? "trick-waiting" : "table-surface"}`}>
     <div className="table-orbit" />
     <div className={`seat-layout played-cards opponents-layout seats-${snapshot.players.length}`}>
       {seats.filter(({ player }) => player.id !== mineId).map(({ player, position }) =>
         <PlayerSeat key={player.id} snapshot={snapshot} player={player} position={position} mineId={mineId} compactIdentity />)}
-      <svg className="seat-connections" aria-hidden="true">{seats.filter(({player}) => player.id !== mineId).map(({player}) =>
-        <g key={player.id} data-player-id={player.id} data-seat-index={player.seat}><path className="seat-link"/><rect className="seat-zone-outline" rx="10"/></g>)}</svg>
-      <section className={`central-trick seats-${snapshot.players.length}`} aria-label="중앙 트릭">
+      <section className={`central-trick seats-${snapshot.players.length}`} data-sequential-order="true" aria-label="중앙 트릭">
         <header><strong>TRICK {snapshot.trickNumber}</strong><span>{led ? `${SUIT_META[suitOf(led)].color} 선도` : "대원들의 카드를 모아 봅니다"}</span></header>
-        <div className="central-trick-cards">{seats.map(({ player, position }) => {
+        <div className="central-trick-cards">{trickOrder.map(({ player, position }) => {
           const play = snapshot.trick.find(card => card.playerId === player.id);
           const current = snapshot.phase === "playing" && snapshot.turnPlayerId === player.id;
           return <div className={`central-play played-slot from-${position} ${current ? "awaiting-card" : ""}`}
@@ -145,32 +147,4 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
       </section>
     </div>
   </div>;
-}
-
-/** Join each crew panel to its own central slot after both have been fitted. */
-function updateSeatConnections(layout: HTMLElement) {
-  const origin = layout.getBoundingClientRect();
-  for (const group of layout.querySelectorAll<SVGGElement>(".seat-connections g")) {
-    const id = group.dataset.playerId;
-    const seat = layout.querySelector<HTMLElement>(`.player-seat[data-player-id="${id}"]`);
-    const slot = layout.querySelector<HTMLElement>(`.central-play[data-player-id="${id}"]`);
-    if (!seat || !slot) continue;
-    const a = seat.getBoundingClientRect(), b = slot.getBoundingClientRect();
-    let x1: number, y1: number, x2: number, y2: number;
-    const horizontal = a.right <= b.left || b.right <= a.left;
-    if (horizontal) {
-      x1 = a.right <= b.left ? a.right : a.left; x2 = a.right <= b.left ? b.left : b.right;
-      y1 = a.top + a.height / 2; y2 = b.top + b.height / 2;
-    } else {
-      x1 = a.left + a.width / 2; x2 = b.left + b.width / 2;
-      y1 = a.bottom <= b.top ? a.bottom : a.top; y2 = a.bottom <= b.top ? b.top : b.bottom;
-    }
-    x1 -= origin.left; x2 -= origin.left; y1 -= origin.top; y2 -= origin.top;
-    const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
-    group.querySelector('path')!.setAttribute('d', horizontal
-      ? `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`
-      : `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`);
-    const outline = group.querySelector('rect')!;
-    for (const [key,value] of Object.entries({ x:b.left-origin.left-3, y:b.top-origin.top-3, width:b.width+6, height:b.height+6 })) outline.setAttribute(key,String(value));
-  }
 }

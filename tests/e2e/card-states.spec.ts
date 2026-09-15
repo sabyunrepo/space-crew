@@ -3,7 +3,16 @@ test('completed goals, next priority, lead effect and distinct signal states', a
   await page.goto('/tests/fixtures/card-states.html');
   const goals=page.getByRole('region',{name:'목표 상태'});
   const signals=page.getByRole('region',{name:'교신 상태 비교'});
-  await expect(goals.locator('.task-order')).toHaveText(['>','>>','>>>','>>>>']);
+  await expect(goals.locator('.task-order')).toHaveText(['›','››','›››','››››']);
+  const orderBadges = await goals.locator('.task-order').evaluateAll(tokens => tokens.map(token => {
+    const rect = token.getBoundingClientRect();
+    return { width: rect.width, height: rect.height, weight: getComputedStyle(token).fontWeight };
+  }));
+  for (const badge of orderBadges) {
+    expect(badge.width).toBeGreaterThanOrEqual(30);
+    expect(badge.height).toBeGreaterThanOrEqual(22);
+    expect(Number(badge.weight)).toBeGreaterThanOrEqual(700);
+  }
   await expect(goals.locator('.current-goal')).toHaveAccessibleName(/초록 2.*현재 우선 목표/);
   await expect(page.locator('.card-value, .lead-card-label')).toHaveCount(0);
   await expect(page.locator('.central-play .lead-card')).toHaveCount(1);
@@ -11,6 +20,12 @@ test('completed goals, next priority, lead effect and distinct signal states', a
   for (const theme of ['dark','light']) {
     if(theme==='light')await page.getByRole('button',{name:'테마 전환'}).click();
     expect(await goals.locator('.success img').evaluate(el=>getComputedStyle(el).filter)).toContain('grayscale(1)');
+    const completed = await goals.locator('.success').first().evaluate(el => ({
+      overlay: getComputedStyle(el, '::after').backgroundColor,
+      check: getComputedStyle(el.querySelector('.task-outcome')!).backgroundColor,
+    }));
+    expect(completed.overlay).not.toBe('rgba(0, 0, 0, 0)');
+    expect(completed.check).not.toBe('rgba(0, 0, 0, 0)');
     expect(await goals.locator('.current-goal').evaluate(el=>getComputedStyle(el).outlineStyle)).toBe('solid');
     const backgrounds=await signals.locator('.signal-back').evaluateAll(els=>els.map(el=>getComputedStyle(el).background));
     expect(new Set(backgrounds).size).toBe(3);

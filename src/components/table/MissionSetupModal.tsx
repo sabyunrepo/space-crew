@@ -4,7 +4,7 @@ import { Check, X } from "lucide-react";
 import type { Command, Mission, Snapshot } from "../../../shared/contracts.ts";
 import { cardImage, cardLabel } from "../../../shared/cards.ts";
 import { PreparationPanel, preparationTitle } from "./PreparationPanel.tsx";
-import { taskTokenDescription, taskTokenLabel } from "./taskToken.ts";
+import { taskTokenClass, taskTokenDescription, taskTokenLabel } from "./taskToken.ts";
 import { missionRules } from "../../../shared/missionRules.ts";
 
 export function usesCombinedTaskSetup(snapshot: Snapshot) {
@@ -86,7 +86,7 @@ export function MissionSetupModal({ snapshot, mission, open, openRequest, stepKe
           return <button type="button" className="draft-task" key={task.id} aria-label={cardLabel(task.cardId)}
             aria-disabled={disabled} disabled={disabled} onClick={() => onSend({ type: "choose_task", taskId: task.id })}>
             <span className="draft-task-art"><img src={cardImage(task.cardId)} alt="" draggable={false} />
-              {taskTokenLabel(task) && <span className={`task-order ${task.token?.kind === "relative" ? "relative-order" : ""}`} title={taskTokenDescription(task)}>{taskTokenLabel(task)}</span>}</span>
+              {taskTokenLabel(task) && <span className={`task-order ${taskTokenClass(task)}`} title={taskTokenDescription(task)}>{taskTokenLabel(task)}</span>}</span>
             <span className="draft-task-name">{cardLabel(task.cardId)}</span>
           </button>;
         })}</div>
