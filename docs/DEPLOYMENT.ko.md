@@ -142,3 +142,11 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 배포 전 Aside 로컬 3인 실제 화면에서 슬롯 x좌표 `330 → 597 → 865`, 상단 높이53px를 확인했다. 단위758개, 관련 PC·모바일 UI30개, 타입 검사, 프론트/서버 빌드와 실제 Node 다인 시나리오20개가 통과했다.
 - 공개 1189×779 스모크 검증에서 슬롯이 `코멧 → 요시 · 나 → 루나`, x좌표 `290 → 499 → 707`, 상단 높이53px·상태/미션 중앙선 차이0px로 확인됐다. 공개 JS `index-CsQAirAR.js`와 CSS `index-CPiz4Fgo.css`의 SHA-256이 서버 모드 로컬 빌드와 일치하고 `/healthz`, `backendReady: true`, 규칙 `crew-p9-50-4`, 미션50개를 유지한다.
 - 백업 `/data/coolify/backups/space-crew/20260915-trick-order-status/`. 배포 전 기존 방35개의 체크섬이 배포 후 모두 일치했고, 공개 검증용 새 방2개를 포함해 현재37개다. 기존 Cloudflare Tunnel, DNS와 영속 볼륨을 그대로 사용했다.
+
+## 2026-09-16 상대 순서 토큰 선택 화면 보완
+
+- 런타임 `0f54471ee08bc5e2dea62abf47ace6330cc661ac`, Coolify ID `tdan11lzsoja0fwksdqe2ne2`, 결과 `finished`.
+- 목표 선택 모달의 상대 순서 배지를 카드 바깥 모서리에서 카드 안쪽으로 옮겼다. 작은 화면이나 촘촘한 목표 그리드에서 첫 `›` 토큰이 잘리거나 인접 요소에 묻을 수 있던 원인을 없앴고, 카드 접근 가능한 이름에도 `상대 순서 N`을 포함했다.
+- 상대 순서 미션 6·14·22·25·30·35·39·45·49를 PC·모바일에서 전수 검사한다. 각 토큰의 `›` 텍스트, 불투명도, `display:grid`, 카드 경계 안 배치를 회귀 테스트로 고정했다.
+- 배포 전 단위758개, 타입 검사, 프론트/서버 빌드, 목표 선택 UI26개와 실제 Node 다인 서버 시나리오20개가 통과했다. Aside 로컬 미션49에서 `› / ›› / ›››`가 모두 카드 내부에 표시되는 것을 확인했다.
+- 백업 `/data/coolify/backups/space-crew/20260916-relative-token-fix/`에 배포 전 방 JSON40개와 SHA-256 체크섬을 저장했다. 공개 `/healthz`와 capabilities는 정상(`backendReady:true`, `crew-p9-50-4`, 미션50개)이며, 공개 CSS `index-4j7oYP-D.css`는 로컬과 SHA-256이 일치했다. 새 검증 방에서 WSS 인증 뒤 revision 수신도 확인했다.
