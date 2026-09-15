@@ -291,7 +291,26 @@
 .mission-setup-modal .draft-task:focus-visible { outline: 3px solid #d4ec9c; outline-offset: 4px; border-radius: 6px; }
 .mission-setup-modal .draft-task:disabled { opacity: .72; }
 .draft-task-name { display: block; font-size: 11px; line-height: 1.5; margin-top: 7px; }
-.mission-setup-modal .task-order { min-width: 30px; height: 30px; font-size: 16px; }
+/* Keep every order token inside its own selectable card.  The shared token
+   normally sits just outside a card edge, which can be clipped by a modal
+   grid and made a single › look absent at some viewport sizes. */
+.mission-setup-modal .draft-task-art { isolation: isolate; }
+.mission-setup-modal .draft-task-art .task-order {
+  right: 6px;
+  bottom: 6px;
+  min-width: 32px;
+  height: 32px;
+  font-size: 17px;
+  border-width: 2px;
+  background: #f6d96b;
+  color: #17140d;
+  box-shadow: 0 2px 10px #000c, 0 0 0 1px #473c174d;
+}
+.mission-setup-modal .draft-task-art .task-order.relative-order {
+  min-width: 38px;
+  padding-inline: 8px;
+  letter-spacing: .08em;
+}
 .mission-setup-modal .mission-preparation { margin-top: 20px; padding: 16px; }
 .mission-setup-modal .mission-preparation > p, .mission-setup-modal .preparation-responses { font-size: 13px; }
 .mission-setup-modal .preparation-actions label { font-size: 12px; }

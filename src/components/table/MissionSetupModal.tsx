@@ -83,10 +83,13 @@ export function MissionSetupModal({ snapshot, mission, open, openRequest, stepKe
         <p className="setup-turn-notice" role="status">{briefing ? `대원들이 준비되면 지휘관부터 선택합니다. · ${snapshot.players.filter(p => p.briefingReady).length}/${snapshot.players.length}명 준비` : myTurn ? "내 차례 · 맡을 목표 카드를 선택하세요" : `${snapshot.players.find(p => p.id === snapshot.turnPlayerId)?.nickname ?? "다른"} 대원이 목표를 고르는 중입니다`}</p>
         <div className="target-list">{snapshot.tasks.filter(task => !task.ownerId).map(task => {
           const disabled = locked || briefing || !myTurn;
-          return <button type="button" className="draft-task" key={task.id} aria-label={cardLabel(task.cardId)}
+          const tokenLabel = taskTokenLabel(task);
+          const tokenDescription = taskTokenDescription(task);
+          return <button type="button" className="draft-task" key={task.id}
+            aria-label={tokenLabel ? `${cardLabel(task.cardId)} · ${tokenDescription}` : cardLabel(task.cardId)}
             aria-disabled={disabled} disabled={disabled} onClick={() => onSend({ type: "choose_task", taskId: task.id })}>
             <span className="draft-task-art"><img src={cardImage(task.cardId)} alt="" draggable={false} />
-              {taskTokenLabel(task) && <span className={`task-order ${taskTokenClass(task)}`} title={taskTokenDescription(task)}>{taskTokenLabel(task)}</span>}</span>
+              {tokenLabel && <span className={`task-order ${taskTokenClass(task)}`} title={tokenDescription}>{tokenLabel}</span>}</span>
             <span className="draft-task-name">{cardLabel(task.cardId)}</span>
           </button>;
         })}</div>

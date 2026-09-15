@@ -54,6 +54,43 @@ for (const [mission, tasks, condition] of [[7, 3, "Ω"], [22, 5, "상대 순서 
   });
 }
 
+const relativeTokenMissions = [
+  [6, ["›", "››"]],
+  [14, ["›", "››", "›››"]],
+  [22, ["›", "››", "›››", "››››"]],
+  [25, ["›", "››"]],
+  [30, ["›", "››", "›››"]],
+  [35, ["›", "››", "›››"]],
+  [39, ["›", "››", "›››"]],
+  [45, ["›", "››", "›››"]],
+  [49, ["›", "››", "›››"]],
+] as const;
+
+for (const [mission, expectedTokens] of relativeTokenMissions) {
+  test(`mission ${mission}: every relative-order token remains visible in target selection`, async ({ page }) => {
+    await launch(page, mission);
+    const modal = page.getByRole("dialog", { name: "목표 카드 선택", exact: true });
+    await expect(modal).toBeVisible();
+
+    const tokens = modal.locator(".target-list .task-order.relative-order");
+    await expect(tokens).toHaveCount(expectedTokens.length);
+    await expect(tokens).toHaveText([...expectedTokens]);
+
+    const geometry = await tokens.evaluateAll(elements => elements.map(token => {
+      const tokenRect = token.getBoundingClientRect();
+      const artRect = token.parentElement!.getBoundingClientRect();
+      const style = getComputedStyle(token);
+      return {
+        display: style.display,
+        opacity: Number(style.opacity),
+        entirelyInsideCard: tokenRect.left >= artRect.left && tokenRect.right <= artRect.right
+          && tokenRect.top >= artRect.top && tokenRect.bottom <= artRect.bottom,
+      };
+    }));
+    expect(geometry).toEqual(expectedTokens.map(() => ({ display: "grid", opacity: 1, entirelyInsideCard: true })));
+  });
+}
+
 test("combined setup can be closed, reopened and resumed without confirming twice", async ({ page }) => {
   await launch(page, 7);
   const modal = page.getByRole("dialog", { name: "목표 카드 선택", exact: true });
