@@ -14,7 +14,7 @@
 - 영속 볼륨: `wwdeemugv7lqzozohddwtvlx-space-crew-data` → 컨테이너 `/data`.
 - 업데이트 시 기존 볼륨, Cloudflare DNS/Tunnel, 호스트명을 유지한다. 로컬 개발용 `data/`로 운영 데이터를 덮어쓰지 않는다.
 - 2026-09-14 업데이트 전 백업: 홈 서버 `/data/coolify/backups/space-crew/20260914-preupdate/` (방 데이터 압축본 및 기존 compose). 인증 정보와 손패를 포함할 수 있으므로 서버 내부 비공개로 보관한다.
-- 현재 배포 SHA: `4614c82f6913cf9f854b2df395da0e8ad74f2aec`. 직전 배포 SHA: `87b37d9e4440ad8b95edde51805b421de5ad54b4`.
+- 현재 배포 SHA: `527e32f32bbd9133dffc318c855f84f5675e5a0a`. 직전 배포 SHA: `aa430654c36a86dda2d3d66f03e6f6e042332a6a`.
 - 새 배포 전 `npm test`, `VITE_BACKEND_MODE=server npm run build`, `npm run build:server`를 실행한다. 해당 브랜치에 소스를 반영한 뒤 Coolify의 커밋 SHA를 지정해 배포한다.
 - 배포 후 `/healthz`, `/api/capabilities`, 프론트 자산, 초대 링크를 통한 다인 플레이와 WebSocket 동기화/새로고침 복귀를 확인한다.
 - 롤백은 Coolify에서 직전 SHA를 지정해 배포한다. 새 버전에서 만든 방의 구버전 호환성을 검토하고, 데이터 복구는 필요한 경우에만 별도 수행한다.
@@ -124,3 +124,12 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 배포 전 단위758개, PC·모바일 UI22개, 타입 검사, 프론트/서버 빌드와 로컬 실제 Node 다인 협동 시나리오를 통과했다. 공개 주소에서도 교신·재시작·복귀 협동 시나리오가 통과했다.
 - 공개 `/healthz` 정상, `backendReady: true`, 규칙 버전 `crew-p9-50-4`, 미션50개를 유지한다. 공개 JS `index-BSKv6MRX.js`와 CSS `index-BEeGaVGn.css`의 SHA-256이 로컬 빌드와 일치한다.
 - 백업 `/data/coolify/backups/space-crew/20260915-three-player-layout/`. 배포 전 기존 방27개 중26개는 바이트 단위로 유지됐다. 진행 중이던 방 `a72ddc1f-87c4-4142-84b9-08f5455f7c77`은 서비스 중단 없이 리비전191→206, playing→preparation으로 정상 진행됐다. 공개 검증에서 만든 새 방은 별도다.
+
+## 2026-09-15 적응형 중앙 트릭·5인 순서 표시 업데이트
+
+- 최종 런타임 `527e32f32bbd9133dffc318c855f84f5675e5a0a`, Coolify ID `632fa87b-f139-40b4-93b3-ce4046bb7f31`, 결과 `finished`/새 컨테이너 healthy. 앞선 적응형 중앙 확대 커밋 `aa430654c36a86dda2d3d66f03e6f6e042332a6a`도 동일 날 중간 배포했으며 최종 배포가 이를 대체한다.
+- 3·4·5인 PC/모바일에서 중앙 카드 최대 크기 배열을 선택하고 외곽을 좌우 대원 패널에서 2px 떨어진 경계까지 확장한다. 5인은 좌측 대원 25%·중앙 50%·우측 대원 25%이며, 중앙 슬롯은 선도자부터 실제 제출 순서대로 왼쪽→오른쪽에 표시한다. 대원 패널과 슬롯 사이 곡선 연결선은 제거했다.
+- 미션 조건의 참가 대원 시각 목록, 반응형 글자 확대, 상대 순서 `›` 캡슐 토큰과 절대/Ω 구분을 적용했다. 완료 목표는 어두운 오버레이와 중앙 체크로 구분한다. 56px 이하 색·숫자 축약형은 모바일에만 적용하고 PC는 원본 카드 이미지를 유지한다.
+- 배포 전 Aside 1440×900 실제 5인 플레이와 1470×956 3·4·5인 화면을 확인했다. 단위758개, 관련 PC·모바일 UI18개와 준비 UI6개, 타입 검사, 프론트/서버 빌드, 로컬 Node 협동 시나리오가 통과했다.
+- 공개 `/healthz` 정상, `backendReady: true`, 규칙 `crew-p9-50-4`, 미션50개를 유지한다. 공개 JS `index-D2EEDcDd.js`와 CSS `index-DapLGcS0.css`의 SHA-256이 로컬 빌드와 일치한다. 공개 독립 브라우저 협동 시나리오도 통과했다.
+- 최종 배포 백업 `/data/coolify/backups/space-crew/20260915-five-player-trick/`. 배포 전 기존 방31개가 모두 바이트 단위로 유지됐다. 기존 Cloudflare Tunnel, DNS와 영속 볼륨을 그대로 사용했다.
