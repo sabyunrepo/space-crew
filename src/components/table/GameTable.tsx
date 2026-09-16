@@ -232,10 +232,9 @@ export function GameTable({
                 여정이 시작돼요.
               </h2>
               <p>
-                임무{" "}
                 {snapshot.settings.missionMode === "random"
-                  ? "랜덤 선택"
-                  : `${String(snapshot.settings.startMission).padStart(2, "0")} · ${currentMission?.title}`}
+                  ? "랜덤 미션 · 시작 시 자동 선택"
+                  : `임무 ${String(snapshot.settings.startMission).padStart(2, "0")} · ${currentMission?.title}`}
               </p>
               <CharacterPicker value={characterFor(mine?.characterId).id} disabled={locked}
                 onChange={(characterId) => onSend({ type: "set_character", characterId })} />
@@ -285,7 +284,7 @@ export function GameTable({
                     서버가 지원하는 미션을 선택해 주세요.
                   </p>
                 )}
-              {isHost && (
+              {isHost && snapshot.settings.missionMode !== "random" ? (
                 <label className="lobby-mission">
                   시작 미션 변경
                   <select
@@ -310,8 +309,8 @@ export function GameTable({
                     ))}
                   </select>
                 </label>
-              )}
-              <p className="helper">
+              ) : null}
+              <p className="helper lobby-helper">
                 데모 대원은 규칙 확인용입니다. 협력 전략을 판단하는 AI는
                 아닙니다.
               </p>
