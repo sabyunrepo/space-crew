@@ -171,7 +171,7 @@ export function App() {
       ? [{ id: 1, kind: "error", message: serviceResult.error }]
       : [],
   );
-  const toastSequence = useRef(0);
+  const toastSequence = useRef(serviceResult.error ? 1 : 0);
   const pushToast = useCallback((message: string, kind: ToastItem["kind"] = "error", action?: ToastItem["action"]) => {
     const toast = { id: ++toastSequence.current, kind, message, ...(action ? { action } : {}) } satisfies ToastItem;
     setToasts(old => [...old, toast].slice(-3));
