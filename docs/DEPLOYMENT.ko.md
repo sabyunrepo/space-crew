@@ -150,3 +150,13 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 상대 순서 미션 6·14·22·25·30·35·39·45·49를 PC·모바일에서 전수 검사한다. 각 토큰의 `›` 텍스트, 불투명도, `display:grid`, 카드 경계 안 배치를 회귀 테스트로 고정했다.
 - 배포 전 단위758개, 타입 검사, 프론트/서버 빌드, 목표 선택 UI26개와 실제 Node 다인 서버 시나리오20개가 통과했다. Aside 로컬 미션49에서 `› / ›› / ›››`가 모두 카드 내부에 표시되는 것을 확인했다.
 - 백업 `/data/coolify/backups/space-crew/20260916-relative-token-fix/`에 배포 전 방 JSON40개와 SHA-256 체크섬을 저장했다. 공개 `/healthz`와 capabilities는 정상(`backendReady:true`, `crew-p9-50-4`, 미션50개)이며, 공개 CSS `index-4j7oYP-D.css`는 로컬과 SHA-256이 일치했다. 새 검증 방에서 WSS 인증 뒤 revision 수신도 확인했다.
+
+## 2026-09-16 오류 토스트·동시 선택 보완
+
+- 런타임 `d742b2a6e04c9ce92e26945375440951b443483e`, Coolify 배포 ID `c8c01d83-132d-457f-aebc-a191c058b984`, 결과 `finished`/새 컨테이너 healthy.
+- 네트워크·초대·명령 처리 오류를 고정 오류 영역 대신 최대 3개 토스트로 표시한다. 오류 토스트는 1초 후 자동으로 사라지고, 아직 안전하게 재전송할 수 있는 요청에는 같은 토스트 안에 `재전송` 동작을 제공한다. 기존 성공 상태 안내는 유지했다.
+- 선택 명령이 최신 리비전과 충돌하면 최신 snapshot을 먼저 반영한다. 차례·대상 소유권·준비 단계가 여전히 유효한 `choose_task`, `select_crew`, `assign_task`만 새 command ID로 한 번 자동 재시도하며, 이미 다른 대원이 선점한 선택은 중복 실행하지 않고 최신 상태 갱신 안내를 토스트한다. 서버의 리비전 검사와 room lock은 그대로 유지한다.
+- 로컬 검증: `npm run typecheck`, 단위 테스트 758개, 프로덕션 빌드, 독립 브라우저 경계 테스트(PC/모바일 오류 토스트 표시·자동 소거)와 준비 모달 UI 26개가 통과했다.
+- 공개 검증: `/healthz` 정상, `backendReady:true`, 규칙 `crew-p9-50-4`, 미션 50개. 공개 CSS에 `toast-viewport`/`toast-error`가 포함되고 JS에 충돌 갱신·재전송 문구가 포함됨을 확인했다.
+- 배포 전 운영 방 43개를 `/data/coolify/backups/space-crew/20260916-toast-conflict/rooms.tgz`와 SHA-256 목록으로 백업했다. 첫 시도 `5d8915a4-ba66-4404-9d95-5a2e3c4e75a7`는 Coolify 로컬 배포 키가 호스트 `root` 허용 키와 달라 공개키 인증에서 중단됐으며 컨테이너·운영 데이터에는 영향을 주지 않았다. 기존 허용 키를 보존한 채 Coolify 키의 공개키를 추가한 뒤 재배포해 완료했다.
+- 프로젝트 체크아웃은 `coolify:/home/ubuntu/space-crew`에 `feat/realtime-prototype` 최신 커밋으로 동기화했다. 로컬 SSH에는 `Host coolify`(211.184.227.96:10022, `~/Downloads/kt.pem`) 별칭과 known_hosts 항목을 등록했다. 기존 Cloudflare Tunnel, DNS, 영속 볼륨은 그대로 사용했다.
