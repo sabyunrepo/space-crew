@@ -153,10 +153,10 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 
 ## 2026-09-16 오류 토스트·동시 선택 보완
 
-- 런타임 `de9428474e4854de973b7596866641434faff2af`, Coolify 배포 ID `56112760-017e-4780-a2c8-5e9d6feb2041`, 결과 `finished`/새 컨테이너 healthy. 앞선 기능 배포 `d742b2a6e04c9ce92e26945375440951b443483e`도 `c8c01d83-132d-457f-aebc-a191c058b984`로 완료했으며 이번 런타임은 초기 오류 토스트 보완을 포함한다.
+- 런타임 `b667e8756c13ba78a22329e303a3f07db56821a9`, Coolify 배포 ID `48cd3753-6a63-4e02-9e90-e9bd73cfe182`, 결과 `finished`/새 컨테이너 healthy. 앞선 기능 배포 `d742b2a6e04c9ce92e26945375440951b443483e`와 초기 오류 토스트 보완 `de9428474e4854de973b7596866641434faff2af`도 각각 완료했으며 이번 런타임은 시작 시 토스트 순번 안정화까지 포함한다.
 - 네트워크·초대·명령 처리 오류를 고정 오류 영역 대신 최대 3개 토스트로 표시한다. 오류 토스트는 1초 후 자동으로 사라지고, 아직 안전하게 재전송할 수 있는 요청에는 같은 토스트 안에 `재전송` 동작을 제공한다. 기존 성공 상태 안내는 유지했다.
 - 선택 명령이 최신 리비전과 충돌하면 최신 snapshot을 먼저 반영한다. 차례·대상 소유권·준비 단계가 여전히 유효한 `choose_task`, `select_crew`, `assign_task`만 새 command ID로 한 번 자동 재시도하며, 이미 다른 대원이 선점한 선택은 중복 실행하지 않고 최신 상태 갱신 안내를 토스트한다. 서버의 리비전 검사와 room lock은 그대로 유지한다.
 - 로컬 검증: `npm run typecheck`, 단위 테스트 758개, 프로덕션 빌드, 독립 브라우저 경계 테스트(PC/모바일 오류 토스트 표시·자동 소거)와 준비 모달 UI 26개가 통과했다.
 - 공개 검증: `/healthz` 정상, `backendReady:true`, 규칙 `crew-p9-50-4`, 미션 50개. 공개 CSS에 `toast-viewport`/`toast-error`가 포함되고 JS에 충돌 갱신·재전송 문구가 포함됨을 확인했다.
-- 배포 전 운영 방 43개를 `/data/coolify/backups/space-crew/20260916-toast-init/rooms.tgz`와 SHA-256 목록으로 백업했다. 기능 배포 전 백업은 `/data/coolify/backups/space-crew/20260916-toast-conflict/`에도 보관되어 있다. 첫 시도 `5d8915a4-ba66-4404-9d95-5a2e3c4e75a7`는 Coolify 로컬 배포 키가 호스트 `root` 허용 키와 달라 공개키 인증에서 중단됐으며 컨테이너·운영 데이터에는 영향을 주지 않았다. 기존 허용 키를 보존한 채 Coolify 키의 공개키를 추가한 뒤 두 번째 배포를 완료했다.
+- 배포 전 운영 방 44개를 `/data/coolify/backups/space-crew/20260916-toast-final/rooms.tgz`와 SHA-256 목록으로 백업했다. 앞선 기능 배포 백업은 `/data/coolify/backups/space-crew/20260916-toast-conflict/`, `/data/coolify/backups/space-crew/20260916-toast-init/`에도 보관되어 있다. 첫 시도 `5d8915a4-ba66-4404-9d95-5a2e3c4e75a7`는 Coolify 로컬 배포 키가 호스트 `root` 허용 키와 달라 공개키 인증에서 중단됐으며 컨테이너·운영 데이터에는 영향을 주지 않았다. 기존 허용 키를 보존한 채 Coolify 키의 공개키를 추가한 뒤 재배포를 완료했다.
 - 프로젝트 체크아웃은 `coolify:/home/ubuntu/space-crew`에 `feat/realtime-prototype` 최신 커밋으로 동기화했다. 로컬 SSH에는 `Host coolify`(211.184.227.96:10022, `~/Downloads/kt.pem`) 별칭과 known_hosts 항목을 등록했다. 기존 Cloudflare Tunnel, DNS, 영속 볼륨은 그대로 사용했다.
