@@ -40,7 +40,6 @@ export function MissionResultModal({ snapshot, open, isHost, locked, canContinue
       <p id="mission-result-reason">{snapshot.resultReason || (failure ? "이번 임무의 조건을 달성하지 못했습니다." : "모든 대원이 함께 임무를 마쳤습니다.")}</p>
     </div>
     <div className="result-modal-actions">
-      {error && <div className="setup-error" role="alert"><p>{error}</p>{hasPending && <button type="button" className="secondary" disabled={locked} onClick={() => onSend()}>같은 요청 재전송</button>}</div>}
       {!finished && (isHost ? <>
         <p>{failure ? "같은 미션을 새 손패로 다시 시작합니다." : canContinue ? "다음 임무로 탐사를 이어갑니다." : "다음으로 진행할 임무가 없습니다."}</p>
         <button type="button" className="primary result-continue" disabled={locked || (!failure && !canContinue)}

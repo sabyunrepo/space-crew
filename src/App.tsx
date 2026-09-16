@@ -48,6 +48,7 @@ import { ThemePicker } from "./components/ThemePicker.tsx";
 import { CharacterPicker } from "./components/CharacterPicker.tsx";
 import { GameTable } from "./components/table/GameTable.tsx";
 import { GuidePage } from "./pages/GuidePage.tsx";
+import { ToastViewport, type ToastItem } from "./components/ToastViewport.tsx";
 /** service.mode는 향후 "server"도 값으로 가질 수 있어 문자열 비교로 안전하게 처리한다. */
 function modeLabel(mode: string | undefined) {
   if (mode === "mock") return "LOCAL DEMO";
@@ -61,6 +62,27 @@ const defaultSettings: RoomSettings = {
   missionMode: "sequential",
   startMission: 1,
 };
+
+function canRetrySelection(command: Command, latest: Snapshot, actorId: string): boolean {
+  if (command.type === "choose_task") {
+    return latest.phase === "task_selection" && latest.turnPlayerId === actorId
+      && latest.tasks.some(task => task.id === command.taskId && !task.ownerId);
+  }
+  const preparation = latest.preparation;
+  if (!preparation || latest.commanderId !== actorId) return false;
+  if (command.type === "select_crew") {
+    return ["role", "captain_decision"].includes(preparation.stage)
+      && preparation.eligiblePlayerIds.includes(command.playerId)
+      && (!command.secondaryPlayerId || preparation.eligiblePlayerIds.includes(command.secondaryPlayerId));
+  }
+  if (command.type === "assign_task") {
+    return preparation.stage === "captain_distribution"
+      && preparation.eligiblePlayerIds.includes(command.playerId)
+      && !!preparation.activeTaskId
+      && latest.tasks.some(task => task.id === preparation.activeTaskId && !task.ownerId);
+  }
+  return false;
+}
 function Card({
   id,
   small = false,
@@ -144,6 +166,13 @@ export function App() {
   const [backendReady, setBackendReady] = useState(service?.mode === "mock");
   const [error, setError] = useState(serviceResult.error);
   const [notice, setNotice] = useState("");
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const toastSequence = useRef(0);
+  const pushToast = useCallback((message: string, kind: ToastItem["kind"] = "error", action?: ToastItem["action"]) => {
+    const toast = { id: ++toastSequence.current, kind, message, ...(action ? { action } : {}) } satisfies ToastItem;
+    setToasts(old => [...old, toast].slice(-3));
+  }, []);
+  const dismissToast = useCallback((id: number) => setToasts(old => old.filter(toast => toast.id !== id)), []);
   const [busy, setBusy] = useState(false);
   const [connection, setConnection] = useState<Connection>("connecting");
   const [modal, setModal] = useState<"missions" | "cards" | null>(null);
@@ -183,8 +212,8 @@ export function App() {
           setCatalogue(c.missions);
           setBackendReady(c.backendReady);
         })
-        .catch((e) => setError(e.message));
-  }, [service]);
+        .catch((e) => { setError(e.message); pushToast(e.message); });
+  }, [service, pushToast]);
   const accept = useCallback((next: Snapshot) => {
     setSnapshot((old) =>
       !old || old.roomId !== next.roomId || next.revision >= old.revision
@@ -207,7 +236,7 @@ export function App() {
           if (active) accept(next);
         })
         .catch((e) => {
-          if (active) setError(e.message);
+          if (active) { setError(e.message); pushToast(e.message); }
         });
     void refresh();
     const unsubscribe = service.subscribe(
@@ -242,7 +271,7 @@ export function App() {
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [roomId, service, accept]);
+  }, [roomId, service, accept, pushToast]);
   async function run(work: () => Promise<void>) {
     if (busy) return;
     setBusy(true);
@@ -250,7 +279,9 @@ export function App() {
     try {
       await work();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "요청을 처리하지 못했습니다.");
+      const message = e instanceof Error ? e.message : "요청을 처리하지 못했습니다.";
+      setError(message);
+      pushToast(message, "error", pending.current ? { label: "재전송", onClick: () => void send() } : undefined);
     } finally {
       setBusy(false);
     }
@@ -258,7 +289,7 @@ export function App() {
   async function send(command?: Command) {
     if (!service || !snapshot) return;
     await run(async () => {
-      const request = command
+      let request = command
         ? {
             roomId: snapshot.roomId,
             envelope: {
@@ -272,18 +303,38 @@ export function App() {
       if (!request) return;
       pending.current = request;
       setHasPending(true);
-      try {
-        accept(await service.command(request.roomId, request.envelope));
-        pending.current = null;
-        setHasPending(false);
-        setSelected(null);
-      } catch (e) {
-        if (e instanceof ApiError && e.status !== 0 && e.status < 500) {
+      let retried = false;
+      while (true) {
+        try {
+          accept(await service.command(request.roomId, request.envelope));
           pending.current = null;
           setHasPending(false);
-          accept(await service.snapshot(request.roomId));
+          setSelected(null);
+          return;
+        } catch (e) {
+          if (e instanceof ApiError && e.code === "REVISION_CONFLICT" && !retried && command) {
+            const latest = await service.snapshot(request.roomId);
+            accept(latest);
+            if (canRetrySelection(command, latest, latest.me.playerId)) {
+              retried = true;
+              request = {
+                roomId: request.roomId,
+                envelope: { ...request.envelope, commandId: crypto.randomUUID(), expectedRevision: latest.revision },
+              };
+              pending.current = request;
+              continue;
+            }
+          }
+          if (e instanceof ApiError && e.status !== 0 && e.status < 500) {
+            pending.current = null;
+            setHasPending(false);
+            if (e.code !== "REVISION_CONFLICT") accept(await service.snapshot(request.roomId));
+          }
+          if (e instanceof ApiError && e.code === "REVISION_CONFLICT") {
+            throw new Error("다른 대원의 선택이 먼저 반영되어 최신 상태로 갱신했습니다.");
+          }
+          throw e;
         }
-        throw e;
       }
     });
   }
@@ -384,40 +435,17 @@ export function App() {
           </span>
         </nav>
       </header>
+      <ToastViewport toasts={toasts} onDismiss={dismissToast} />
       {service?.mode === "mock" && (
         <div className="demo-banner">
           <Globe2 size={14} /> 로컬 데모 · 이 브라우저에 진행 상황이 저장됩니다.
           다른 기기와의 실시간 접속은 Supabase 연동 후 지원합니다.
         </div>
       )}
-      {error && (
-        <div role="alert" className="alert">
-          <span>{error}</span>
-          {hasPending ? (
-            <button disabled={busy} onClick={() => void send()}>
-              같은 요청 재전송
-            </button>
-          ) : (
-            <button
-              className="icon-button"
-              onClick={() => setError("")}
-              aria-label="오류 닫기"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-      )}
       {notice && (
         <div role="status" className="notice">
           <span>{notice}</span>
-          <button
-            className="icon-button"
-            onClick={() => setNotice("")}
-            aria-label="알림 닫기"
-          >
-            <X size={16} />
-          </button>
+          <button className="icon-button" onClick={() => setNotice("")} aria-label="알림 닫기"><X size={16} /></button>
         </div>
       )}
       {!roomId && path !== "/join" && (

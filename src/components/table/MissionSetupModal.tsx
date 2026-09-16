@@ -73,7 +73,6 @@ export function MissionSetupModal({ snapshot, mission, open, openRequest, stepKe
         {!!mission?.modifiers.length && <ul>{mission.modifiers.map(condition => <li key={condition}>{condition}</li>)}</ul>}
         {snapshot.rulesetVersion === "crew-p9-50-2" && [5, 17, 33].includes(snapshot.missionId ?? 0) && <p className="helper">이전 규칙으로 시작한 판입니다. 테이블의 기존 판 안내를 함께 확인하세요.</p>}
       </section>
-      {error && <div className="setup-error" role="alert"><p>{error}</p>{hasPending ? <button type="button" className="secondary" onClick={() => onSend()}>같은 요청 재전송</button> : combined && briefing && !mine?.briefingReady && <button type="button" className="secondary" disabled={locked} onClick={() => onSend({ type: "briefing_ready" })}>준비 다시 시도</button>}</div>}
       {briefing && !combined && <section className="setup-briefing-actions" aria-label="임무 확인">
         <p>손패와 임무를 확인한 후 ‘임무 확인 완료’를 눌러 주세요.</p>
         <p className="setup-turn-notice" role="status">{mine?.briefingReady ? "내 임무 확인을 저장했습니다. 다른 대원을 기다립니다." : "내 확인이 필요합니다."} · {snapshot.players.filter(p => p.briefingReady).length}/{snapshot.players.length}명 확인</p>

@@ -68,6 +68,8 @@ html, body { background-color: var(--theme-page); }
 :root[data-theme="light"] .primary:hover:not(:disabled) { background: #284e26; }
 :root[data-theme="light"] :is(.alert, .setup-error, .hand-hint) { background: #fff0e3; color: #7e3d20; border-color: #d5a885; }
 :root[data-theme="light"] .notice { background: #e8f1df; color: #305027; border-color: #b4cba2; }
+:root[data-theme="light"] .toast-error { background: #fff0e3f5; color: #7e3d20; border-color: #d5a885; }
+:root[data-theme="light"] .toast-notice { background: #e8f1dff5; color: #305027; border-color: #b4cba2; }
 :root[data-theme="light"] .warning { color: #875c14; }
 :root[data-theme="light"] :is(.mission-catalogue article, .crew-member, .target) { border-color: var(--line); background: #f8faf5; }
 :root[data-theme="light"] .avatar { background: #e2ecd9; color: #31592a; }

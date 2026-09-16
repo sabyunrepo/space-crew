@@ -30,14 +30,17 @@ test("separate users cannot join the local-only room; same-profile tab resumes t
         .getByRole("textbox", { name: "대원 이름", exact: true })
         .fill(nickname);
       await guest.getByRole("button", { name: "탐사선 탑승하기" }).click();
-      await expect(guest.getByRole("alert")).toContainText(
+      const errorToast = guest.getByRole("alert");
+      await expect(errorToast).toContainText(
         "로컬 데모 링크는 같은 브라우저에서만",
       );
+      const errorMessage = await errorToast.innerText();
+      await expect(errorToast).toBeHidden({ timeout: 1500 });
       await expect(guest).toHaveURL(/\/join#/);
       observations.push({
         user: nickname,
         joined: false,
-        message: await guest.getByRole("alert").innerText(),
+        message: errorMessage,
       });
       await guest.screenshot({
         path: `artifacts/qa/independent-${nickname.at(-1)}-${testInfo.project.name}.png`,

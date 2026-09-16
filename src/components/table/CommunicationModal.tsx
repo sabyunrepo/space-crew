@@ -28,7 +28,6 @@ export function CommunicationModal({ cardId, markers, locked, error, hasPending,
       <button type="button" key={option} className="secondary" aria-pressed={marker === option} disabled={locked || hasPending} onClick={() => setMarker(option)}>{markerLabels[option]}</button>)}</div>
       : <p className="communication-meaning">{markerLabels[marker]}</p>}
     <p className="helper">카드와 교신 신호가 모든 대원에게 공개됩니다. 교신은 시도당 한 번 사용할 수 있습니다.</p>
-    {error && <div className="setup-error" role="alert"><p>{error}</p>{hasPending && <button type="button" className="secondary" disabled={locked} onClick={() => onSend()}>같은 요청 재전송</button>}</div>}
     <div className="communication-modal-actions"><button type="button" className="secondary" onClick={onDismiss}>다른 카드 선택</button>
       <button type="button" className="primary" disabled={locked || hasPending} onClick={() => onSend({ type: "communicate", cardId, marker })}><Radio size={18} />교신 보내기</button></div>
   </dialog>;
