@@ -169,3 +169,10 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 로컬 Aside 1440×900에서 모달 `760×738px`, 대기방 문서 높이 `900px`를 확인했다. 단위 테스트 758개, 타입 검사, 프론트 빌드, 모달·플로우·준비 UI E2E 36개가 통과했다.
 - 공개 `/healthz` 정상, `backendReady:true`, 규칙 `crew-p9-50-4`, 미션 50개. 공개 CSS에서 모달·대기방 반응형 규칙을 확인했다.
 - 배포 전 방 44개를 `/data/coolify/backups/space-crew/20260916-modal-lobby/rooms.tgz`와 SHA-256 목록으로 백업했다. 기존 Cloudflare Tunnel, DNS와 영속 볼륨은 그대로 사용했다.
+
+## 2026-09-16 Coolify CLI·GitHub 자동 배포 연결 검증
+
+- Coolify CLI `1.8.0`에 `coolify` 컨텍스트(`https://coolify.bsh00.com`)를 등록하고 `context verify`, `resource list`, `app get`을 성공시켰다. CLI 토큰은 로컬 `~/.config/coolify/config.json`에 권한 제한 파일로 보관하며 원문은 저장소에 기록하지 않는다.
+- `space-crew` 앱은 `feat/realtime-prototype` 브랜치, `is_auto_deploy_enabled=true`, 고정 커밋 없음으로 설정했다. 따라서 webhook이 전달되면 해당 브랜치의 push SHA를 그대로 배포한다.
+- GitHub 저장소 webhook은 Push 이벤트와 `https://coolify.bsh00.com/webhooks/source/github/events/manual` 주소로 등록했다. Coolify 수동 webhook의 secret은 애플리케이션 전용 값을 사용하며 문서에는 기록하지 않는다.
+- GitHub ping delivery가 HTTP 200으로 도착하는지 확인한 뒤, 이 문서 커밋 push로 자동 배포 큐 생성과 최신 SHA 배포 결과를 검증한다.
