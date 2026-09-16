@@ -160,3 +160,12 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 공개 검증: `/healthz` 정상, `backendReady:true`, 규칙 `crew-p9-50-4`, 미션 50개. 공개 CSS에 `toast-viewport`/`toast-error`가 포함되고 JS에 충돌 갱신·재전송 문구가 포함됨을 확인했다.
 - 배포 전 운영 방 44개를 `/data/coolify/backups/space-crew/20260916-toast-final/rooms.tgz`와 SHA-256 목록으로 백업했다. 앞선 기능 배포 백업은 `/data/coolify/backups/space-crew/20260916-toast-conflict/`, `/data/coolify/backups/space-crew/20260916-toast-init/`에도 보관되어 있다. 첫 시도 `5d8915a4-ba66-4404-9d95-5a2e3c4e75a7`는 Coolify 로컬 배포 키가 호스트 `root` 허용 키와 달라 공개키 인증에서 중단됐으며 컨테이너·운영 데이터에는 영향을 주지 않았다. 기존 허용 키를 보존한 채 Coolify 키의 공개키를 추가한 뒤 재배포를 완료했다.
 - 프로젝트 체크아웃은 `coolify:/home/ubuntu/space-crew`에 `feat/realtime-prototype` 최신 커밋으로 동기화했다. 로컬 SSH에는 `Host coolify`(211.184.227.96:10022, `~/Downloads/kt.pem`) 별칭과 known_hosts 항목을 등록했다. 기존 Cloudflare Tunnel, DNS, 영속 볼륨은 그대로 사용했다.
+
+## 2026-09-16 목표 선택 모달·대기방 반응형 업데이트
+
+- 런타임 `0014bba7497bd2e70e7631ae98d2f3803f2a22c0`, Coolify 배포 ID `b39d0547-6b09-4509-9a6c-efd7c2d02a57`, 결과 `finished`/새 컨테이너 healthy.
+- 목표 선택 모달을 최대 `760px`/`82dvh`까지 확대하고 상단 기준으로 배치해 손패 영역과 겹치는 면적을 줄였다. 모바일은 화면 양옆 8px 여백과 `78dvh`를 사용하며 내용은 모달 내부에서만 스크롤한다.
+- 접속 전 대기방을 `100dvh`에서 헤더를 제외한 높이로 맞추고, 대기방 테이블·중앙 선택 영역·대원 패널을 화면 안에 고정했다. 작은 화면에서는 대원 패널과 중앙 대기 영역만 내부 스크롤하며 전체 페이지가 불필요하게 이동하지 않는다.
+- 로컬 Aside 1440×900에서 모달 `760×738px`, 대기방 문서 높이 `900px`를 확인했다. 단위 테스트 758개, 타입 검사, 프론트 빌드, 모달·플로우·준비 UI E2E 36개가 통과했다.
+- 공개 `/healthz` 정상, `backendReady:true`, 규칙 `crew-p9-50-4`, 미션 50개. 공개 CSS에서 모달·대기방 반응형 규칙을 확인했다.
+- 배포 전 방 44개를 `/data/coolify/backups/space-crew/20260916-modal-lobby/rooms.tgz`와 SHA-256 목록으로 백업했다. 기존 Cloudflare Tunnel, DNS와 영속 볼륨은 그대로 사용했다.
