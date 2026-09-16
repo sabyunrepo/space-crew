@@ -176,3 +176,10 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - `space-crew` 앱은 `feat/realtime-prototype` 브랜치, `is_auto_deploy_enabled=true`, 고정 커밋 없음으로 설정했다. 따라서 webhook이 전달되면 해당 브랜치의 push SHA를 그대로 배포한다.
 - GitHub 저장소 webhook은 Push 이벤트와 `https://coolify.bsh00.com/webhooks/source/github/events/manual` 주소로 등록했다. Coolify 수동 webhook의 secret은 애플리케이션 전용 값을 사용하며 문서에는 기록하지 않는다.
 - GitHub ping과 push delivery가 모두 HTTP 200으로 도착했고, 이 문서 커밋 push가 Coolify 배포 ID `fdlpnmta8lo8b1g009clh7nn`으로 자동 큐잉되어 `finished`/healthy까지 확인됐다.
+
+## 2026-09-16 대원 퇴장·대체 입장 업데이트
+
+- 배포 커밋 `b7986d48d2d5ee089aa45c298faed0faa35a4f5c`, Coolify 배포 ID `rmkbtysuicc4tbvijh4cocze`, 결과 `finished`/healthy.
+- `POST /api/rooms/{roomId}/leave`와 진행 중 대체 입장을 추가했다. 진행 중 대원이 나가면 남은 인원이 3명 이상일 때 같은 미션의 새 시도를 원자적으로 시작하고, 3명 미만이면 대기실로 되돌린다. 새 대원은 `waitingPlayers`로 대기하며 방장이 즉시 재시작 또는 현재 미션 후 합류를 선택한다. 마지막 한 명의 퇴장은 방을 고아 상태로 만들지 않도록 거부한다.
+- 로컬 Aside에서 대기실·방 나가기 UI를 조작했고, 로컬 단위 테스트 759개·타입 검사·프론트/서버 빌드를 통과했다. 공개 HTTPS API에서도 4인 방 생성→진행 시작→퇴장→대체 입장→방장 즉시 재시작을 검증했다(검증 방 `f65b7ba4-ec1c-4cdc-8467-9f496d6af76e`).
+- 배포 전 운영 볼륨 백업은 `/data/coolify/backups/space-crew/20260916-crew-replacement/rooms.tgz` 및 `SHA256SUMS`에 보관했다. 기존 Cloudflare Tunnel, DNS와 영속 볼륨은 유지했다.
