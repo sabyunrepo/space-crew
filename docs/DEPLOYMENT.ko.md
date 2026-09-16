@@ -175,4 +175,4 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - Coolify CLI `1.8.0`에 `coolify` 컨텍스트(`https://coolify.bsh00.com`)를 등록하고 `context verify`, `resource list`, `app get`을 성공시켰다. CLI 토큰은 로컬 `~/.config/coolify/config.json`에 권한 제한 파일로 보관하며 원문은 저장소에 기록하지 않는다.
 - `space-crew` 앱은 `feat/realtime-prototype` 브랜치, `is_auto_deploy_enabled=true`, 고정 커밋 없음으로 설정했다. 따라서 webhook이 전달되면 해당 브랜치의 push SHA를 그대로 배포한다.
 - GitHub 저장소 webhook은 Push 이벤트와 `https://coolify.bsh00.com/webhooks/source/github/events/manual` 주소로 등록했다. Coolify 수동 webhook의 secret은 애플리케이션 전용 값을 사용하며 문서에는 기록하지 않는다.
-- GitHub ping delivery가 HTTP 200으로 도착하는지 확인한 뒤, 이 문서 커밋 push로 자동 배포 큐 생성과 최신 SHA 배포 결과를 검증한다.
+- GitHub ping과 push delivery가 모두 HTTP 200으로 도착했고, 이 문서 커밋 push가 Coolify 배포 ID `fdlpnmta8lo8b1g009clh7nn`으로 자동 큐잉되어 `finished`/healthy까지 확인됐다.
