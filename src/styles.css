@@ -837,6 +837,32 @@ footer {
   font-size: 12px;
   white-space: nowrap;
 }
+.status-leave {
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: #f1c4a7;
+  border-color: #f1c4a755;
+}
+.waiting-join-modal {
+  width: min(560px, calc(100vw - 32px));
+}
+.waiting-join-modal .setup-modal-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.waiting-join-modal h2 { margin: 4px 0 0; font-size: clamp(20px, 2.4vw, 28px); }
+.waiting-join-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.waiting-join-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
 /* --- 게임 테이블 본문(미션/중앙/플레이어) --- */
 .game-table-body {

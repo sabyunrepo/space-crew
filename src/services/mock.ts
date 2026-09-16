@@ -18,6 +18,7 @@ import {
   createState,
   fail,
   newPlayer,
+  removePlayer,
   project,
   type State,
 } from "../game/engine.ts";
@@ -149,6 +150,14 @@ export class MockService implements GameService {
   }
   async snapshot(id: string) {
     return SnapshotSchema.parse(project(this.read(id).state, this.actor));
+  }
+  async leaveRoom(id: string): Promise<void> {
+    return this.locked(id, () => {
+      const record = this.read(id);
+      const next = removePlayer(record.state, this.actor);
+      record.state = next;
+      this.save(record);
+    });
   }
   async command(id: string, raw: Envelope) {
     const input = EnvelopeSchema.parse(raw);

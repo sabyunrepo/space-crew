@@ -31,12 +31,15 @@ import { PreparationPanel, preparationTitle } from "./PreparationPanel.tsx";
 import { MissionSetupModal, usesCombinedTaskSetup } from "./MissionSetupModal.tsx";
 import { MissionResultModal } from "./MissionResultModal.tsx";
 import { handAvailability } from "./cardRules.ts";
+import { WaitingJoinModal } from "./WaitingJoinModal.tsx";
 
 function statusMessage(
   snapshot: Snapshot,
   mineId: string | undefined,
   serviceMode: GameService["mode"],
 ): string {
+  if (!snapshot.players.some((p) => p.id === mineId) && (snapshot.waitingPlayers ?? []).some((p) => p.id === snapshot.me.playerId))
+    return "입장 대기 중 · 방장이 합류 방식을 선택합니다";
   const nickOf = (id: string | null) =>
     snapshot.players.find((p) => p.id === id)?.nickname ?? "";
   switch (snapshot.phase) {
@@ -92,6 +95,7 @@ export function GameTable({
   selected,
   setSelected,
   onBack,
+  onLeave,
   onCopyInvite,
   onToast,
   onSend,
@@ -111,6 +115,7 @@ export function GameTable({
   selected: CardId | null;
   setSelected(id: CardId | null): void;
   onBack(): void;
+  onLeave(): void;
   onCopyInvite(): void;
   onToast?(message: string): void;
   onSend(command?: Command): void;
@@ -152,6 +157,7 @@ export function GameTable({
   const toggleCommunication = () => { setSelected(null); setCommunicateMode(active => !active); };
 
   const lobby = snapshot.phase === "lobby";
+  const waitingForSeat = !mine && (snapshot.waitingPlayers ?? []).some((p) => p.id === snapshot.me.playerId);
   const nextPlayable = catalogue.find(
     (m) => m.id === snapshot.missionId! + 1,
   )?.playable;
@@ -200,6 +206,7 @@ export function GameTable({
         title={snapshot.settings.name}
         message={statusMessage(snapshot, mine?.id, serviceMode)}
         onBack={onBack}
+        onLeave={onLeave}
         action={action}
         connection={connection}
         serviceMode={serviceMode}
@@ -264,7 +271,8 @@ export function GameTable({
                     locked ||
                     (!currentMission?.playable &&
                       snapshot.settings.missionMode !== "random") ||
-                    snapshot.players.length !== snapshot.settings.capacity ||
+                    snapshot.players.length < 3 ||
+                    snapshot.players.length > snapshot.settings.capacity ||
                     snapshot.players.some((p) => !p.ready)
                   }
                   onClick={() => onSend({ type: "start_mission" })}
@@ -326,7 +334,8 @@ export function GameTable({
       {communicateMode && selected && markers.length > 0 && snapshot.me.canCommunicate && !snapshot.restartVote && <CommunicationModal key={selected} cardId={selected}
         markers={missionRules(snapshot.missionId ?? 1).communication.hidden ? ["hidden"] : markers}
         locked={locked} error={error} hasPending={hasPending} onSend={onSend} onDismiss={() => setSelected(null)} />}
-      {!lobby && (
+      {(snapshot.waitingPlayers ?? []).length > 0 && <WaitingJoinModal snapshot={snapshot} isHost={isHost} locked={locked} onSend={onSend} />}
+      {!lobby && !waitingForSeat && (
       <div className="hand-dock">
         {mine && <OwnSeatDock snapshot={snapshot} player={mine} onCommunicate={toggleCommunication} communicationActive={communicateMode} locked={locked} />}
         <div className="hand-play-area">

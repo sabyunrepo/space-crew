@@ -12,6 +12,7 @@ export function StatusBar({
   title,
   message,
   onBack,
+  onLeave,
   action,
   connection,
   serviceMode,
@@ -24,6 +25,7 @@ export function StatusBar({
   title: string;
   message: string;
   onBack(): void;
+  onLeave?(): void;
   action?: {
     label: string;
     icon?: ReactNode;
@@ -68,6 +70,7 @@ export function StatusBar({
         </button>
       )}
       <div className="status-actions">
+        {onLeave && <button type="button" className="secondary status-leave" onClick={onLeave}>방 나가기</button>}
         <span className={`connection ${connection}`}>
           <Wifi size={13} />
           {serviceMode === "mock"

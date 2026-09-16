@@ -107,6 +107,7 @@ export const CommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("advance_trick") }).strict(),
   z.object({ type: z.literal("retry_mission") }).strict(),
   z.object({ type: z.literal("next_mission") }).strict(),
+  z.object({ type: z.literal("resolve_waiting"), mode: z.enum(["restart_now", "after_mission"]) }).strict(),
 ]);
 export type Command = z.infer<typeof CommandSchema>;
 export const EnvelopeSchema = z
@@ -190,6 +191,8 @@ export const SnapshotSchema = z.object({
   commanderId: z.uuid().nullable(),
   turnPlayerId: z.uuid().nullable(),
   players: z.array(PlayerSchema).min(1).max(5),
+  waitingPlayers: z.array(PlayerSchema).max(5).optional(),
+  waitingPolicy: z.enum(["prompt", "after_mission"]).nullable().optional(),
   me: z.object({
     playerId: z.uuid(),
     hand: z.array(CardIdSchema),
@@ -250,4 +253,5 @@ export interface GameService {
   ): () => void;
   fillDemoCrew?(roomId: string): Promise<Snapshot>;
   demoStep?(roomId: string): Promise<Snapshot>;
+  leaveRoom?(roomId: string): Promise<void>;
 }

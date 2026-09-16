@@ -1276,6 +1276,129 @@
                   "additionalProperties": false
                 }
               },
+              "waitingPlayers": {
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "nickname": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 16
+                    },
+                    "characterId": {
+                      "type": "string",
+                      "enum": [
+                        "otter",
+                        "gary",
+                        "moby-dick",
+                        "spongebob",
+                        "green-dino",
+                        "coral",
+                        "komodo",
+                        "hangyodon",
+                        "pingu",
+                        "ilu",
+                        "snow",
+                        "tamama",
+                        "sun",
+                        "tree",
+                        "bay"
+                      ]
+                    },
+                    "seat": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 4
+                    },
+                    "ready": {
+                      "type": "boolean"
+                    },
+                    "briefingReady": {
+                      "type": "boolean"
+                    },
+                    "cardCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "tricksWon": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "isDemo": {
+                      "type": "boolean"
+                    },
+                    "communication": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "cardId": {
+                              "type": "string",
+                              "pattern": "^(blue|green|yellow|black)-[1-9]$|^rocket-[1-4]$"
+                            },
+                            "marker": {
+                              "type": "string",
+                              "enum": [
+                                "highest",
+                                "lowest",
+                                "only",
+                                "hidden"
+                              ]
+                            },
+                            "played": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "cardId",
+                            "marker",
+                            "played"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nickname",
+                    "seat",
+                    "ready",
+                    "briefingReady",
+                    "cardCount",
+                    "tricksWon",
+                    "isDemo",
+                    "communication"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "waitingPolicy": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "prompt",
+                      "after_mission"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
               "me": {
                 "type": "object",
                 "properties": {
@@ -2245,6 +2368,27 @@
                   "type"
                 ],
                 "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "resolve_waiting"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "restart_now",
+                      "after_mission"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "mode"
+                ],
+                "additionalProperties": false
               }
             ]
           }
@@ -2554,6 +2698,129 @@
               ],
               "additionalProperties": false
             }
+          },
+          "waitingPlayers": {
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "nickname": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16
+                },
+                "characterId": {
+                  "type": "string",
+                  "enum": [
+                    "otter",
+                    "gary",
+                    "moby-dick",
+                    "spongebob",
+                    "green-dino",
+                    "coral",
+                    "komodo",
+                    "hangyodon",
+                    "pingu",
+                    "ilu",
+                    "snow",
+                    "tamama",
+                    "sun",
+                    "tree",
+                    "bay"
+                  ]
+                },
+                "seat": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 4
+                },
+                "ready": {
+                  "type": "boolean"
+                },
+                "briefingReady": {
+                  "type": "boolean"
+                },
+                "cardCount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "tricksWon": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "isDemo": {
+                  "type": "boolean"
+                },
+                "communication": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "cardId": {
+                          "type": "string",
+                          "pattern": "^(blue|green|yellow|black)-[1-9]$|^rocket-[1-4]$"
+                        },
+                        "marker": {
+                          "type": "string",
+                          "enum": [
+                            "highest",
+                            "lowest",
+                            "only",
+                            "hidden"
+                          ]
+                        },
+                        "played": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "cardId",
+                        "marker",
+                        "played"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "nickname",
+                "seat",
+                "ready",
+                "briefingReady",
+                "cardCount",
+                "tricksWon",
+                "isDemo",
+                "communication"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "waitingPolicy": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "prompt",
+                  "after_mission"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "me": {
             "type": "object",

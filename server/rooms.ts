@@ -11,6 +11,7 @@ import {
   createState,
   fail,
   newPlayer,
+  removePlayer,
   project,
   type State,
 } from "../src/game/engine.ts";
@@ -419,19 +420,17 @@ export class RoomStore {
     if (!roomId)
       fail("INVITE_NOT_FOUND", "초대 링크를 찾을 수 없습니다.", 404);
     const result = await this.withRoom(roomId, async (record) => {
-      if (
-        record.state.phase !== "lobby" ||
-        record.state.players.length >= record.state.settings.capacity
-      )
+      const occupied = record.state.players.length + (record.state.waitingPlayers?.length ?? 0);
+      if (occupied >= record.state.settings.capacity)
         fail("ROOM_FULL", "입장 가능한 좌석이 없습니다.");
       const playerId = crypto.randomUUID();
       const { token, hash } = issueToken();
+      const player = newPlayer(playerId, input.nickname, occupied, false, input.characterId);
       const nextState: State = {
         ...record.state,
-        players: [
-          ...record.state.players,
-          newPlayer(playerId, input.nickname, record.state.players.length, false, input.characterId),
-        ],
+        players: record.state.phase === "lobby" ? [...record.state.players, player] : record.state.players,
+        waitingPlayers: record.state.phase === "lobby" ? (record.state.waitingPlayers ?? []) : [...(record.state.waitingPlayers ?? []), player],
+        waitingPolicy: record.state.phase === "lobby" ? null : "prompt",
         hands: { ...record.state.hands, [playerId]: [] },
         revision: record.state.revision + 1,
         updatedAt: new Date().toISOString(),
@@ -453,6 +452,26 @@ export class RoomStore {
     return this.withRoom(roomId, (record) => {
       const actor = this.resolveActor(record, token);
       return project(record.state, actor);
+    });
+  }
+
+  async leaveRoom(roomId: string, token: string): Promise<void> {
+    await this.withRoom(roomId, async (record) => {
+      const actor = this.resolveActor(record, token);
+      const timer = this.timers.get(roomId);
+      if (timer) clearTimeout(timer);
+      this.timers.delete(roomId);
+      const trickTimer = this.trickTimers.get(roomId);
+      if (trickTimer) clearTimeout(trickTimer);
+      this.trickTimers.delete(roomId);
+      const nextState = removePlayer(record.state, actor);
+      const tokens = { ...record.tokens };
+      for (const [hash, playerId] of Object.entries(tokens)) if (playerId === actor) delete tokens[hash];
+      const nextRecord: RoomRecord = { ...record, state: nextState, tokens };
+      await this.persist(roomId, nextRecord);
+      this.notify(roomId, nextState.revision);
+      this.maybeScheduleDemo(nextRecord);
+      this.maybeScheduleTrickAdvance(nextRecord);
     });
   }
 

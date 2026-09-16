@@ -159,6 +159,16 @@ export class ServerService implements GameService {
     });
   }
 
+  async leaveRoom(roomId: string): Promise<void> {
+    const token = this.tokenFor(roomId);
+    await this.request(`/rooms/${roomId}/leave`, z.object({ ok: z.literal(true) }), {
+      method: "POST",
+      body: {},
+      token,
+    });
+    localStorage.removeItem(tokenKey(roomId));
+  }
+
   subscribe(
     roomId: string,
     onRevision: (revision: number) => void,

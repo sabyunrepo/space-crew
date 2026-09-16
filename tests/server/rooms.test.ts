@@ -113,6 +113,40 @@ const readyCommand = (revision: number): Envelope => ({
 });
 
 describe("RoomStore", () => {
+  it("lets a replacement join after an in-game departure and lets the host restart with them", async () => {
+    await withTempDir(async (dataDir) => {
+      const store = new RoomStore({ dataDir, trickAdvanceDelayMs: 60_000 });
+      try {
+        const host = await store.createRoom({ commandId: crypto.randomUUID(), nickname: "선장", settings: { name: "교대", capacity: 4, missionMode: "sequential", startMission: 1 } });
+        const peers: { snapshot: typeof host.snapshot; playerToken: string }[] = [host];
+        for (let i = 1; i < 4; i++) peers.push(await store.joinRoom({ commandId: crypto.randomUUID(), nickname: `대원${i}`, inviteToken: host.inviteToken }));
+        let snap = peers[3].snapshot;
+        for (const peer of peers) {
+          snap = await store.command(snap.roomId, peer.playerToken, { commandId: crypto.randomUUID(), expectedRevision: snap.revision, attemptId: null, command: { type: "set_ready", ready: true } });
+        }
+        snap = await store.command(snap.roomId, host.playerToken, { commandId: crypto.randomUUID(), expectedRevision: snap.revision, attemptId: null, command: { type: "start_mission" } });
+        const departed = peers[1];
+        await store.leaveRoom(snap.roomId, departed.playerToken);
+        snap = await store.snapshot(snap.roomId, host.playerToken);
+        expect(snap.players).toHaveLength(3);
+        expect(snap.phase).toBe("briefing");
+        expect(snap.attemptNumber).toBe(2);
+        await expect(store.snapshot(snap.roomId, departed.playerToken)).rejects.toMatchObject({ code: "NOT_MEMBER" });
+
+        const replacement = await store.joinRoom({ commandId: crypto.randomUUID(), nickname: "교대 대원", inviteToken: host.inviteToken });
+        expect(replacement.snapshot.players).toHaveLength(3);
+        expect(replacement.snapshot.waitingPlayers).toHaveLength(1);
+        expect(replacement.snapshot.me.playerId).toBe(replacement.snapshot.waitingPlayers![0].id);
+        snap = await store.snapshot(snap.roomId, host.playerToken);
+        snap = await store.command(snap.roomId, host.playerToken, { commandId: crypto.randomUUID(), expectedRevision: snap.revision, attemptId: snap.attemptId, command: { type: "resolve_waiting", mode: "restart_now" } });
+        expect(snap.players).toHaveLength(4);
+        expect(snap.waitingPlayers).toHaveLength(0);
+        expect(snap.attemptNumber).toBe(3);
+        expect(snap.phase).toBe("briefing");
+      } finally { store.shutdown(); }
+    });
+  });
+
   it("creates a room and authenticates by playerToken; unknown token is rejected", async () => {
     await withTempDir(async (dataDir) => {
       const store = new RoomStore({ dataDir, demoDelayMs: 0 });

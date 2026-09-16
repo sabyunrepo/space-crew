@@ -28,8 +28,75 @@ const freshSetup = (): SetupState => ({ roleDone: false, tokensDone: false, assi
 function normalize(state: State) {
   state.missionProgress ??= freshProgress();
   state.preparation ??= null;
+  state.waitingPlayers ??= [];
+  state.waitingPolicy ??= null;
   // Old saves contain only missions 1–4 and no setup state.
   state.setup ??= { ...freshSetup(), assignmentDone: state.tasks.length > 0 && state.tasks.every(t => t.ownerId !== null) };
+}
+
+function compactSeats(state: State) {
+  state.players = [...state.players].sort((a, b) => a.seat - b.seat).map((p, seat) => ({ ...p, seat }));
+  state.waitingPlayers = [...(state.waitingPlayers ?? [])].map((p, i) => ({ ...p, seat: state.players.length + i }));
+}
+
+function promoteWaiting(state: State) {
+  if (!state.waitingPlayers?.length) return;
+  state.players.push(...state.waitingPlayers);
+  state.waitingPlayers = [];
+  state.waitingPolicy = null;
+  compactSeats(state);
+  state.players.forEach((p) => { state.hands[p.id] ??= []; });
+}
+
+function resetToLobby(state: State) {
+  state.phase = "lobby";
+  state.missionId = null;
+  state.attemptId = null;
+  state.attemptNumber = 0;
+  state.commanderId = null;
+  state.turnPlayerId = null;
+  state.tasks = [];
+  state.trick = [];
+  state.lastTrick = null;
+  state.trickNumber = 0;
+  state.resultReason = null;
+  state.restartVote = null;
+  state.preparation = null;
+  state.missionProgress = freshProgress();
+  state.setup = freshSetup();
+  state.players.forEach((p) => { p.ready = p.isDemo; p.briefingReady = false; p.cardCount = 0; p.tricksWon = 0; p.communication = null; });
+  state.hands = Object.fromEntries(state.players.map((p) => [p.id, []]));
+}
+
+/** Removes a member atomically. During a mission the remaining crew gets a
+ * fresh attempt with the same mission when at least three members remain;
+ * otherwise the room returns to the lobby until another member joins. */
+export function removePlayer(input: State, playerId: string, random = Math.random): State {
+  const state = structuredClone(input);
+  normalize(state);
+  if (state.players.length <= 1 && state.players.some((p) => p.id === playerId))
+    fail("LAST_MEMBER", "마지막 대원은 방을 나갈 수 없습니다.");
+  const waitingIndex = (state.waitingPlayers ?? []).findIndex((p) => p.id === playerId);
+  if (waitingIndex >= 0) {
+    state.waitingPlayers = (state.waitingPlayers ?? []).filter((_, i) => i !== waitingIndex);
+    delete state.hands[playerId];
+  } else {
+    const leaving = state.players.find((p) => p.id === playerId);
+    if (!leaving) fail("NOT_MEMBER", "이 방의 대원이 아닙니다.", 403);
+    state.players = state.players.filter((p) => p.id !== playerId);
+    delete state.hands[playerId];
+    compactSeats(state);
+    if (state.hostId === playerId) state.hostId = state.players[0].id;
+    state.restartVote = null;
+    if (state.phase !== "lobby") {
+      const playable = state.missionId !== null && missions.some((m) => m.id === state.missionId && m.playable);
+      if (state.players.length >= 3 && playable) begin(state, state.missionId!, random);
+      else { promoteWaiting(state); resetToLobby(state); }
+    }
+  }
+  state.revision += 1;
+  state.updatedAt = new Date().toISOString();
+  return state;
 }
 function seatAfter(state: State, playerId: string, offset = 1) {
   const ordered = [...state.players].sort((a, b) => a.seat - b.seat);
@@ -97,6 +164,8 @@ export function createState(
     commanderId: null,
     turnPlayerId: null,
     players: [newPlayer(id, nickname, 0, false, characterId)],
+    waitingPlayers: [],
+    waitingPolicy: null,
     hands: { [id]: [] },
     tasks: [],
     trick: [],
@@ -129,7 +198,10 @@ export function communicationMarkers(
   ];
 }
 export function project(state: State, playerId: string): Snapshot {
-  if (!state.players.some((p) => p.id === playerId)) fail("NOT_MEMBER", "이 방의 대원이 아닙니다.", 403);
+  normalize(state);
+  const activeMember = state.players.some((p) => p.id === playerId);
+  const waitingMember = (state.waitingPlayers ?? []).some((p) => p.id === playerId);
+  if (!activeMember && !waitingMember) fail("NOT_MEMBER", "이 방의 대원이 아닙니다.", 403);
   const { hands, setup: _privateSetup, ...publicState } = structuredClone(state);
   const rules = missionRules(state.missionId ?? 1);
   let tasks = publicState.tasks;
@@ -141,7 +213,7 @@ export function project(state: State, playerId: string): Snapshot {
     ...publicState, tasks, hiddenTaskCount: state.tasks.length - tasks.length,
     preparation: publicState.preparation ?? null,
     missionProgress: publicState.missionProgress ?? freshProgress(),
-    me: { playerId, hand: sortCards(hands[playerId] ?? []), legalCardIds: legalCards(state, playerId), canCommunicate: mayCommunicate(state, playerId) },
+    me: { playerId, hand: activeMember ? sortCards(hands[playerId] ?? []) : [], legalCardIds: activeMember ? legalCards(state, playerId) : [], canCommunicate: activeMember ? mayCommunicate(state, playerId) : false },
   };
 }
 function prepare(state: State, stage: NonNullable<Snapshot["preparation"]>["stage"], eligiblePlayerIds = state.players.map(p => p.id), activeTaskId: string | null = null) {
@@ -354,6 +426,8 @@ function resolve(state: State, random: () => number) {
   else if (success) { state.phase = "success"; state.resultReason = "미션의 모든 조건을 달성했습니다."; }
   else if (exhausted) { state.phase = "failure"; state.resultReason = "플레이할 트릭이 남아 있지 않습니다. 미션 조건을 완료하지 못했습니다."; }
   else state.phase = "trick_result";
+  if (["success", "failure"].includes(state.phase) && state.waitingPolicy === "after_mission")
+    promoteWaiting(state);
   state.turnPlayerId = winnerId;
   if (id === 12 && state.trickNumber === 1 && !progress.transferApplied && state.phase === "trick_result") {
     // Author-relayed ruling: the publicly communicated card is not eligible; marker remains historical.
@@ -431,7 +505,7 @@ export function applyCommand(
       host();
       phase("lobby");
       requireThat(
-        state.players.length === state.settings.capacity &&
+        state.players.length >= 3 && state.players.length <= state.settings.capacity &&
           state.players.every((p) => p.ready),
         "모든 좌석을 채우고 준비를 완료해 주세요.",
       );
@@ -601,9 +675,25 @@ export function applyCommand(
       state.trickNumber += 1;
       state.phase = "playing";
       break;
+    case "resolve_waiting":
+      host();
+      requireThat((state.waitingPlayers ?? []).length > 0, "대기 중인 새 대원이 없습니다.");
+      if (command.mode === "after_mission") {
+        if (["success", "failure"].includes(state.phase)) promoteWaiting(state);
+        else {
+          requireThat(["briefing", "task_selection", "preparation", "playing", "trick_result"].includes(state.phase), "현재 임무가 진행 중이 아닙니다.");
+          state.waitingPolicy = "after_mission";
+        }
+      } else {
+        promoteWaiting(state);
+        if (state.missionId !== null && state.phase !== "lobby" && state.phase !== "campaign_complete") begin(state, state.missionId, random);
+        else if (state.phase === "campaign_complete") resetToLobby(state);
+      }
+      break;
     case "retry_mission":
       host();
       phase("failure");
+      promoteWaiting(state);
       begin(state, state.missionId!, random);
       break;
     case "next_mission": {
@@ -624,7 +714,7 @@ export function applyCommand(
       if (!id || id > 50) {
         state.phase = "campaign_complete";
         state.resultReason = "플레이 가능한 임무를 모두 마쳤습니다.";
-      } else begin(state, id, random);
+      } else { promoteWaiting(state); begin(state, id, random); }
       break;
     }
   }

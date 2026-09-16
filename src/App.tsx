@@ -373,6 +373,13 @@ export function App() {
       }
     });
   }
+  async function leaveRoom() {
+    if (!service || !roomId) { navigate("/"); return; }
+    await run(async () => {
+      if (service.leaveRoom) await service.leaveRoom(roomId);
+      navigate("/");
+    });
+  }
   const mine = snapshot?.players.find((p) => p.id === snapshot.me.playerId);
   const isHost = snapshot?.hostId === snapshot?.me.playerId;
   const currentMission = catalogue.find(
@@ -762,7 +769,8 @@ export function App() {
             serviceMode={service!.mode}
             selected={selected}
             setSelected={setSelected}
-            onBack={() => navigate("/")}
+            onBack={() => void leaveRoom()}
+            onLeave={() => void leaveRoom()}
             onCopyInvite={() => void copyInvite()}
             onToast={(message) => pushToast(message, "error")}
             onSend={(command) => void send(command)}

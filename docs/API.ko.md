@@ -6,7 +6,7 @@ Supabase Edge 경로는 현재 HTTP 골격만 준비되어 있다. `GET /capabil
 
 ## Node 실시간 서버
 
-현재 동작하는 Node 서버는 `/api`를 사용한다. 방 생성은 `POST /api/rooms`, 입장은 `POST /api/join`이며 `{ entry: { snapshot, inviteToken }, playerToken }`을 반환한다. 이후 조회·명령은 서버가 발급한 `playerToken`을 Bearer 인증으로 보낸다. 초대 조회는 `GET /api/rooms/{roomId}/invite`다. `/ws?roomId=…` 연결 후 첫 메시지 `{ type: "auth", token }`으로 인증하면 revision 알림을 받는다. 클라이언트는 개인 snapshot을 다시 조회한다. 이 인증·저장 방식과 아래 Supabase JWT·Postgres 계약은 별개의 어댑터이며 혼용하지 않는다.
+현재 동작하는 Node 서버는 `/api`를 사용한다. 방 생성은 `POST /api/rooms`, 입장은 `POST /api/join`이며 `{ entry: { snapshot, inviteToken }, playerToken }`을 반환한다. 이후 조회·명령은 서버가 발급한 `playerToken`을 Bearer 인증으로 보낸다. 초대 조회는 `GET /api/rooms/{roomId}/invite`다. `POST /api/rooms/{roomId}/leave`로 현재 토큰의 대원을 원자적으로 퇴장시킬 수 있다. 진행 중 퇴장으로 3명 이상이 남으면 같은 미션의 새 시도가 즉시 시작되고, 3명 미만이면 대기실로 돌아간다. 진행 중 새 입장은 `waitingPlayers`로 대기하며 방장이 `resolve_waiting` 명령으로 즉시 재시작 또는 현재 미션 후 합류를 선택한다. `/ws?roomId=…` 연결 후 첫 메시지 `{ type: "auth", token }`으로 인증하면 revision 알림을 받는다. 클라이언트는 개인 snapshot을 다시 조회한다. 이 인증·저장 방식과 아래 Supabase JWT·Postgres 계약은 별개의 어댑터이며 혼용하지 않는다.
 
 ## 인증과 기본 형식 (Supabase)
 
@@ -19,6 +19,7 @@ Supabase Edge 경로는 현재 HTTP 골격만 준비되어 있다. `GET /capabil
 | POST | `/rooms/join` | commandId, nickname, inviteToken | 기존 자리 복귀 또는 신규 자리 snapshot; inviteToken은 null 가능 |
 | GET | `/rooms/{roomId}` | 없음 | 요청자 손패만 포함한 최신 snapshot |
 | POST | `/rooms/{roomId}/commands` | 아래 명령 envelope | 행동 반영 snapshot |
+| POST | `/rooms/{roomId}/leave` | Bearer playerToken | `{ ok: true }`; 마지막 대원은 퇴장할 수 없음 |
 | POST | `/rooms/{roomId}/invites` | commandId | 201: 새 inviteToken; 방장만 가능 |
 
 초대 링크는 `/join#<token>`. fragment를 요청 본문으로 보내고 성공 후 URL에서 제거한다. 신규 초대 토큰은 최소 256비트 암호학적 난수로 만들고 DB `invites`에는 SHA-256 해시만 저장한다. 재전송용 응답에 토큰이 필요한 경우 private receipts의 접근/보존을 제한한다. 만료·회전은 신규 입장만 막으며 기존 멤버 snapshot 복귀는 토큰 없이 인증으로 처리한다.
@@ -65,6 +66,7 @@ capacity는 3/4/5. startMission은 1~50. random 모드에서는 startMission을 
 | advance_trick | 없음 | trick_result / 참여 대원 (Node 서버는 자동 진행도 지원) |
 | retry_mission | 없음 | failure / 방장, 같은 미션 새 시도 |
 | next_mission | 없음 | success / 방장, 순차 다음 번호 또는 미추첨 랜덤 |
+| resolve_waiting | mode: restart_now/after_mission | 진행 중 대기 대원 / 방장; 즉시 새 시도에 합류하거나 현재 미션 종료 후 합류 |
 
 새 시도의 규칙 버전은 `crew-p9-50-3`이다. 진행 중인 v2 시도는 5·33번 담당자 범위와 17번 종료 판정을 유지하며 재도전·다음 미션에서 v3으로 전환한다. 변경 근거는 [원작 재대조](./ORIGINAL-MISSION-AUDIT.ko.md)를 따른다. 아래 명령은 공유 엔진·Node 서버·로컬 데모에 적용됐고 파생 Edge 계약에도 포함된다. Supabase `PendingRepository`의 게임 저장소 구현은 여전히 후속 작업이다.
 

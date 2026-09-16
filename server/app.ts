@@ -409,7 +409,7 @@ export function createApp(options: {
       return;
     }
 
-    const match = /^\/rooms\/([^/]+)(?:\/(commands|invite|demo-crew))?$/.exec(
+    const match = /^\/rooms\/([^/]+)(?:\/(commands|invite|demo-crew|leave))?$/.exec(
       path,
     );
     if (!match) {
@@ -438,6 +438,11 @@ export function createApp(options: {
     }
     if (match[2] === "demo-crew" && req.method === "POST") {
       sendJson(200, await store.fillDemoCrew(roomId, token));
+      return;
+    }
+    if (match[2] === "leave" && req.method === "POST") {
+      await store.leaveRoom(roomId, token);
+      sendJson(200, { ok: true });
       return;
     }
     sendJson(404, errorBody("NOT_FOUND", "요청 경로가 없습니다."));
