@@ -167,6 +167,164 @@
 }
 @media (prefers-reduced-motion: reduce) { .player-seat .played-card { animation: none; } }
 
+/* Unified room chrome: the global header stays compact while the room bar
+   owns the live status, mission chip, and room actions. */
+.app-shell.gameplay-fixed .site-header {
+  width: 100%;
+  box-sizing: border-box;
+  max-width: none;
+  padding-inline: clamp(16px, 3vw, 48px);
+  border-bottom: 1px solid var(--line);
+}
+.app-shell.gameplay-fixed .site-header .mode-tag { display: none; }
+.app-shell.gameplay-fixed .site-header nav { gap: clamp(10px, 1.5vw, 20px); }
+.app-shell.gameplay-fixed .status-bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "back overview actions";
+  align-items: center;
+  min-height: 68px;
+  padding: 8px clamp(12px, 2vw, 28px);
+  gap: clamp(8px, 1.2vw, 18px);
+}
+.app-shell.gameplay-fixed .status-back { grid-area: back; }
+.app-shell.gameplay-fixed .status-overview {
+  grid-area: overview;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(150px, .8fr) minmax(360px, 1.2fr);
+  align-items: center;
+  gap: clamp(10px, 1.5vw, 22px);
+}
+.app-shell.gameplay-fixed .status-message { min-width: 0; }
+.app-shell.gameplay-fixed .status-message strong {
+  font-size: clamp(10px, .8vw, 13px);
+  letter-spacing: .03em;
+}
+.app-shell.gameplay-fixed .status-message span { font-size: clamp(12px, 1vw, 15px); }
+.app-shell.gameplay-fixed .status-mission { min-width: 0; }
+.app-shell.gameplay-fixed .status-mission .mission-panel-strip {
+  min-height: 40px;
+  padding: 5px 9px;
+  gap: clamp(6px, .8vw, 12px);
+  border: 1px solid #afc89035;
+  border-radius: 9px;
+  background: #17221f;
+}
+.app-shell.gameplay-fixed .status-mission .mission-history-button {
+  min-height: 30px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.app-shell.gameplay-fixed .status-mobile-toggle { display: none; }
+.app-shell.gameplay-fixed .status-actions {
+  grid-area: actions;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  min-width: 0;
+  gap: 6px;
+}
+.app-shell.gameplay-fixed .status-actions .connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding-inline: 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.app-shell.gameplay-fixed .status-actions button { min-height: 40px; }
+.app-shell.gameplay-fixed .status-leave { order: 5; }
+.app-shell.gameplay-fixed .status-actions .connection { order: 1; }
+.app-shell.gameplay-fixed .status-invite { order: 2; }
+.app-shell.gameplay-fixed .status-restart { order: 3; }
+.app-shell.gameplay-fixed .status-primary { order: 4; }
+
+@media (max-width: 1280px) and (min-width: 761px) {
+  .app-shell.gameplay-fixed .status-overview { grid-template-columns: minmax(135px, .65fr) minmax(300px, 1.35fr); gap: 8px; }
+  .app-shell.gameplay-fixed .status-actions { gap: 4px; }
+  .app-shell.gameplay-fixed .status-actions button { padding-inline: 8px; font-size: 10px; }
+  .app-shell.gameplay-fixed .status-leave-label,
+  .app-shell.gameplay-fixed .status-restart span { display: none; }
+  .app-shell.gameplay-fixed .status-leave { width: 40px; padding: 0; justify-content: center; }
+  .app-shell.gameplay-fixed .status-restart { width: 40px; padding: 0; justify-content: center; }
+}
+
+@media (max-width: 760px) {
+  .app-shell.gameplay-fixed .site-header {
+    height: 44px;
+    padding-inline: 10px;
+  }
+  .app-shell.gameplay-fixed .brand { font-size: 13px; gap: 7px; }
+  .app-shell.gameplay-fixed .brand-icon { width: 30px; height: 30px; }
+  .app-shell.gameplay-fixed .site-header nav { gap: 6px; }
+  .app-shell.gameplay-fixed .site-header nav button { font-size: 9px; padding: 6px 3px; }
+  .app-shell.gameplay-fixed .site-header nav button svg { display: block; width: 14px; height: 14px; }
+  .app-shell.gameplay-fixed .status-bar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "back overview toggle" "actions actions actions";
+    grid-template-rows: auto auto;
+    min-height: 84px;
+    padding: 5px 8px 4px;
+    gap: 3px 6px;
+  }
+  .app-shell.gameplay-fixed .status-overview {
+    display: block;
+    min-width: 0;
+  }
+  .app-shell.gameplay-fixed .status-message { gap: 0; }
+  .app-shell.gameplay-fixed .status-message strong { display: block; font-size: 8px; line-height: 1.15; }
+  .app-shell.gameplay-fixed .status-message span {
+    display: block;
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app-shell.gameplay-fixed .status-mission { margin-top: 3px; }
+  .app-shell.gameplay-fixed .status-mission .mission-panel-strip {
+    min-height: 25px;
+    padding: 2px 5px;
+    gap: 5px;
+    border-radius: 6px;
+  }
+  .app-shell.gameplay-fixed .status-mission .eyebrow { font-size: 8px !important; letter-spacing: .1em !important; }
+  .app-shell.gameplay-fixed .status-mission .attempt { font-size: 8px; }
+  .app-shell.gameplay-fixed .status-mission .mission-progress { font-size: 8px; }
+  .app-shell.gameplay-fixed .status-mission .mission-history-button {
+    min-height: 22px;
+    padding: 2px 5px;
+    font-size: 8px;
+  }
+  .app-shell.gameplay-fixed .status-mission .mission-history-button:nth-of-type(2) { display: none; }
+  .app-shell.gameplay-fixed .status-mobile-toggle {
+    display: inline-flex;
+    grid-area: toggle;
+    align-self: start;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+  }
+  .app-shell.gameplay-fixed .status-actions {
+    grid-area: actions;
+    width: 100%;
+    justify-content: flex-end;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 4px;
+  }
+  .app-shell.gameplay-fixed .status-actions::-webkit-scrollbar { display: none; }
+  .app-shell.gameplay-fixed .status-actions button { min-height: 32px; padding-inline: 8px; font-size: 9px; }
+  .app-shell.gameplay-fixed .status-actions .connection { font-size: 8px; }
+  .app-shell.gameplay-fixed .status-leave-label,
+  .app-shell.gameplay-fixed .status-restart span { display: none; }
+  .app-shell.gameplay-fixed .status-leave,
+  .app-shell.gameplay-fixed .status-restart { width: 34px; padding: 0; justify-content: center; }
+}
+
 .seat-briefing { display: block; font-size: 9px; color: var(--accent); margin-bottom: 3px; }
 .communication-options { margin-top: 0; padding-top: 4px; gap: 6px; }
 .communication-options button { display: flex; align-items: center; gap: 8px; padding: 3px 10px; }

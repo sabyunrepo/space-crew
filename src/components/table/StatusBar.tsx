@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { ArrowLeft, ChevronDown, ChevronUp, Copy, RotateCcw, Wifi } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Copy, LogOut, RotateCcw, Wifi } from "lucide-react";
 import type { Connection, GameService } from "../../../shared/contracts.ts";
 
 /**
@@ -70,7 +70,7 @@ export function StatusBar({
         </button>
       )}
       <div className="status-actions">
-        {onLeave && <button type="button" className="secondary status-leave" onClick={onLeave}>방 나가기</button>}
+        {onLeave && <button type="button" className="secondary status-leave" onClick={onLeave}><LogOut size={15} /><span className="status-leave-label">방 나가기</span></button>}
         <span className={`connection ${connection}`}>
           <Wifi size={13} />
           {serviceMode === "mock"
@@ -93,7 +93,7 @@ export function StatusBar({
             <span className="status-invite-label">초대 링크</span>
           </button>
         )}
-        {onRestart && <button type="button" className="secondary status-restart" disabled={restartDisabled} onClick={onRestart}><RotateCcw size={16} />게임 포기 · 재시작</button>}
+        {onRestart && <button type="button" className="secondary status-restart" disabled={restartDisabled} onClick={onRestart}><RotateCcw size={16} /><span>게임 포기 · 재시작</span></button>}
         {action && (
           <button
             type="button"
