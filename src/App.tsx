@@ -166,7 +166,11 @@ export function App() {
   const [backendReady, setBackendReady] = useState(service?.mode === "mock");
   const [error, setError] = useState(serviceResult.error);
   const [notice, setNotice] = useState("");
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [toasts, setToasts] = useState<ToastItem[]>(() =>
+    serviceResult.error
+      ? [{ id: 1, kind: "error", message: serviceResult.error }]
+      : [],
+  );
   const toastSequence = useRef(0);
   const pushToast = useCallback((message: string, kind: ToastItem["kind"] = "error", action?: ToastItem["action"]) => {
     const toast = { id: ++toastSequence.current, kind, message, ...(action ? { action } : {}) } satisfies ToastItem;
