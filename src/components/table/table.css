@@ -685,6 +685,15 @@
   .hand-controls { padding-top: 0; }
   .central-trick > header span { display: none; }
   .central-trick > header strong { font-size: 9px; }
+
+  /* Keep the two areas players need to inspect at a glance photographic.
+     Opponent seats may use the compact suit/rank face when their cards are
+     tiny, but the shared trick and the viewer's goals should match the hand
+     cards and retain their artwork. */
+  .central-trick .compact-card-art,
+  .own-seat-dock .seat-task .compact-card-art { visibility: visible; }
+  .central-trick .compact-card-face,
+  .own-seat-dock .seat-task .compact-card-face { display: none; }
 }
 .player-seat { position: relative; min-width: min(140px, 100%); }
 .seat-submission, .seat-missions .no-tasks { display: none; }
