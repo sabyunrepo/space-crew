@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   Check,
@@ -93,6 +93,7 @@ export function GameTable({
   setSelected,
   onBack,
   onCopyInvite,
+  onToast,
   onSend,
   onFillDemoCrew,
   onDemoStep,
@@ -111,6 +112,7 @@ export function GameTable({
   setSelected(id: CardId | null): void;
   onBack(): void;
   onCopyInvite(): void;
+  onToast?(message: string): void;
   onSend(command?: Command): void;
   onFillDemoCrew?(): void;
   onDemoStep?(): void;
@@ -130,16 +132,9 @@ export function GameTable({
   const setupOpen = !snapshot.restartVote && setupActive && dismissedSetup !== setupKey;
   const [communicateMode, setCommunicateMode] = useState(false);
   const [distressOpen, setDistressOpen] = useState(false);
-  const [hint, setHint] = useState("");
-  const hintTimer = useRef<number>(undefined);
   useEffect(() => {
     if (snapshot.phase !== "playing" || !snapshot.me.canCommunicate || snapshot.restartVote) setCommunicateMode(false);
   }, [snapshot.phase, snapshot.me.canCommunicate, snapshot.restartVote]);
-  const showHint = (reason: string) => {
-    setHint(reason);
-    window.clearTimeout(hintTimer.current);
-    hintTimer.current = window.setTimeout(() => setHint(""), 4000);
-  };
   const handMode =
     snapshot.phase !== "playing"
       ? "view"
@@ -335,11 +330,6 @@ export function GameTable({
       <div className="hand-dock">
         {mine && <OwnSeatDock snapshot={snapshot} player={mine} onCommunicate={toggleCommunication} communicationActive={communicateMode} locked={locked} />}
         <div className="hand-play-area">
-        {hint && (
-          <p className="hand-hint" role="status">
-            {hint}
-          </p>
-        )}
         <div className="hand-dock-head">
           <h3>
             내 손패 <span>{snapshot.me.hand.length}장</span>
@@ -374,7 +364,7 @@ export function GameTable({
           cards={availability}
           selected={selected}
           onSelect={(cardId) => setSelected(selected === cardId ? null : cardId)}
-          onBlocked={showHint}
+          onBlocked={(reason) => onToast?.(reason)}
         />
         {communicateMode ? (
           <p className="hand-controls-hint" role="status">교신할 카드를 선택하세요. 신호 카드를 다시 누르면 취소됩니다.</p>

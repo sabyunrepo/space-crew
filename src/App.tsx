@@ -764,6 +764,7 @@ export function App() {
             setSelected={setSelected}
             onBack={() => navigate("/")}
             onCopyInvite={() => void copyInvite()}
+            onToast={(message) => pushToast(message, "error")}
             onSend={(command) => void send(command)}
             onFillDemoCrew={
               service?.fillDemoCrew &&
