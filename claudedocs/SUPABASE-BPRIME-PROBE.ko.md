@@ -194,3 +194,13 @@ PROBE_CLIENT_CONFIG=<client-config.json> PROBE_OUT=<result.json> \
 전체 19개가 25분 만에 모두 통과했다. 같은 테스트의 Node 서버 모드 회귀도 19개 모두 통과했다(7.3분). 특수 미션과 협동 테스트는 방을 Node API로 미리 만드는 방식이어서, Supabase 모드에서는 화면으로 방을 만들고 초대 링크로 들어가게 테스트 준비 코드만 나눴다.
 
 운영 주소 `crew.bsh00.com`은 여전히 Node 서버다. `feat/realtime-prototype`에 push하면 Coolify가 자동 배포하므로, Supabase 모드 전환은 별도로 결정한다.
+
+## 4차: 운영 전환 (2026-09-20)
+
+`crew.bsh00.com`을 Supabase 모드로 전환했다. 같은 Coolify 앱, 같은 도메인, 같은 터널을 유지하고 프론트 빌드 모드만 바꿨다(빌드 시점 변수 4개). 컨테이너의 Node 서버는 정적 파일과 `/healthz`만 담당한다.
+
+- 배포 커밋 `8ea6f13`(전환) → `9155ad9`(방송 누락 복구)
+- 전환 전 방 48개 백업: `/data/coolify/backups/space-crew/20260920-presupabase/rooms.tgz`. 사용자 결정으로 이어가지 않는다.
+- 되돌리기: Coolify 빌드 변수 `VITE_BACKEND_MODE=server`로 바꾸고 재배포하면 기존 방이 다시 보인다.
+
+전환 직후 공개 주소 검증에서 **방송 누락으로 화면이 멈추는 실제 결함**을 발견해 고쳤다(4초 안전 재조회 + 캐시 유효 시간 3초). 로컬에서는 재현되지 않았고 공개 주소에서만 재현됐다.
