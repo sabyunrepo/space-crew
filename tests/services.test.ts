@@ -145,6 +145,13 @@ describe("Edge HTTP boundary", () => {
     expect(response.status).toBe(501);
     expect((await response.json()).error.code).toBe("BACKEND_NOT_IMPLEMENTED");
   });
+  it("routes by the route query when the platform router only admits /functions/v1/<name>", async () => {
+    const viaQuery = await handler(request("?route=" + encodeURIComponent("/capabilities")));
+    expect(viaQuery.status).toBe(200);
+    expect((await viaQuery.json()).missions).toHaveLength(50);
+    const create = await handler(request("?route=" + encodeURIComponent("/rooms"), createInput()));
+    expect(create.status).toBe(501);
+  });
   it("supports preflight without requiring JWT", async () => {
     const response = await handler(
       new Request("http://api/crew-api/rooms", {

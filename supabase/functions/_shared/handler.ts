@@ -163,8 +163,12 @@ export function createHandler(options: {
           "유효한 로그인 세션이 아닙니다.",
           401,
         );
+      // The self-hosted (sbp) platform router only admits /functions/v1/<name>,
+      // so clients send the API path as ?route=; plain sub-paths still work on
+      // a standard Supabase runtime.
+      const url = new URL(request.url);
       const path =
-        new URL(request.url).pathname
+        (url.searchParams.get("route") ?? url.pathname)
           .replace(/^\/functions\/v1\/crew-api(?=\/|$)/, "")
           .replace(/^\/crew-api(?=\/|$)/, "")
           .replace(/\/$/, "") || "/";
@@ -263,13 +267,21 @@ export function createHandler(options: {
           },
           error.status,
         );
-      // Never log JWTs, invite tokens or private hands.
+      // Never log JWTs, invite tokens or private hands. The sbp runtime keeps no
+      // function logs, so a database error's SQLSTATE and message (no tokens or
+      // hands reach them) are returned for diagnosis; other errors only by name.
+      const pg = error as { code?: unknown; message?: unknown; name?: unknown } | null;
+      const detail =
+        typeof pg?.code === "string" && /^[0-9A-Z]{5}$/.test(pg.code)
+          ? `${pg.code} ${String(pg.message).slice(0, 200)}`
+          : String(pg?.name ?? "Error");
       return reply(
         {
           error: {
             code: "INTERNAL_ERROR",
             message: "서버 처리 중 오류가 발생했습니다.",
             requestId,
+            detail,
           },
         },
         500,

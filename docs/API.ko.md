@@ -10,7 +10,7 @@ Supabase Edge 경로는 `PostgresRepository`(`supabase/functions/_shared/postgre
 
 ## 인증과 기본 형식 (Supabase)
 
-모든 API는 Supabase 익명/일반 로그인 후 받은 사용자 JWT를 `Authorization: Bearer <access_token>`에 보내고 공개 프로젝트 키를 `apikey` 헤더에 보낸다. 쓰기는 `Content-Type: application/json`. 응답은 `Cache-Control: no-store`. 게임의 actor는 JWT의 auth 사용자에서 `crew_private.players`로 매핑한다.
+모든 API는 Supabase 익명/일반 로그인 후 받은 사용자 JWT를 `Authorization: Bearer <access_token>`에 보내고 공개 프로젝트 키를 `apikey` 헤더에 보낸다. 쓰기는 `Content-Type: application/json`. 응답은 `Cache-Control: no-store`. 게임의 actor는 JWT의 auth 사용자 ID(`sub`)를 그대로 쓴다.
 
 | HTTP | 경로 | 요청 | 응답 |
 | --- | --- | --- | --- |
@@ -95,13 +95,13 @@ snapshot은 roomId/revision/settings/phase/missionId/attemptId/시도 수/이미
 
 `me`에는 **현재 인증된 사용자의** playerId, hand, legalCardIds, canCommunicate만 담는다. 다른 사람의 손패, 분배 순서, 난수 seed, invite hash, 전체 이벤트 이력은 포함하지 않는다. 플레이한 카드의 공개 사실과 다른 사람의 남은 장수는 허용된다. `lastTrick`은 직전 트릭 하나만 제공한다.
 
-로컬 데모의 localStorage에는 테스트용 전체 상태가 있다. 이 저장 방식을 실제 서버의 보안 구조로 사용하지 않는다. 운영 상태는 `crew_private.game_states`의 JSON 하나가 기준이며, 손패를 별도 중복 테이블에도 써서 두 기준을 만들지 않는다. 정규화한 rooms/members/attempt headers와 revision은 동일 트랜잭션에서 동기화한다.
+로컬 데모의 localStorage에는 테스트용 전체 상태가 있다. 이 저장 방식을 실제 서버의 보안 구조로 사용하지 않는다. 운영 상태는 `public.crew_game_states`의 JSON 하나가 기준이며, 손패를 별도 중복 테이블에도 써서 두 기준을 만들지 않는다. 정규화한 rooms/members/attempt headers와 revision은 동일 트랜잭션에서 동기화한다.
 
 ## 서버 트랜잭션 구현 계약
 
 `CrewRepository`의 각 변경 메서드는 아래 전체를 하나의 Postgres 트랜잭션으로 수행해야 한다. 여러 독립적인 Data API 호출을 이어 붙여 구현하지 않는다.
 
-1. 검증한 auth UID를 그대로 대원 식별자로 쓴다(`crew_private.players` 없이 `auth.users.id` = playerId). 신규 입장은 `room_members(room_id,user_id)`에 행을 추가해 멤버십을 기록한다.
+1. 검증한 auth UID를 그대로 대원 식별자로 쓴다(별도 players 표 없이 `auth.users.id` = playerId). 신규 입장은 `crew_room_members(room_id,user_id)`에 행을 추가해 멤버십을 기록한다.
 2. actor+commandId 기반 advisory transaction lock을 얻는다. 같은 ID의 동시 최초 요청을 직렬화한다. create/join/invite도 같은 규약을 사용한다. 잠금 순서는 항상 command lock → room row lock이다.
 3. `command_receipts`를 확인한다. 동일 canonical 요청 해시면 이전 확정 효과를 재사용한다. 다른 본문이면 `409 IDEMPOTENCY_CONFLICT`. **중복 확인은 revision/attempt 검사보다 먼저** 수행한다.
 4. room을 `SELECT … FOR UPDATE`로 잠근다. 멤버십·방장 권한·capacity·좌석·현재 단계·expectedRevision·attemptId를 검사한다. 미참여자의 조회도 거부한다.

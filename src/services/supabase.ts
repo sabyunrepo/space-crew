@@ -93,7 +93,8 @@ export class SupabaseService implements GameService {
   ): Promise<T> {
     try {
       const token = await this.token();
-      const response = await fetch(this.apiUrl + path, {
+      // The sbp platform router rejects /functions/v1/crew-api/<sub-path>.
+      const response = await fetch(`${this.apiUrl}?route=${encodeURIComponent(path)}`, {
         method: body === undefined ? "GET" : "POST",
         headers: {
           "Content-Type": "application/json",

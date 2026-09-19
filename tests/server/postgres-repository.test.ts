@@ -193,3 +193,15 @@ describe("PostgresRepository (PGlite)", () => {
     await expect(repo.leave(host, roomId)).rejects.toMatchObject({ code: "LAST_MEMBER" });
   });
 });
+
+describe("postgres.js parameter typing", () => {
+  it("casts every JSON-string parameter through text so postgres.js cannot double-encode it", async () => {
+    // postgres.js serializes a parameter the server types as jsonb with
+    // JSON.stringify, so a pre-stringified value becomes a jsonb *string*
+    // (seen live: crew_game_states_state_check violation). PGlite does not
+    // reproduce this, hence a source-level guard.
+    const source = await readFile("supabase/functions/_shared/postgres-repository.ts", "utf8");
+    expect(source.match(/\$\d+::jsonb/g) ?? []).toEqual([]);
+    expect((source.match(/\$\d+::text::jsonb/g) ?? []).length).toBeGreaterThan(0);
+  });
+});

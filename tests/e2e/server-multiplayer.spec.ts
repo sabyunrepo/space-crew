@@ -188,7 +188,8 @@ test.describe("서버 모드 다인 플레이", () => {
       // 등장하면 다른 대원의 손패 배열이 함께 직렬화된 것이므로 실패해야 한다.
       const bResponseBodies: string[] = [];
       pageB.on("response", async (res) => {
-        if (!res.url().includes("/api/")) return;
+        // Node 서버는 /api/, Supabase 모드는 Edge Function(/functions/v1/)으로 응답한다.
+        if (!res.url().includes("/api/") && !res.url().includes("/functions/v1/")) return;
         try {
           bResponseBodies.push(await res.text());
         } catch {

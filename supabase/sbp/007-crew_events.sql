@@ -1,6 +1,6 @@
-create table crew_private.events (
+create table public.crew_events (
   id bigint generated always as identity primary key,
-  room_id uuid not null references crew_private.rooms(id) on delete cascade,
+  room_id uuid not null references public.crew_rooms(id) on delete cascade,
   revision bigint not null check (revision > 0),
   actor_user_id uuid not null references auth.users(id),
   command_type text not null,

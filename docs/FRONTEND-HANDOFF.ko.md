@@ -83,14 +83,17 @@ SUPABASE_DB_URL=postgres-계정-연결-문자열
 CREW_PROJECT_ID=실제-프로젝트-UUID
 ```
 
-sbp 플랫폼은 `SUPABASE_DB_URL`을 플랫폼이 직접 제공하고, `CREW_PROJECT_ID`는 런타임 env allowlist에 없어 [빌드 시 esbuild `define`으로 주입](#sbp-플랫폼-배포)한다. `crew_private`를 PostgREST의 exposed schemas에 추가하지 않는다(`config.toml`의 `schemas`에 없음 = 노출 안 됨).
+sbp 플랫폼에서는 함수에 환경 변수를 직접 넣을 수 없다. 허용 출처는 `sbp secrets set --name APP_CREW_ALLOWED_ORIGINS --value-file <쉼표 목록>`으로 설정하고, 배포 manifest의 `secret_bindings`에 그 버전을 연결한다. 또 플랫폼 라우터는 `/functions/v1/crew-api` 아래의 하위 경로를 거부하므로, 클라이언트는 API 경로를 `?route=/rooms…` 쿼리로 보낸다.
+
+
+sbp 플랫폼은 `SUPABASE_DB_URL`을 플랫폼이 직접 제공하고, `CREW_PROJECT_ID`는 런타임 env allowlist에 없어 [빌드 시 esbuild `define`으로 주입](#sbp-플랫폼-배포)한다. 게임 표는 `public.crew_*`에 있다. sbp는 스키마 생성(`create schema`)을 허용하지 않기 때문이다. 대신 모든 `crew_*` 표에 RLS를 켜고 정책을 두지 않으며, `anon`/`authenticated` 권한을 회수하고 `service_role`에만 부여한다. 그래서 PostgREST로 노출돼도 읽고 쓸 수 없다.
 
 ## sbp 플랫폼 배포
 
 **전제**: 아래는 로컬 빌드·검증 절차다. 원격 배포(`sbp` 명령, SSH, 실제 DB 적용)는 운영자가 직접 실행한다.
 
-1. **DB 표 생성**: `supabase/sbp/001-schema.sql`부터 `019-grant_sequences_service.sql`까지 **번호 순서대로 한 파일씩** `sbp db sql`로 적용한다. 각 파일은 이미 문장 하나이며 `$`·`--`·`/* */`·문장 중간 `;`이 없다. 실패 시 그 파일만 재시도하고 이후 파일은 이전 파일이 성공해야 진행한다(뒤 파일이 앞 파일의 표/컬럼을 참조).
-2. **권한 확인**: 마지막 두 파일(`017`~`019`)이 끝나면 `service_role`이 `crew_private`의 모든 표에 select/insert/update/delete를 가졌는지, `anon`/`authenticated`는 권한이 없는지 확인한다(`has_table_privilege`).
+1. **DB 표 생성**: `supabase/sbp/001-crew_rooms.sql`부터 `016-grant_sequence_service.sql`까지 **번호 순서대로 한 파일씩** `sbp db sql`로 적용한다. 각 파일은 이미 문장 하나이며 `$`·`--`·`/* */`·문장 중간 `;`이 없다. 실패 시 그 파일만 재시도하고 이후 파일은 이전 파일이 성공해야 진행한다(뒤 파일이 앞 파일의 표/컬럼을 참조).
+2. **권한 확인**: 마지막 세 파일(`014`~`016`)이 끝나면 `service_role`이 `public.crew_*` 표 6개에 select/insert/update/delete를 가졌는지, `anon`/`authenticated`는 권한이 없는지 확인한다(`has_table_privilege`).
 3. **함수 빌드**: `CREW_PROJECT_ID=<실제 프로젝트 UUID> npm run build:edge`. 네트워크로 `postgres@3.4.9`를 받아 Buffer/process/setImmediate 배너를 주입해 번들링하고, `supabase/functions/crew-api/sbp-entry.ts`(핸들러+저장소+엔진+contracts+missions+zod+postgres.js)를 esbuild로 단일 `dist-edge/crew-api/index.ts`(1개 파일, 약 0.57MB)로 묶는다. 실패하면 빌드를 중단한다(`CREW_PROJECT_ID` 누락 등).
 4. **배포 입력 구성**: `dist-edge/crew-api/files.json`(`[{path:"index.ts", base64}]`)을 아래 manifest의 `source.files`에 넣는다.
    ```json

@@ -62,7 +62,7 @@ export class PostgresRepository implements CrewRepository {
 
   private async receipt(tx: DbTx, actor: string, commandId: string): Promise<{ request_hash: string; response: unknown } | undefined> {
     const rows = await tx.query<Row>(
-      `select request_hash, response from crew_private.command_receipts where actor_user_id = $1::uuid and command_id = $2::uuid`,
+      `select request_hash, response from public.crew_command_receipts where actor_user_id = $1::uuid and command_id = $2::uuid`,
       [actor, commandId],
     );
     return rows[0] as { request_hash: string; response: unknown } | undefined;
@@ -78,9 +78,9 @@ export class PostgresRepository implements CrewRepository {
     response: unknown,
   ): Promise<void> {
     await tx.query(
-      `insert into crew_private.command_receipts
+      `insert into public.crew_command_receipts
          (actor_user_id, command_id, room_id, request_hash, committed_revision, response)
-       values ($1::uuid, $2::uuid, $3::uuid, $4::text, $5::bigint, $6::jsonb)`,
+       values ($1::uuid, $2::uuid, $3::uuid, $4::text, $5::bigint, $6::text::jsonb)`,
       [actor, commandId, roomId, hash, revision, JSON.stringify(response)],
     );
   }
@@ -90,19 +90,19 @@ export class PostgresRepository implements CrewRepository {
     for (const member of members) {
       const payload = JSON.stringify(project(state, member.id));
       const topic = `sbp:${this.projectId}:${member.id}`;
-      await tx.query(`select realtime.send($1::jsonb, 'snapshot', $2::text, true)`, [payload, topic]);
+      await tx.query(`select realtime.send($1::text::jsonb, 'snapshot', $2::text, true)`, [payload, topic]);
     }
   }
 
   private async recordEvent(tx: DbTx, roomId: string, revision: number, actor: string, type: string, payload: unknown): Promise<void> {
     await tx.query(
-      `insert into crew_private.events (room_id, revision, actor_user_id, command_type, payload)
-       values ($1::uuid, $2::bigint, $3::uuid, $4::text, $5::jsonb)`,
+      `insert into public.crew_events (room_id, revision, actor_user_id, command_type, payload)
+       values ($1::uuid, $2::bigint, $3::uuid, $4::text, $5::text::jsonb)`,
       [roomId, revision, actor, type, JSON.stringify(payload ?? {})],
     );
   }
 
-  /** Keeps crew_private.mission_attempts in sync whenever begin()/removePlayer()
+  /** Keeps public.crew_mission_attempts in sync whenever begin()/removePlayer()
    * inside applyCommand() starts a new attempt or closes the current one. An
    * attempt abandoned mid-mission (e.g. a full-approval restart vote) is
    * marked 'abandoned' rather than left dangling as 'active'. */
@@ -110,26 +110,26 @@ export class PostgresRepository implements CrewRepository {
     if (next.attemptId && next.attemptId !== prev.attemptId) {
       if (prev.attemptId)
         await tx.query(
-          `update crew_private.mission_attempts set status = 'abandoned', finished_at = now()
+          `update public.crew_mission_attempts set status = 'abandoned', finished_at = now()
            where attempt_id = $1::uuid and status = 'active'`,
           [prev.attemptId],
         );
       await tx.query(
-        `insert into crew_private.mission_attempts (attempt_id, room_id, mission_id, attempt_number, ruleset_version, status)
+        `insert into public.crew_mission_attempts (attempt_id, room_id, mission_id, attempt_number, ruleset_version, status)
          values ($1::uuid, $2::uuid, $3::smallint, $4::integer, $5::text, 'active')`,
         [next.attemptId, roomId, next.missionId, next.attemptNumber, next.rulesetVersion],
       );
     }
     if (next.attemptId && ["success", "failure"].includes(next.phase) && next.phase !== prev.phase)
       await tx.query(
-        `update crew_private.mission_attempts set status = $2::text, finished_at = now() where attempt_id = $1::uuid`,
+        `update public.crew_mission_attempts set status = $2::text, finished_at = now() where attempt_id = $1::uuid`,
         [next.attemptId, next.phase],
       );
   }
 
   private async requireRoom(tx: DbTx, roomId: string, forUpdate = false): Promise<void> {
     const rows = await tx.query<Row>(
-      `select id from crew_private.rooms where id = $1::uuid${forUpdate ? " for update" : ""}`,
+      `select id from public.crew_rooms where id = $1::uuid${forUpdate ? " for update" : ""}`,
       [roomId],
     );
     if (!rows.length) fail("ROOM_NOT_FOUND", "존재하지 않는 방입니다.", 404);
@@ -137,7 +137,7 @@ export class PostgresRepository implements CrewRepository {
 
   private async requireMember(tx: DbTx, roomId: string, actor: string): Promise<void> {
     const rows = await tx.query<Row>(
-      `select 1 from crew_private.room_members where room_id = $1::uuid and user_id = $2::uuid`,
+      `select 1 from public.crew_room_members where room_id = $1::uuid and user_id = $2::uuid`,
       [roomId, actor],
     );
     if (!rows.length) fail("NOT_MEMBER", "이 방의 대원이 아닙니다.", 403);
@@ -156,7 +156,7 @@ export class PostgresRepository implements CrewRepository {
       const inviteToken = randomToken();
       const inviteHash = await sha256Hex(inviteToken);
       await tx.query(
-        `insert into crew_private.rooms
+        `insert into public.crew_rooms
            (id, host_user_id, name, capacity, mission_mode, start_mission, phase, revision, ruleset_version, invite_token_hash)
          values ($1::uuid, $2::uuid, $3::text, $4::smallint, $5::text, $6::smallint, $7::text, $8::bigint, $9::text, $10::text)`,
         [
@@ -164,8 +164,8 @@ export class PostgresRepository implements CrewRepository {
           input.settings.startMission, state.phase, state.revision, state.rulesetVersion, inviteHash,
         ],
       );
-      await tx.query(`insert into crew_private.room_members (room_id, user_id) values ($1::uuid, $2::uuid)`, [state.roomId, actorAuthId]);
-      await tx.query(`insert into crew_private.game_states (room_id, state) values ($1::uuid, $2::jsonb)`, [state.roomId, JSON.stringify(state)]);
+      await tx.query(`insert into public.crew_room_members (room_id, user_id) values ($1::uuid, $2::uuid)`, [state.roomId, actorAuthId]);
+      await tx.query(`insert into public.crew_game_states (room_id, state) values ($1::uuid, $2::text::jsonb)`, [state.roomId, JSON.stringify(state)]);
       const result = { snapshot: project(state, actorAuthId), inviteToken };
       await this.saveReceipt(tx, actorAuthId, input.commandId, state.roomId, hash, state.revision, result);
       return result;
@@ -176,7 +176,7 @@ export class PostgresRepository implements CrewRepository {
     return this.pool.begin(async (tx) => {
       await this.lockCommand(tx, actorAuthId, input.commandId);
       const inviteHash = await sha256Hex(input.inviteToken);
-      const [room] = await tx.query<Row>(`select id from crew_private.rooms where invite_token_hash = $1::text`, [inviteHash]);
+      const [room] = await tx.query<Row>(`select id from public.crew_rooms where invite_token_hash = $1::text`, [inviteHash]);
       if (!room) fail("INVITE_NOT_FOUND", "초대 링크를 찾을 수 없습니다.", 404);
       const roomId = room.id as string;
       const hash = await sha256Hex(JSON.stringify({ roomId, input }));
@@ -186,8 +186,8 @@ export class PostgresRepository implements CrewRepository {
         return asObject<{ snapshot: Snapshot; inviteToken: string | null }>(existing.response);
       }
       // Lock the room row before touching game_states, per the transaction contract.
-      await tx.query(`select 1 from crew_private.rooms where id = $1::uuid for update`, [roomId]);
-      const [row] = await tx.query<Row>(`select state from crew_private.game_states where room_id = $1::uuid`, [roomId]);
+      await tx.query(`select 1 from public.crew_rooms where id = $1::uuid for update`, [roomId]);
+      const [row] = await tx.query<Row>(`select state from public.crew_game_states where room_id = $1::uuid`, [roomId]);
       const state = asObject<State>(row.state);
       const isMember = state.players.some((p) => p.id === actorAuthId) || (state.waitingPlayers ?? []).some((p) => p.id === actorAuthId);
       let result: { snapshot: Snapshot; inviteToken: string | null };
@@ -207,11 +207,11 @@ export class PostgresRepository implements CrewRepository {
           revision: state.revision + 1,
           updatedAt: new Date().toISOString(),
         };
-        await tx.query(`insert into crew_private.room_members (room_id, user_id) values ($1::uuid, $2::uuid)`, [roomId, actorAuthId]);
-        await tx.query(`update crew_private.rooms set revision = $2::bigint, phase = $3::text, updated_at = now() where id = $1::uuid`, [
+        await tx.query(`insert into public.crew_room_members (room_id, user_id) values ($1::uuid, $2::uuid)`, [roomId, actorAuthId]);
+        await tx.query(`update public.crew_rooms set revision = $2::bigint, phase = $3::text, updated_at = now() where id = $1::uuid`, [
           roomId, nextState.revision, nextState.phase,
         ]);
-        await tx.query(`update crew_private.game_states set state = $2::jsonb, updated_at = now() where room_id = $1::uuid`, [
+        await tx.query(`update public.crew_game_states set state = $2::text::jsonb, updated_at = now() where room_id = $1::uuid`, [
           roomId, JSON.stringify(nextState),
         ]);
         await this.recordEvent(tx, roomId, nextState.revision, actorAuthId, "join", {});
@@ -228,7 +228,7 @@ export class PostgresRepository implements CrewRepository {
     return this.pool.begin(async (tx) => {
       await this.requireRoom(tx, roomId);
       await this.requireMember(tx, roomId, actorAuthId);
-      const [row] = await tx.query<Row>(`select state from crew_private.game_states where room_id = $1::uuid`, [roomId]);
+      const [row] = await tx.query<Row>(`select state from public.crew_game_states where room_id = $1::uuid`, [roomId]);
       return project(asObject<State>(row.state), actorAuthId);
     });
   }
@@ -239,14 +239,14 @@ export class PostgresRepository implements CrewRepository {
       await this.requireRoom(tx, roomId);
       await this.requireMember(tx, roomId, actorAuthId);
       // Lock the room row before checking the receipt / touching game_states.
-      await tx.query(`select 1 from crew_private.rooms where id = $1::uuid for update`, [roomId]);
+      await tx.query(`select 1 from public.crew_rooms where id = $1::uuid for update`, [roomId]);
       const hash = await sha256Hex(JSON.stringify({ roomId, input }));
       const existing = await this.receipt(tx, actorAuthId, input.commandId);
       if (existing) {
         if (existing.request_hash !== hash) fail("IDEMPOTENCY_CONFLICT", "같은 요청 번호를 다른 행동에 사용할 수 없습니다.");
         return asObject<Snapshot>(existing.response);
       }
-      const [row] = await tx.query<Row>(`select state from crew_private.game_states where room_id = $1::uuid`, [roomId]);
+      const [row] = await tx.query<Row>(`select state from public.crew_game_states where room_id = $1::uuid`, [roomId]);
       const state = asObject<State>(row.state);
       const bypass = REVISION_BYPASS_COMMANDS.has(input.command.type);
       if (!bypass && state.revision !== input.expectedRevision)
@@ -254,10 +254,10 @@ export class PostgresRepository implements CrewRepository {
       if (state.attemptId !== input.attemptId) fail("ATTEMPT_MISMATCH", "이전 시도의 행동입니다. 새 임무 상태를 확인해 주세요.");
       const nextState = applyCommand(state, actorAuthId, input.command);
       await tx.query(
-        `update crew_private.rooms set revision = $2::bigint, phase = $3::text, attempt_id = $4::uuid, updated_at = now() where id = $1::uuid`,
+        `update public.crew_rooms set revision = $2::bigint, phase = $3::text, attempt_id = $4::uuid, updated_at = now() where id = $1::uuid`,
         [roomId, nextState.revision, nextState.phase, nextState.attemptId],
       );
-      await tx.query(`update crew_private.game_states set state = $2::jsonb, updated_at = now() where room_id = $1::uuid`, [
+      await tx.query(`update public.crew_game_states set state = $2::text::jsonb, updated_at = now() where room_id = $1::uuid`, [
         roomId, JSON.stringify(nextState),
       ]);
       await this.syncMissionAttempt(tx, roomId, state, nextState);
@@ -272,7 +272,7 @@ export class PostgresRepository implements CrewRepository {
   async invite(actorAuthId: string, roomId: string, commandId: string): Promise<{ inviteToken: string }> {
     return this.pool.begin(async (tx) => {
       await this.lockCommand(tx, actorAuthId, commandId);
-      const [room] = await tx.query<Row>(`select host_user_id from crew_private.rooms where id = $1::uuid for update`, [roomId]);
+      const [room] = await tx.query<Row>(`select host_user_id from public.crew_rooms where id = $1::uuid for update`, [roomId]);
       if (!room) fail("ROOM_NOT_FOUND", "존재하지 않는 방입니다.", 404);
       if (room.host_user_id !== actorAuthId) fail("FORBIDDEN", "방장만 초대 링크를 발급할 수 있습니다.", 403);
       const hash = await sha256Hex(JSON.stringify({ roomId, commandId }));
@@ -283,7 +283,7 @@ export class PostgresRepository implements CrewRepository {
       }
       const inviteToken = randomToken();
       const inviteHash = await sha256Hex(inviteToken);
-      await tx.query(`update crew_private.rooms set invite_token_hash = $2::text, updated_at = now() where id = $1::uuid`, [roomId, inviteHash]);
+      await tx.query(`update public.crew_rooms set invite_token_hash = $2::text, updated_at = now() where id = $1::uuid`, [roomId, inviteHash]);
       const result = { inviteToken };
       await this.saveReceipt(tx, actorAuthId, commandId, roomId, hash, null, result);
       return result;
@@ -294,15 +294,15 @@ export class PostgresRepository implements CrewRepository {
     await this.pool.begin(async (tx) => {
       await this.requireRoom(tx, roomId, true);
       await this.requireMember(tx, roomId, actorAuthId);
-      const [row] = await tx.query<Row>(`select state from crew_private.game_states where room_id = $1::uuid`, [roomId]);
+      const [row] = await tx.query<Row>(`select state from public.crew_game_states where room_id = $1::uuid`, [roomId]);
       const state = asObject<State>(row.state);
       const nextState = removePlayer(state, actorAuthId);
-      await tx.query(`delete from crew_private.room_members where room_id = $1::uuid and user_id = $2::uuid`, [roomId, actorAuthId]);
+      await tx.query(`delete from public.crew_room_members where room_id = $1::uuid and user_id = $2::uuid`, [roomId, actorAuthId]);
       await tx.query(
-        `update crew_private.rooms set revision = $2::bigint, phase = $3::text, attempt_id = $4::uuid, host_user_id = $5::uuid, updated_at = now() where id = $1::uuid`,
+        `update public.crew_rooms set revision = $2::bigint, phase = $3::text, attempt_id = $4::uuid, host_user_id = $5::uuid, updated_at = now() where id = $1::uuid`,
         [roomId, nextState.revision, nextState.phase, nextState.attemptId, nextState.hostId],
       );
-      await tx.query(`update crew_private.game_states set state = $2::jsonb, updated_at = now() where room_id = $1::uuid`, [
+      await tx.query(`update public.crew_game_states set state = $2::text::jsonb, updated_at = now() where room_id = $1::uuid`, [
         roomId, JSON.stringify(nextState),
       ]);
       await this.syncMissionAttempt(tx, roomId, state, nextState);

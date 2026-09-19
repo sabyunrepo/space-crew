@@ -49,7 +49,8 @@ const pool: DbPool = {
 Deno.serve(
   createHandler({
     repository: new PostgresRepository(pool, projectId),
-    allowedOrigins: (Deno.env.get("CREW_ALLOWED_ORIGINS") ?? "")
+    // The sbp runtime only forwards APP_* secrets (sbp secrets set) to workers.
+    allowedOrigins: (Deno.env.get("APP_CREW_ALLOWED_ORIGINS") ?? Deno.env.get("CREW_ALLOWED_ORIGINS") ?? "")
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean),
