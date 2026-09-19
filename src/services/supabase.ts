@@ -30,6 +30,11 @@ function jitteredBackoff(attempt: number): number {
   return Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** attempt) * (0.5 + Math.random());
 }
 
+/** How long a cached snapshot may answer snapshot() without a network check. */
+const CACHE_MAX_AGE_MS = 3000;
+/** Safety-net poll cadence while subscribed to a room's private channel. */
+const POLL_INTERVAL_MS = 4000;
+
 export class SupabaseService implements GameService {
   readonly mode = "supabase";
   private client: SupabaseClient;
@@ -39,6 +44,7 @@ export class SupabaseService implements GameService {
    * in subscribe(). A cache hit lets snapshot() skip the network entirely
    * right after an onRevision callback - see docs/API.ko.md. */
   private cache = new Map<string, Snapshot>();
+  private cachedAt = new Map<string, number>();
 
   constructor(
     private url: string,
@@ -164,7 +170,10 @@ export class SupabaseService implements GameService {
    * wrong result, because the server re-validates expectedRevision either way. */
   async snapshot(id: string): Promise<Snapshot> {
     const cached = this.cache.get(id);
-    if (cached) return cached;
+    // A broadcast can be missed (observed once in the live probe, and once in
+    // a deployed 4-player run): without an age limit the stale entry would be
+    // served forever and that screen would never learn it is its turn.
+    if (cached && Date.now() - (this.cachedAt.get(id) ?? 0) < CACHE_MAX_AGE_MS) return cached;
     return this.fetchSnapshot(id);
   }
   private async fetchSnapshot(id: string): Promise<Snapshot> {
@@ -174,7 +183,10 @@ export class SupabaseService implements GameService {
   }
   private cacheIfNewer(snap: Snapshot): void {
     const cached = this.cache.get(snap.roomId);
-    if (!cached || snap.revision >= cached.revision) this.cache.set(snap.roomId, snap);
+    if (!cached || snap.revision >= cached.revision) {
+      this.cache.set(snap.roomId, snap);
+      this.cachedAt.set(snap.roomId, Date.now());
+    }
   }
   command(id: string, input: Envelope) {
     return this.withCommandRetry(async () => {
@@ -199,6 +211,7 @@ export class SupabaseService implements GameService {
   async leaveRoom(id: string): Promise<void> {
     await this.request(`/rooms/${z.uuid().parse(id)}/leave`, z.object({ ok: z.literal(true) }), {});
     this.cache.delete(id);
+    this.cachedAt.delete(id);
   }
   subscribe(
     id: string,
@@ -208,6 +221,7 @@ export class SupabaseService implements GameService {
     let stopped = false;
     let channel: ReturnType<SupabaseClient["channel"]> | null = null;
     let wasConnected = false;
+    let lastMessageAt = Date.now();
     onConnection("connecting");
 
     const resync = () => {
@@ -218,6 +232,19 @@ export class SupabaseService implements GameService {
           // visibility-driven refresh will retry.
         });
     };
+
+    // Safety net for a broadcast that never arrives: the screen would otherwise
+    // wait forever for a turn it was never told about. Skipped while a recent
+    // broadcast keeps the room fresh, and while the tab is hidden.
+    const poll = setInterval(() => {
+      if (stopped || Date.now() - lastMessageAt < POLL_INTERVAL_MS) return;
+      if (typeof document !== "undefined" && document.hidden) return;
+      resync();
+    }, POLL_INTERVAL_MS);
+    const onVisible = () => {
+      if (!stopped && typeof document !== "undefined" && !document.hidden) resync();
+    };
+    if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVisible);
 
     void (async () => {
       try {
@@ -237,6 +264,8 @@ export class SupabaseService implements GameService {
             const cached = this.cache.get(id);
             if (cached && payload.revision <= cached.revision) return;
             this.cache.set(id, payload);
+            this.cachedAt.set(id, Date.now());
+            lastMessageAt = Date.now();
             onRevision(payload.revision);
           })
           .subscribe((status) => {
@@ -264,6 +293,8 @@ export class SupabaseService implements GameService {
 
     return () => {
       stopped = true;
+      clearInterval(poll);
+      if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVisible);
       authListener.subscription.unsubscribe();
       if (channel) void this.client.removeChannel(channel);
     };
