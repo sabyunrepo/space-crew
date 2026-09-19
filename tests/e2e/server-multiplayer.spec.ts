@@ -1,4 +1,4 @@
-import { test, expect, type BrowserContext, type Locator, type Page } from "@playwright/test";
+import { test, expect, type APIRequestContext, type Browser, type BrowserContext, type Locator, type Page } from "@playwright/test";
 
 /**
  * Task 5 — 서버 모드(`VITE_BACKEND_MODE=server`, 실제 Node 서버 + WS) 통합
@@ -6,6 +6,128 @@ import { test, expect, type BrowserContext, type Locator, type Page } from "@pla
  * 서로 다른 브라우저 컨텍스트(= 서로 다른 브라우저·기기를 흉내)가 초대
  * 링크로 같은 방에 실제로 들어와 카드를 주고받는다.
  */
+
+/**
+ * 백엔드별 시드(준비) 분기. `playwright.supabase.config.ts`가 `E2E_BACKEND`를
+ * 지정하거나(그 값이 없으면 `VITE_BACKEND_MODE`) "supabase"면 Supabase 모드로
+ * 본다 — 이때는 Node 서버 전용 REST 시드(`/api/rooms`, `/api/join`,
+ * localStorage 토큰 주입) 대신 UI로 방을 만들고 초대 링크로 참가한다.
+ */
+const BACKEND: "server" | "supabase" =
+  process.env.E2E_BACKEND === "supabase" || process.env.VITE_BACKEND_MODE === "supabase"
+    ? "supabase"
+    : "server";
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+
+/** Supabase 모드에서 컨텍스트마다 겹치지 않게 고를 캐릭터(최대 5인). */
+const SEED_CHARACTERS: readonly [label: string, id: string][] = [
+  ["요시", "green-dino"], ["일루", "ilu"], ["베이", "bay"], ["콜드", "snow"], ["트리", "tree"],
+];
+
+/**
+ * Supabase 모드 전용 시드: UI로 방을 만들고(호스트) 초대 링크로 나머지 인원이
+ * 참가해 동일한 사전조건(지정 미션·인원)을 만든다 — 이미 통과하는
+ * "서버 모드 다인 플레이" 3인 테스트와 `${capacity} real players...` 테스트가
+ * 쓰는 것과 같은 UI 흐름이다. 신원은 브라우저 컨텍스트별 Supabase 익명 로그인
+ * 세션(localStorage)이므로 별도 토큰 주입이 필요 없다.
+ */
+async function seedSupabaseRoom(params: {
+  browser: Browser;
+  contexts: BrowserContext[];
+  pages: Page[];
+  capacity: number;
+  startMission: number;
+  namePrefix: string;
+  viewportFor?: (i: number) => { width: number; height: number };
+  onPage?: (page: Page, i: number) => void;
+}): Promise<string> {
+  const viewportFor =
+    params.viewportFor ?? ((i: number) => (i % 2 ? { width: 390, height: 844 } : { width: 1440, height: 900 }));
+
+  const hostCtx = await params.browser.newContext({ viewport: viewportFor(0) });
+  params.contexts.push(hostCtx);
+  await hostCtx.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const host = await hostCtx.newPage();
+  params.pages.push(host);
+  params.onPage?.(host, 0);
+
+  await host.goto("/");
+  if (params.capacity !== 3)
+    await host.getByRole("button", { name: `${params.capacity}명`, exact: true }).click();
+  await host.locator(".mission-select select").selectOption(String(params.startMission));
+  await host.getByRole("button", { name: `${SEED_CHARACTERS[0][0]} 선택`, exact: true }).click();
+  await host.getByRole("textbox", { name: "대원 이름", exact: true }).fill(`${params.namePrefix}0`);
+  // 같은 브라우저의 연속된 컨텍스트는 localhost의 운영용 요청 제한 버킷을 공유한다.
+  await expect(async () => {
+    if (!host.url().includes("/rooms/"))
+      await host.getByRole("button", { name: "탐사선 만들기", exact: true }).click();
+    await expect(host).toHaveURL(/\/rooms\//, { timeout: 1000 });
+  }).toPass({ intervals: [6500], timeout: 30000 });
+
+  await host.getByRole("button", { name: "초대 링크", exact: true }).click();
+  await expect(host.getByRole("status")).toContainText("복사했습니다");
+  const invite = await host.evaluate(() => navigator.clipboard.readText());
+  const roomUrl = host.url();
+
+  for (let i = 1; i < params.capacity; i++) {
+    const ctx = await params.browser.newContext({ viewport: viewportFor(i) });
+    params.contexts.push(ctx);
+    const page = await ctx.newPage();
+    params.pages.push(page);
+    params.onPage?.(page, i);
+    await page.goto(invite);
+    await page.getByRole("textbox", { name: "대원 이름", exact: true }).fill(`${params.namePrefix}${i}`);
+    await page.getByRole("button", { name: `${SEED_CHARACTERS[i][0]} 선택`, exact: true }).click();
+    await expect(async () => {
+      if (page.url().includes("/join"))
+        await page.getByRole("button", { name: "탐사선 탑승하기", exact: true }).click();
+      await expect(page).toHaveURL(roomUrl, { timeout: 1000 });
+    }).toPass({ intervals: [6500], timeout: 30000 });
+  }
+
+  for (const page of params.pages)
+    await step(page, page.getByRole("button", { name: "탑승 준비 완료", exact: true }));
+
+  return roomUrl.match(/\/rooms\/([^/?#]+)/)![1];
+}
+
+/**
+ * 특정 플레이어(page) 시점의 최신 Snapshot을 REST로 가져온다. 서버 모드는
+ * `/api/rooms/:id` + 발급된 playerToken, Supabase 모드는 crew-api Edge
+ * Function(`?route=`, 하위 경로 금지)에 그 브라우저의 Supabase 익명 로그인
+ * 세션 access_token을 실어 호출한다 — 신원이 곧 그 세션이므로 `page`의
+ * localStorage에서 그대로 읽는다.
+ */
+async function fetchView(
+  request: APIRequestContext,
+  page: Page,
+  roomId: string,
+  serverToken?: string,
+): Promise<any> {
+  if (BACKEND === "server") {
+    const response = await request.get(`/api/rooms/${roomId}`, {
+      headers: { Authorization: `Bearer ${serverToken}` },
+    });
+    expect(response.ok()).toBe(true);
+    return response.json();
+  }
+  const accessToken = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find((k) => k.includes("-auth-token"));
+    if (!key) return null;
+    try {
+      return JSON.parse(localStorage.getItem(key) ?? "null")?.access_token ?? null;
+    } catch {
+      return null;
+    }
+  });
+  const response = await request.get(
+    `${SUPABASE_URL}/functions/v1/crew-api?route=${encodeURIComponent(`/rooms/${roomId}`)}`,
+    { headers: { Authorization: `Bearer ${accessToken}`, apikey: SUPABASE_ANON_KEY ?? "" } },
+  );
+  expect(response.ok()).toBe(true);
+  return response.json();
+}
 
 async function step(page: Page, button: Locator) {
   const room = page.locator(".room-view");
@@ -188,7 +310,8 @@ test.describe("서버 모드 다인 플레이", () => {
       // 등장하면 다른 대원의 손패 배열이 함께 직렬화된 것이므로 실패해야 한다.
       const bResponseBodies: string[] = [];
       pageB.on("response", async (res) => {
-        if (!res.url().includes("/api/")) return;
+        // Node 서버는 /api/, Supabase 모드는 Edge Function(/functions/v1/)으로 응답한다.
+        if (!res.url().includes("/api/") && !res.url().includes("/functions/v1/")) return;
         try {
           bResponseBodies.push(await res.text());
         } catch {
@@ -449,41 +572,51 @@ for (const [mission, capacity] of [[22, 3], [5, 3], [17, 3], [33, 4], [11, 4], [
   test(`미션 ${mission}: ${capacity}개 독립 화면에서 준비·복귀·실제 플레이`, async ({ browser, request }, info) => {
     test.setTimeout(240_000);
     const { suggestDemoCommand } = await import("../../src/game/demoPolicy.ts");
-    async function entryRequest(path: string, data: unknown) {
-      for (let retry = 0; retry < 12; retry++) {
-        const result = await request.post(path, { data });
-        if (result.status() !== 429) return result;
-        // Keep the production per-IP limit enabled. One runner represents many
-        // independent people on the same IP, so wait for its token to refill.
-        await new Promise(resolve => setTimeout(resolve, 6100));
-      }
-      throw new Error("Entry rate limiter did not refill");
-    }
-    const created = await entryRequest("/api/rooms", {
-      commandId: crypto.randomUUID(), nickname: "선장",
-      settings: { name: "미션 준비 검증", capacity, missionMode: "sequential", startMission: mission },
-    });
-    expect(created.ok()).toBe(true);
-    const first = await created.json();
-    const roomId = first.entry.snapshot.roomId;
-    const entries = [first];
-    for (let i = 1; i < capacity; i++) {
-      const res = await entryRequest("/api/join", { commandId: crypto.randomUUID(), nickname: `대원${i}`, inviteToken: first.entry.inviteToken });
-      expect(res.ok()).toBe(true);
-      entries.push(await res.json());
-    }
     const contexts: BrowserContext[] = [];
     const pages: Page[] = [];
     const errors: string[] = [];
+    const serverTokens: string[] = [];
+    let roomId = "";
     try {
-      for (const [i, entry] of entries.entries()) {
-        const ctx = await browser.newContext({ viewport: i % 2 ? { width: 390, height: 844 } : { width: 1440, height: 900 } });
-        contexts.push(ctx);
-        await ctx.addInitScript(({ roomId, token }) => localStorage.setItem(`crew.server.v1.token.${roomId}`, token), { roomId, token: entry.playerToken });
-        const page = await ctx.newPage(); pages.push(page);
-        page.on("pageerror", error => errors.push(error.message));
-        await page.goto(`/rooms/${roomId}`);
-        await step(page, page.getByRole("button", { name: "탑승 준비 완료", exact: true }));
+      if (BACKEND === "server") {
+        async function entryRequest(path: string, data: unknown) {
+          for (let retry = 0; retry < 12; retry++) {
+            const result = await request.post(path, { data });
+            if (result.status() !== 429) return result;
+            // Keep the production per-IP limit enabled. One runner represents many
+            // independent people on the same IP, so wait for its token to refill.
+            await new Promise(resolve => setTimeout(resolve, 6100));
+          }
+          throw new Error("Entry rate limiter did not refill");
+        }
+        const created = await entryRequest("/api/rooms", {
+          commandId: crypto.randomUUID(), nickname: "선장",
+          settings: { name: "미션 준비 검증", capacity, missionMode: "sequential", startMission: mission },
+        });
+        expect(created.ok()).toBe(true);
+        const first = await created.json();
+        roomId = first.entry.snapshot.roomId;
+        const entries = [first];
+        for (let i = 1; i < capacity; i++) {
+          const res = await entryRequest("/api/join", { commandId: crypto.randomUUID(), nickname: `대원${i}`, inviteToken: first.entry.inviteToken });
+          expect(res.ok()).toBe(true);
+          entries.push(await res.json());
+        }
+        for (const [i, entry] of entries.entries()) {
+          const ctx = await browser.newContext({ viewport: i % 2 ? { width: 390, height: 844 } : { width: 1440, height: 900 } });
+          contexts.push(ctx);
+          serverTokens.push(entry.playerToken);
+          await ctx.addInitScript(({ roomId, token }) => localStorage.setItem(`crew.server.v1.token.${roomId}`, token), { roomId, token: entry.playerToken });
+          const page = await ctx.newPage(); pages.push(page);
+          page.on("pageerror", error => errors.push(error.message));
+          await page.goto(`/rooms/${roomId}`);
+          await step(page, page.getByRole("button", { name: "탑승 준비 완료", exact: true }));
+        }
+      } else {
+        roomId = await seedSupabaseRoom({
+          browser, contexts, pages, capacity, startMission: mission, namePrefix: "대원",
+          onPage: (page) => page.on("pageerror", error => errors.push(error.message)),
+        });
       }
       await step(pages[0], pages[0].getByRole("button", { name: "임무 시작", exact: true }));
       const restored = new Set<string>();
@@ -492,9 +625,7 @@ for (const [mission, capacity] of [[22, 3], [5, 3], [17, 3], [33, 4], [11, 4], [
       while (actions++ < 220) {
         let acted = false;
         for (const [i, page] of pages.entries()) {
-          const response = await request.get(`/api/rooms/${roomId}`, { headers: { Authorization: `Bearer ${entries[i].playerToken}` } });
-          expect(response.ok()).toBe(true);
-          const view = await response.json();
+          const view = await fetchView(request, page, roomId, serverTokens[i]);
           if (["success", "failure"].includes(view.phase)) { reachedResult = true; break; }
           await expect(page.locator(".room-view")).toHaveAttribute("data-revision", String(view.revision));
           let command = suggestDemoCommand(view);
@@ -566,34 +697,46 @@ for (const [mission, capacity] of [[22, 3], [5, 3], [17, 3], [33, 4], [11, 4], [
 
 test("cooperative controls: last goal, hover, off-turn signal and unanimous restart", async ({ browser, request }) => {
   test.setTimeout(180000);
-  const post = async (path: string, data: unknown) => {
-    for (let i=0;i<12;i++) {
-      const response=await request.post(path,{data});
-      if(response.status() !== 429) { expect(response.ok()).toBe(true); return response.json(); }
-      await new Promise(resolve=>setTimeout(resolve,6200));
-    }
-    throw new Error("Room entry rate limit");
-  };
-  const first=await post('/api/rooms',{commandId:crypto.randomUUID(),nickname:'검증 선장',settings:{name:'협동 조작 검증',capacity:3,missionMode:'sequential',startMission:4}});
-  const entries=[first];
-  for(let i=1;i<3;i++) entries.push(await post('/api/join',{commandId:crypto.randomUUID(),nickname:`검증 대원${i}`,inviteToken:first.entry.inviteToken}));
-  const roomId=first.entry.snapshot.roomId;
+  const viewportFor = (i: number) => i===2?{width:390,height:844}:i===0?{width:1189,height:779}:{width:2279,height:1426};
   const contexts: BrowserContext[]=[];
   const pages: Page[]=[];
-  const snapshot=async(i=0)=>(await request.get(`/api/rooms/${roomId}`,{headers:{Authorization:`Bearer ${entries[i].playerToken}`}})).json();
+  const serverTokens: string[] = [];
+  let roomId = "";
   try {
-    for(let i=0;i<3;i++) {
-      const context=await browser.newContext({viewport:i===2?{width:390,height:844}:i===0?{width:1189,height:779}:{width:2279,height:1426}});contexts.push(context);
-      await context.addInitScript(({roomId,token})=>localStorage.setItem(`crew.server.v1.token.${roomId}`,token),{roomId,token:entries[i].playerToken});
-      const page=await context.newPage();pages.push(page);
-      await page.goto(`/rooms/${roomId}`);
-      await step(page,page.getByRole('button',{name:'탑승 준비 완료',exact:true}));
+    if (BACKEND === "server") {
+      const post = async (path: string, data: unknown) => {
+        for (let i=0;i<12;i++) {
+          const response=await request.post(path,{data});
+          if(response.status() !== 429) { expect(response.ok()).toBe(true); return response.json(); }
+          await new Promise(resolve=>setTimeout(resolve,6200));
+        }
+        throw new Error("Room entry rate limit");
+      };
+      const first=await post('/api/rooms',{commandId:crypto.randomUUID(),nickname:'검증 선장',settings:{name:'협동 조작 검증',capacity:3,missionMode:'sequential',startMission:4}});
+      const entries=[first];
+      for(let i=1;i<3;i++) entries.push(await post('/api/join',{commandId:crypto.randomUUID(),nickname:`검증 대원${i}`,inviteToken:first.entry.inviteToken}));
+      roomId=first.entry.snapshot.roomId;
+      for(let i=0;i<3;i++) {
+        const context=await browser.newContext({viewport: viewportFor(i)});contexts.push(context);
+        serverTokens.push(entries[i].playerToken);
+        await context.addInitScript(({roomId,token})=>localStorage.setItem(`crew.server.v1.token.${roomId}`,token),{roomId,token:entries[i].playerToken});
+        const page=await context.newPage();pages.push(page);
+        await page.goto(`/rooms/${roomId}`);
+        await step(page,page.getByRole('button',{name:'탑승 준비 완료',exact:true}));
+      }
+    } else {
+      roomId = await seedSupabaseRoom({ browser, contexts, pages, capacity: 3, startMission: 4, namePrefix: "검증 대원", viewportFor });
     }
+    const snapshot = async (i = 0) => fetchView(request, pages[i], roomId, serverTokens[i]);
     await step(pages[0],pages[0].getByRole('button',{name:'임무 시작',exact:true}));
     await expect.poll(async()=>(await snapshot()).phase).toBe('task_selection');
+    const playerIds = await Promise.all(pages.map(async (page) => {
+      await expect(page.locator('.seat-south')).toBeVisible();
+      return page.locator('.seat-south').getAttribute('data-player-id');
+    }));
     let snap=await snapshot();
     while(snap.phase==='task_selection') {
-      const i=entries.findIndex(e=>e.entry.snapshot.me.playerId===snap.turnPlayerId);
+      const i=playerIds.indexOf(snap.turnPlayerId);
       const remaining=snap.tasks.filter((t: {ownerId:string|null})=>!t.ownerId);
       const last=remaining.length===2?remaining[1]:null;
       const next=snap.players[(snap.players.findIndex((p:{id:string})=>p.id===snap.turnPlayerId)+1)%3].id;
@@ -619,11 +762,11 @@ test("cooperative controls: last goal, hover, off-turn signal and unanimous rest
     await expect(host.getByRole('tooltip')).toContainText(await goal.locator('img').getAttribute('alt') ?? '');
     await host.keyboard.press('Escape');
     await expect(host.getByRole('tooltip')).not.toBeVisible();
-    const actor=entries.findIndex(e=>e.entry.snapshot.me.playerId===snap.turnPlayerId);
+    const actor=playerIds.indexOf(snap.turnPlayerId);
     await tapCard(pages[actor].locator('.hand-cards button[aria-disabled="false"]').first());
     await step(pages[actor],pages[actor].getByRole('button',{name:'선택한 카드 내기',exact:true}));
     snap=await snapshot();expect(snap.trick).toHaveLength(1);
-    const views=await Promise.all(entries.map((_,i)=>snapshot(i)));
+    const views=await Promise.all(pages.map((_,i)=>snapshot(i)));
     const communicator=views.findIndex(v=>v.me.playerId!==snap.turnPlayerId && v.me.canCommunicate);
     expect(communicator).toBeGreaterThanOrEqual(0);
     const page=pages[communicator];

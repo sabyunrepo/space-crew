@@ -6,8 +6,9 @@
 - Cloudflare Tunnel → 홈 서버의 `coolify-proxy` → Coolify `space-crew` 애플리케이션 → Node 8080.
 - 애플리케이션 UUID: `wwdeemugv7lqzozohddwtvlx`, 프로젝트 `space-crew`, 환경 `production`.
 - 소스: `sabyunrepo/space-crew`, 브랜치 `feat/realtime-prototype`, Dockerfile 빌드, 배포할 커밋 SHA 지정.
-- 프론트는 `VITE_BACKEND_MODE=server`로 빌드한다. REST `/api`와 WebSocket `/ws`는 같은 호스트를 사용한다.
-- 이 배포는 Node 저장소를 사용한다. Supabase DB/Edge Function 완성을 의미하지 않는다.
+- 프론트는 Coolify의 빌드 시점 변수로 모드를 정한다(2026-09-20부터 `VITE_BACKEND_MODE=supabase`). Dockerfile이 `VITE_BACKEND_MODE`·`VITE_SUPABASE_URL`·`VITE_SUPABASE_ANON_KEY`·`VITE_SUPABASE_PROJECT_ID`를 `ARG`로 받는다.
+- Supabase 모드에서 컨테이너의 Node 서버는 **정적 파일과 `/healthz`만 제공한다**. 게임 요청은 브라우저에서 `https://sb-spacecrew.bsh00.com`의 `crew-api` Edge Function으로 직접 간다. 컨테이너의 `/api`·`/ws`와 `/data` 볼륨은 남아 있지만 화면이 쓰지 않는다.
+- 되돌리려면 `VITE_BACKEND_MODE=server`로 바꾸고 재배포한다. 그러면 `/data`의 기존 방이 다시 보인다.
 
 ## 저장 및 업데이트
 
@@ -193,3 +194,12 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 배포 전 로컬 Aside에서 실제 방 생성→데모 대원 채우기→준비→임무 시작 흐름을 조작했다. 게임 헤더가 전체 폭 `1440px`, 상태 바 `1418px`, 상태 중앙 영역 `723px`, 액션 영역 `560px`로 계산되고 글로벌 모드 태그가 게임 화면에서 숨겨지는 것을 확인했다. 모바일 규칙은 760px 이하 미디어 쿼리에서 상태 바 2행·아이콘 축약·가로 액션 스크롤로 검증했다.
 - `npm run typecheck`, 단위 테스트 759개, `npm run build`, `npm run build:server`, `git diff --check`가 모두 통과했다. 공개 `/healthz`와 `/api/capabilities`가 정상이며 `backendReady:true`, 규칙 `crew-p9-50-4`, 미션 50개를 유지한다. 공개 HTML의 JS/CSS 자산도 최신 빌드 해시로 제공된다.
 - 배포 전 운영 방은 `/data/coolify/backups/space-crew/20260916-header-layout/rooms.tgz` 및 `SHA256SUMS`로 백업했다. 기존 Cloudflare Tunnel, DNS와 영속 볼륨은 유지했다.
+
+## 2026-09-20 Supabase 모드 전환
+
+- 전환 대상: 같은 앱·도메인·터널·볼륨을 유지하고 프론트 빌드 모드만 `supabase`로 바꿨다.
+- 백엔드: sbp 프로젝트 `spacecrew`(`https://sb-spacecrew.bsh00.com`), 함수 `crew-api`, 표 `public.crew_*`, 익명 로그인, private Broadcast `own-user-v1`. 허용 출처 시크릿 `APP_CREW_ALLOWED_ORIGINS`에 `https://crew.bsh00.com`이 포함돼 있다.
+- Coolify 빌드 시점 변수 4개를 등록했다(값은 문서에 적지 않는다).
+- 전환 전 방 데이터 백업: 홈/KT Coolify 호스트 `/data/coolify/backups/space-crew/20260920-presupabase/rooms.tgz` (48개 방, sha256 기록). 사용자 결정으로 기존 방은 이어가지 않는다.
+- 사전 검증: 단위 768개, Supabase 모드 다인 E2E 19개(실제 `spacecrew` 프로젝트), Node 서버 모드 회귀 19개, Aside 로컬 조작(방 생성·초대 복사·새로고침 복귀·콘솔 오류 0).
+- 배포 후 확인 항목: `/healthz`, 헤더의 `SUPABASE` 표시, 방 생성과 초대 링크 다인 입장, 새로고침 복귀, 그리고 `E2E_BASE_URL=https://crew.bsh00.com`으로 돌린 다인 E2E.

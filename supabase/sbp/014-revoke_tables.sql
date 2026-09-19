@@ -1,0 +1,1 @@
+revoke all on table public.crew_rooms, public.crew_room_members, public.crew_game_states, public.crew_command_receipts, public.crew_mission_attempts, public.crew_events from public, anon, authenticated

@@ -4,7 +4,16 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-ENV VITE_BACKEND_MODE=server
+# Backend mode and the public Supabase values are baked into the static bundle at
+# build time, so Coolify passes them as build-time environment variables.
+ARG VITE_BACKEND_MODE=server
+ARG VITE_SUPABASE_URL=
+ARG VITE_SUPABASE_ANON_KEY=
+ARG VITE_SUPABASE_PROJECT_ID=
+ENV VITE_BACKEND_MODE=$VITE_BACKEND_MODE \
+    VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
+    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
+    VITE_SUPABASE_PROJECT_ID=$VITE_SUPABASE_PROJECT_ID
 RUN npm run build && npm run build:server
 
 FROM node:24-alpine AS runtime

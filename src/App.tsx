@@ -276,6 +276,30 @@ export function App() {
       document.removeEventListener("visibilitychange", visibility);
     };
   }, [roomId, service, accept, pushToast]);
+  // Supabase has no server-side timer to move a stalled trick_result along
+  // (Node's RoomStore does this with setTimeout; an Edge Function is
+  // stateless between requests). The trick winner sends advance_trick first;
+  // everyone else follows later only if the revision hasn't moved on -
+  // harmless either way, since the server re-checks expectedRevision. See
+  // claudedocs/SUPABASE-BPRIME-PROBE.ko.md ("트릭 넘김 경합").
+  useEffect(() => {
+    if (!service || service.mode !== "supabase" || !roomId || !snapshot) return;
+    if (snapshot.phase !== "trick_result" || snapshot.restartVote) return;
+    const isDesignated = snapshot.turnPlayerId === snapshot.me.playerId;
+    const envelope: Envelope = {
+      commandId: crypto.randomUUID(),
+      expectedRevision: snapshot.revision,
+      attemptId: snapshot.attemptId,
+      command: { type: "advance_trick" },
+    };
+    const timer = window.setTimeout(() => {
+      void service.command(roomId, envelope).then(accept).catch(() => {
+        // Someone else already advanced (or a stale revision was rejected) -
+        // no toast for this background, best-effort action.
+      });
+    }, isDesignated ? 2500 : 4000);
+    return () => clearTimeout(timer);
+  }, [service, roomId, snapshot, accept]);
   async function run(work: () => Promise<void>) {
     if (busy) return;
     setBusy(true);
