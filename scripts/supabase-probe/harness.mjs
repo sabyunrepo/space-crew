@@ -204,6 +204,8 @@ async function callProbe(config, token, body) {
         "content-type": "application/json",
       },
       body: JSON.stringify(body),
+      // Surface a hung request as an error instead of stalling the whole run.
+      signal: AbortSignal.timeout(20000),
     });
     status = res.status;
     responseHeaders = extractResponseHeaders(res.headers);
