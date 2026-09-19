@@ -12,5 +12,6 @@ export function makeService(): GameService {
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY,
     import.meta.env.VITE_CREW_API_URL,
+    import.meta.env.VITE_SUPABASE_PROJECT_ID,
   );
 }

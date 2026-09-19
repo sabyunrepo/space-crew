@@ -13,6 +13,7 @@ import {
   newPlayer,
   removePlayer,
   project,
+  REVISION_BYPASS_COMMANDS,
   type State,
 } from "../src/game/engine.ts";
 import { pendingDemoActor, demoCommand } from "../src/game/demo.ts";
@@ -34,12 +35,6 @@ const DEFAULT_CACHE_SWEEP_INTERVAL_MS = 5 * 60 * 1000;
 const DEFAULT_MAX_CACHED_ROOMS = 500;
 const MAX_DEMO_BACKOFF_MS = 30_000;
 const DEFAULT_TRICK_ADVANCE_DELAY_MS = 2500;
-/** Commands that must apply against the latest state instead of bouncing a
- * stale expectedRevision: they are actor-idempotent (re-applying the same
- * value is a no-op) so a lobby/briefing race between players shouldn't force
- * a client to retry. Every other command keeps the strict revision check. */
-const REVISION_BYPASS_COMMANDS = new Set(["set_ready", "briefing_ready"]);
-
 type RoomRecord = {
   state: State;
   /** sha256(playerToken) -> playerId. Raw tokens are never persisted. */

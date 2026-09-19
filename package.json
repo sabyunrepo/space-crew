@@ -15,6 +15,7 @@
     "test:e2e:server": "playwright test --config=playwright.server.config.ts",
     "typecheck": "tsc -b",
     "contracts": "node tools/sync-edge-contracts.mjs && tsx tools/export-openapi.ts",
+    "build:edge": "node scripts/build-crew-api.mjs",
     "predev": "npm run assets"
   },
   "engines": {
