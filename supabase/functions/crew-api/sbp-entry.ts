@@ -1,8 +1,11 @@
-// Deno entrypoint for the standard Supabase CLI (`supabase functions serve` /
-// `supabase functions deploy`). The self-hosted sbp platform instead deploys
-// the esbuild bundle produced from sbp-entry.ts by scripts/build-crew-api.mjs
-// (no npm:/deno.json import map allowed there) - see docs/FRONTEND-HANDOFF.ko.md.
-import postgres from "npm:postgres@3.4.9";
+// Entry point for the self-hosted (sbp) platform deploy. Bundled by
+// scripts/build-crew-api.mjs into dist-edge/crew-api/index.ts - never run
+// directly and never deployed as source (npm:/jsr:/https: imports and a
+// deno.json import map are both forbidden on that platform, see
+// claudedocs/SUPABASE-BPRIME-PROBE.ko.md). __CREW_PROJECT_ID__ is replaced by
+// esbuild `define` at build time: the project UUID is not on the platform's
+// runtime env allowlist, so it cannot be read from Deno.env here.
+import postgres from "postgres";
 import { createHandler } from "../_shared/handler.ts";
 import { PostgresRepository } from "../_shared/postgres-repository.ts";
 import { decodeJwtSub } from "../_shared/jwt.ts";
@@ -10,15 +13,18 @@ import { RULESET_VERSION } from "../_shared/contracts.ts";
 import missions from "../_shared/missions.ts";
 import type { DbPool } from "../_shared/db.ts";
 
+declare const __CREW_PROJECT_ID__: string;
+const projectId = __CREW_PROJECT_ID__;
+if (!projectId) throw new Error("CREW_PROJECT_ID was not injected at build time");
+
 const dbUrl = Deno.env.get("SUPABASE_DB_URL");
 if (!dbUrl) throw new Error("SUPABASE_DB_URL required");
-const projectId = Deno.env.get("CREW_PROJECT_ID");
-if (!projectId) throw new Error("CREW_PROJECT_ID required");
 
-// forceCreate:false-style worker reuse means this module can serve several
-// concurrent requests: the pool is created lazily once per isolate and never
-// sql.end()ed after a request. A connection error drops the pool reference so
-// the next request builds a fresh one (see claudedocs/SUPABASE-BPRIME-PROBE.ko.md).
+// Worker reuse: this module-level pool is created lazily once per isolate and
+// reused across every request that isolate handles (never sql.end()ed after a
+// request). A connection error drops the reference so the next request builds
+// a fresh pool. Must also work correctly when the platform still creates a
+// fresh worker per request (forceCreate:true) - see the probe report.
 let sql: ReturnType<typeof postgres> | null = null;
 function getSql() {
   if (!sql)

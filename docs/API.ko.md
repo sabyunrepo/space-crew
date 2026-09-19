@@ -2,7 +2,7 @@
 
 기계 판독 계약: [openapi.json](./openapi.json). 타입 및 검증 원본: [shared/contracts.ts](../shared/contracts.ts). 모든 경로는 프로젝트의 `/functions/v1/crew-api` 아래다.
 
-Supabase Edge 경로는 현재 HTTP 골격만 준비되어 있다. `GET /capabilities`는 `backendReady: false`; 나머지 유효한 요청은 저장소 연결 전까지 `501 BACKEND_NOT_IMPLEMENTED`를 반환한다. 프론트 로컬 모드와 실제 서버의 구현 상태를 구분한다.
+Supabase Edge 경로는 `PostgresRepository`(`supabase/functions/_shared/postgres-repository.ts`)로 구현했다. `GET /capabilities`는 `backendReady: true`이며 실제 구현된 미션 ID를 `playable`로 표시한다. PGlite로 로컬 검증했고(`tests/server/postgres-repository.test.ts`), 원격 프로젝트에 배포·실사용 검증은 아직 하지 않았다. 배포 절차는 [프론트 인계 문서의 sbp 절](FRONTEND-HANDOFF.ko.md#sbp-플랫폼-배포)을 따른다.
 
 ## Node 실시간 서버
 
@@ -68,7 +68,7 @@ capacity는 3/4/5. startMission은 1~50. random 모드에서는 startMission을 
 | next_mission | 없음 | success / 방장, 순차 다음 번호 또는 미추첨 랜덤 |
 | resolve_waiting | mode: restart_now/after_mission | 진행 중 대기 대원 / 방장; 즉시 새 시도에 합류하거나 현재 미션 종료 후 합류 |
 
-새 시도의 규칙 버전은 `crew-p9-50-3`이다. 진행 중인 v2 시도는 5·33번 담당자 범위와 17번 종료 판정을 유지하며 재도전·다음 미션에서 v3으로 전환한다. 변경 근거는 [원작 재대조](./ORIGINAL-MISSION-AUDIT.ko.md)를 따른다. 아래 명령은 공유 엔진·Node 서버·로컬 데모에 적용됐고 파생 Edge 계약에도 포함된다. Supabase `PendingRepository`의 게임 저장소 구현은 여전히 후속 작업이다.
+새 시도의 규칙 버전은 `crew-p9-50-3`이다. 진행 중인 v2 시도는 5·33번 담당자 범위와 17번 종료 판정을 유지하며 재도전·다음 미션에서 v3으로 전환한다. 변경 근거는 [원작 재대조](./ORIGINAL-MISSION-AUDIT.ko.md)를 따른다. 아래 명령은 공유 엔진·Node 서버·로컬 데모·Supabase `PostgresRepository`에 동일하게 적용된다.
 
 | command.type | 추가 필드 | 단계/권한 |
 | --- | --- | --- |
@@ -101,16 +101,16 @@ snapshot은 roomId/revision/settings/phase/missionId/attemptId/시도 수/이미
 
 `CrewRepository`의 각 변경 메서드는 아래 전체를 하나의 Postgres 트랜잭션으로 수행해야 한다. 여러 독립적인 Data API 호출을 이어 붙여 구현하지 않는다.
 
-1. 검증한 auth UID를 players에 바인딩한다. 신규 players 생성도 unique(auth_user_id)와 UPSERT로 경쟁을 처리한다.
+1. 검증한 auth UID를 그대로 대원 식별자로 쓴다(`crew_private.players` 없이 `auth.users.id` = playerId). 신규 입장은 `room_members(room_id,user_id)`에 행을 추가해 멤버십을 기록한다.
 2. actor+commandId 기반 advisory transaction lock을 얻는다. 같은 ID의 동시 최초 요청을 직렬화한다. create/join/invite도 같은 규약을 사용한다. 잠금 순서는 항상 command lock → room row lock이다.
 3. `command_receipts`를 확인한다. 동일 canonical 요청 해시면 이전 확정 효과를 재사용한다. 다른 본문이면 `409 IDEMPOTENCY_CONFLICT`. **중복 확인은 revision/attempt 검사보다 먼저** 수행한다.
 4. room을 `SELECT … FOR UPDATE`로 잠근다. 멤버십·방장 권한·capacity·좌석·현재 단계·expectedRevision·attemptId를 검사한다. 미참여자의 조회도 거부한다.
 5. authoritative state를 읽고 서버 엔진으로 행동을 판정한다. 분배/추첨은 서버에서 하고 결과를 저장한다. 브라우저가 보낸 손패/승자/난수를 신뢰하지 않는다.
 6. game_states, rooms.revision 및 phase, members 준비, mission_attempts 결과, events, receipts를 함께 쓴다. 한 명령은 revision을 정확히 1 증가시킨다. 이벤트는 감사용이며 API로 전체 공개하지 않는다.
-7. 멤버 입장 시 `room_subscriptions(room_id,user_id)`를 함께 만든다. `room_versions.revision`을 같은 revision으로 갱신한다. 주기적 presence heartbeat는 게임 revision으로 취급하지 않는다.
+7. 커밋 직전, 참가자(활성+대기)마다 그 사람의 관점으로 투영한 snapshot을 `realtime.send(payload, 'snapshot', 'sbp:<프로젝트 UUID>:<auth uid>', true)`로 보낸다. 커밋이 실패하면 아무도 받지 못한다(트랜잭션 안에서 호출하므로).
 8. 요청자용 snapshot을 생성한 뒤 commit한다. 오류는 전체 rollback한다. 응답이 유실돼도 같은 commandId로 복구된다.
 
-제공된 SQL은 테이블/권한 틀이다. 트랜잭션 함수, 상태 전이 트리거, 초대 만료/회전 정책, seat < capacity 교차 테이블 검사, canonical 요청 해시/서버 RNG/감사 보존/속도 제한은 저장소 구현에서 완료해야 한다. DB에 직접 insert만 하면 게임 규칙이 자동 보장되는 구조가 아니다.
+`supabase/sbp/*.sql`은 표/권한 틀이다(한 파일 한 문장 — sbp 플랫폼 제약). 초대 만료/회전 정책, canonical 요청 해시, 서버 RNG, 속도 제한은 `supabase/functions/_shared/postgres-repository.ts`가 구현한다. DB에 직접 insert만 하면 게임 규칙이 자동 보장되는 구조가 아니다.
 
 ## 동시성·오류·복귀
 
@@ -123,12 +123,12 @@ snapshot은 roomId/revision/settings/phase/missionId/attemptId/시도 수/이미
 - 409: revision/attempt/idempotency 충돌 또는 현재 단계에서 불가능한 행동
 - 413/415: 큰 본문/잘못된 Content-Type
 - 422: 구현하지 않은 미션
-- 429: 과도한 생성/초대/명령 (후속 저장소/게이트웨이 구현)
-- 500/501: 내부 오류/저장소 미구현
+- 429: 과도한 생성/초대/명령. 플랫폼 라우터가 프로젝트 전체 동시 4요청을 넘기면 5번째부터 자체적으로 429를 반환한다(실측: `claudedocs/SUPABASE-BPRIME-PROBE.ko.md`)
+- 500/501: 내부 오류/저장소 미구현(`PendingRepository`; 실제 배포는 `PostgresRepository`를 사용해 501이 나오지 않아야 한다)
 
-409는 snapshot을 재조회하고 사용자가 최신 상태에서 다시 선택한다. 네트워크 오류/응답 불명/5xx에는 명령 본문을 보존해 재전송할 수 있다. DB 커밋 뒤 네트워크가 끊겼다는 이유로 새 commandId를 자동 발급하지 않는다.
+409는 snapshot을 재조회하고 사용자가 최신 상태에서 다시 선택한다. 503/504/네트워크 오류/응답 불명/429에는 **같은 commandId로 지수 백오프+지터** 재전송한다(최대 5회, 프런트는 `src/services/supabase.ts`의 `withCommandRetry`). DB 커밋 뒤 네트워크가 끊겼다는 이유로 새 commandId를 자동 발급하지 않는다.
 
-Realtime 구독: `postgres_changes`, event `UPDATE`, schema `public`, table `room_versions`, filter `room_id=eq.<roomId>`. payload는 room_id/revision뿐이다. 알림 수신·재구독 완료·포커스 복귀 시 snapshot을 다시 읽는다. 누락에 대비해 화면이 보일 때 15초 폴링한다. 중복/역순 알림은 revision으로 무시한다. 전체 손패를 Realtime broadcast 또는 공개 채널에 보내지 않는다.
+Realtime 구독: private broadcast, topic `sbp:<프로젝트 UUID>:<auth uid>`, event `snapshot`. 플랫폼의 `own-user-v1` 규칙상 이 topic은 해당 uid 본인만 구독할 수 있다. payload는 그 사람 관점의 전체 snapshot이다(추가 GET 불필요). 재연결 시 또는 캐시가 없을 때만 `GET /rooms/{roomId}`으로 재동기화한다. 낮거나 같은 revision의 수신은 무시한다. 전체 손패를 다른 대원의 채널이나 공개 채널로 보내지 않는다.
 
 같은 브라우저의 Supabase 세션 갱신으로 기존 member를 찾는다. 새 닉네임이나 동일 닉네임은 자리를 되찾을 권한이 아니다. 저장소 삭제·기기 변경용 복구 코드는 별도 설계/구현 대상으로 남겨 둔다.
 

@@ -36,6 +36,7 @@ export interface CrewRepository {
     roomId: string,
     commandId: string,
   ): Promise<{ inviteToken: string }>;
+  leave(actorAuthId: string, roomId: string): Promise<void>;
 }
 export class PendingRepository implements CrewRepository {
   readonly ready = false;
@@ -73,6 +74,9 @@ export class PendingRepository implements CrewRepository {
     _roomId: string,
     _commandId: string,
   ): Promise<{ inviteToken: string }> {
+    return this.unavailable();
+  }
+  async leave(_actor: string, _roomId: string): Promise<void> {
     return this.unavailable();
   }
 }
@@ -197,7 +201,7 @@ export function createHandler(options: {
             ),
           ),
         );
-      const match = /^\/rooms\/([^/]+)(?:\/(commands|invites))?$/.exec(path);
+      const match = /^\/rooms\/([^/]+)(?:\/(commands|invites|leave))?$/.exec(path);
       if (!match) throw new ApiError("NOT_FOUND", "요청 경로가 없습니다.", 404);
       const roomId = z.uuid().parse(match[1]);
       if (!match[2] && request.method === "GET")
@@ -212,6 +216,10 @@ export function createHandler(options: {
             ),
           ),
         );
+      if (match[2] === "leave" && request.method === "POST") {
+        await repo.leave(actor, roomId);
+        return reply({ ok: true });
+      }
       if (match[2] === "invites" && request.method === "POST") {
         const input = z
           .object({ commandId: z.uuid() })

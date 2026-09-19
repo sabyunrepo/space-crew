@@ -16,7 +16,7 @@
 ## 범위와 현재 상태
 
 - 대상은 **The Crew: The Quest for Planet Nine**, 한국어 PC·모바일 웹, 3~5인 기본형이다. Deep Sea, 추가 미션, 2인 JARVIS, 3인 도전 변형의 조건을 기본형에 섞지 않는다.
-- 2026-09-14 공유 엔진·로컬 데모·Node 실시간 서버는 1~50번을 지원한다. Supabase 트랜잭션 저장소·Edge 원격 배포는 후속 작업이다. Node 공개 서비스는 `crew.bsh00.com`의 기존 Coolify/Cloudflare Tunnel을 사용한다(`docs/DEPLOYMENT.ko.md`). 작업 시 `shared/missions.json`과 현재 엔진·테스트에서 실제 상태를 확인한다.
+- 2026-09-14 공유 엔진·로컬 데모·Node 실시간 서버는 1~50번을 지원한다. 2026-09-19 Supabase Edge Function의 `PostgresRepository`(방 잠금+영수증+사람별 private broadcast)도 1~50번을 지원하며 PGlite로 로컬 검증했으나, 원격 sbp 프로젝트로의 실제 배포·다중 기기 검증은 후속 작업이다(`docs/FRONTEND-HANDOFF.ko.md`의 sbp 절). Node 공개 서비스는 `crew.bsh00.com`의 기존 Coolify/Cloudflare Tunnel을 사용한다(`docs/DEPLOYMENT.ko.md`). 작업 시 `shared/missions.json`과 현재 엔진·테스트에서 실제 상태를 확인한다.
 - 미션 설명 열람, 시작 번호 설정, 규칙 조사 완료와 실제 플레이 지원은 별개다. 랜덤 추첨 범위도 실제 활성화된 미션을 기준으로 보고한다.
 - `src/game/engine.ts`를 로컬 데모와 `server/rooms.ts`가 공유한다. 한쪽 화면만 고쳐 미션이 구현되었다고 보고하지 않는다.
 - 기존 변경 사항과 카드·캐릭터 결과물을 보존한다. 원작 분홍색은 검은색 타마마 카드(`black`), 로켓은 흰색 표현으로 대응한다.

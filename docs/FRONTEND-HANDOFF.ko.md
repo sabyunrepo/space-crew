@@ -1,6 +1,6 @@
 # 프론트 구현 및 셀프호스팅 연동 인계
 
-갱신: 2026-09-14. 프론트와 로컬 규칙 데모는 실행 가능하다. 원격 Supabase 프로젝트를 생성하거나 원격 DB에 SQL을 적용하지 않았다. 제공된 Edge Function은 인증·검증·라우팅 골격이며, 게임 트랜잭션 저장소는 아직 구현하지 않았다.
+갱신: 2026-09-19. 프론트와 로컬 규칙 데모는 실행 가능하다. Edge Function의 게임 트랜잭션 저장소(`PostgresRepository`)는 구현했고 PGlite로 로컬 검증했다(`tests/server/postgres-repository.test.ts`). 원격 Supabase/sbp 프로젝트에 실제로 배포하거나 원격 DB에 SQL을 적용한 적은 아직 없다 - 배포 절차는 [sbp 플랫폼 배포](#sbp-플랫폼-배포)를 따른다.
 
 ## 바로 실행
 
@@ -31,27 +31,32 @@ npm run dev
 | 랜덤 | 실행 가능한 미션 1~50 중 선택, 성공 후 미추첨 미션, 실패/복귀 시 같은 번호 |
 | 방 복귀 | 같은 브라우저의 저장된 익명/로컬 식별자 사용; 닉네임으로 자리를 찾지 않음 |
 | 데이터 계층 | `GameService`를 공유하는 MockService / ServerService / SupabaseService |
-| 실시간 어댑터 | `room_versions` 구독, 연결 후 snapshot 재조회, 포커스/복귀/15초 폴링 재동기화 |
-| 명령 | commandId, expectedRevision, attemptId; 충돌 시 재조회; 응답 불명 시 동일 요청 재전송 |
-| DB | private 권한/RLS/참조키/인덱스/Realtime 최소 데이터 migration |
-| Edge Function | JWT 사용자 확인, Origin 제한, JSON/Zod 검증, CORS, 경로, 오류 응답 |
-| Supabase 게임 저장소 | 미구현. `PendingRepository`는 쓰기/읽기에 501, capabilities는 backendReady=false |
+| 실시간 어댑터 | private broadcast(`sbp:<프로젝트>:<uid>`) 구독, 캐시된 snapshot 반환, 재연결 시 재동기화 |
+| 명령 | commandId, expectedRevision, attemptId; 충돌 시 재조회; 503/504/네트워크오류/429는 지터 재전송(최대 5회) |
+| DB | `supabase/sbp/*.sql`(sbp 플랫폼용, 표+RLS+권한만, 한 파일 한 문장) / `supabase/migrations/*`(표준 Supabase CLI용, 이 플랫폼에는 적용 불가) |
+| Edge Function | JWT payload 디코드(라우터가 이미 검증), Origin 제한, JSON/Zod 검증, CORS, 경로, 오류 응답 |
+| Supabase 게임 저장소 | `PostgresRepository` 구현 완료. PGlite로 로컬 검증(`tests/server/postgres-repository.test.ts`); 원격 배포·실사용은 미검증 |
 | 배포 | 기존 Cloudflare Tunnel + 홈 서버 Coolify의 crew.bsh00.com. Node 프론트/API/WS 통합 서비스. [운영 문서](DEPLOYMENT.ko.md) |
 
-미션 1~50은 공통 엔진과 Node 저장소에 적용했다. Supabase의 실제 동시 사용자 DB 트랜잭션, 운영 환경 인증/Realtime, 기기를 바꿨을 때의 자리 복구는 다음 백엔드 단계다. 현재 브라우저 저장소가 지워지거나 시크릿 창을 바꾸면 기존 익명 식별자로 복귀하지 못한다. 초대 토큰은 기존 대원의 자리 복구 비밀로 사용하지 않는다.
+미션 1~50은 공통 엔진과 Node 저장소·`PostgresRepository`에 동일하게 적용했다. 원격 Supabase/sbp 프로젝트에서의 실제 다중 기기 동시 사용, 운영 환경 인증/Realtime, 기기를 바꿨을 때의 자리 복구는 다음 검증 단계다(로컬 PGlite 테스트는 셀프호스팅 전체 스택의 E2E 검증을 대체하지 않는다). 현재 브라우저 저장소가 지워지거나 시크릿 창을 바꾸면 기존 익명 식별자로 복귀하지 못한다. 초대 토큰은 기존 대원의 자리 복구 비밀로 사용하지 않는다.
 
 ## 파일 안내
 
 - `src/App.tsx`, `src/styles.css`: 화면과 반응형 디자인
-- `src/game/engine.ts`: 로컬·Node 공유 규칙 엔진 (1~50), 사용자별 snapshot 투영
+- `src/game/engine.ts`: 로컬·Node·Supabase 공유 규칙 엔진 (1~50), 사용자별 snapshot 투영
 - `src/services/mock.ts`: localStorage + Web Locks + 탭 간 알림; 데모 전용
-- `src/services/supabase.ts`: Auth/HTTP/Realtime 어댑터
+- `src/services/supabase.ts`: 익명 로그인/HTTP/private broadcast 어댑터, 명령 재전송
 - `shared/contracts.ts`: 요청/응답 타입과 런타임 검증의 기준
 - `shared/missions.json`: 50개 임무 목록, `playable`은 capabilities로 최종 결정
 - `docs/openapi.json`: OpenAPI 3.1; `npm run contracts`로 재생성
-- `supabase/migrations/20260909044625_crew_contract_v1.sql`: CLI로 생성한 migration
-- `supabase/functions/_shared/handler.ts`: 테스트 가능한 HTTP 경계와 저장소 인터페이스
-- `supabase/functions/crew-api/index.ts`: Deno 실행 진입점
+- `supabase/sbp/NNN-*.sql`: sbp 플랫폼 배포용 DDL(표+RLS+권한). 한 파일 한 문장, 번호 순서로 적용
+- `supabase/migrations/*.sql`: 표준 Supabase CLI(`supabase db push`) 대상. **sbp 플랫폼에는 적용 불가**(DO 블록·전용 역할 사용) - 참고용으로 보존
+- `supabase/functions/_shared/handler.ts`: 테스트 가능한 HTTP 경계와 저장소 인터페이스(`CrewRepository`)
+- `supabase/functions/_shared/postgres-repository.ts`: 실제 저장소 구현. `DbPool`/`DbTx` 인터페이스만 사용해 postgres.js와 PGlite(테스트) 양쪽에서 그대로 동작
+- `supabase/functions/_shared/db.ts`, `jwt.ts`: SQL 클라이언트 계약, JWT `sub` 디코드
+- `supabase/functions/crew-api/index.ts`: 표준 Supabase CLI(`supabase functions serve`/`deploy`)용 Deno 진입점. `npm:postgres` 사용
+- `supabase/functions/crew-api/sbp-entry.ts`: sbp 플랫폼 배포용 진입점. `scripts/build-crew-api.mjs`가 이 파일만 번들링한다(직접 배포하지 않음)
+- `scripts/build-crew-api.mjs`: postgres.js 동봉 + esbuild 번들 → `dist-edge/crew-api/{index.ts,files.json}` 생성(`npm run build:edge`)
 - `supabase/functions/_shared/contracts.ts`, `missions.ts`: 공유 원본에서 생성된 배포 복사본. 직접 수정하지 않음
 
 ## 연결 환경 변수
@@ -63,33 +68,64 @@ VITE_BACKEND_MODE=supabase
 VITE_SUPABASE_URL=https://실제-프로젝트-API-호스트
 VITE_SUPABASE_ANON_KEY=공개-클라이언트-키
 VITE_CREW_API_URL=https://실제-프로젝트-API-호스트/functions/v1/crew-api
+VITE_SUPABASE_PROJECT_ID=실제-프로젝트-UUID
 ```
 
-`VITE_CREW_API_URL`을 비우면 기본 `/functions/v1/crew-api`를 사용한다. **관리 콘솔 주소는 프로젝트 API URL이 아니다.** `service_role`, DB 비밀번호, sbp 기계 토큰을 VITE 변수에 넣지 않는다. 빌드 환경 변수 변경 후 Vercel을 재빌드한다. 서버 연결에 실패해도 조용히 mock으로 전환하지 않는다.
+`VITE_CREW_API_URL`을 비우면 기본 `/functions/v1/crew-api`를 사용한다. `VITE_SUPABASE_PROJECT_ID`는 private broadcast topic(`sbp:<이 값>:<auth uid>`) 구독에 필요하다. **관리 콘솔 주소는 프로젝트 API URL이 아니다.** `service_role`, DB 비밀번호, sbp 기계 토큰을 VITE 변수에 넣지 않는다. 빌드 환경 변수 변경 후 Vercel을 재빌드한다. 서버 연결에 실패해도 조용히 mock으로 전환하지 않는다.
 
-Edge runtime:
+Edge runtime (`supabase/functions/crew-api/index.ts`, 표준 Supabase CLI):
 
 ```dotenv
 SUPABASE_URL=실제-프로젝트-내부-또는-공개-API
 SUPABASE_ANON_KEY=공개-클라이언트-키
 CREW_ALLOWED_ORIGINS=https://실제-프론트.vercel.app,http://localhost:5173
-CREW_DATABASE_URL=서버-전용-DB-연결-문자열
+SUPABASE_DB_URL=postgres-계정-연결-문자열
+CREW_PROJECT_ID=실제-프로젝트-UUID
 ```
 
-`CREW_DATABASE_URL`은 후속 저장소 구현을 위한 예약 항목이다. 현재 골격에서는 사용하지 않는다. `crew_server`는 NOLOGIN이며 비밀번호를 코드로 만들지 않았다. 운영자가 전용 LOGIN 역할을 만든 뒤 crew_server 역할만 부여하고 서버 내부 TLS 연결을 제공한다. `crew_private`를 PostgREST의 exposed schemas에 추가하지 않는다.
+sbp 플랫폼은 `SUPABASE_DB_URL`을 플랫폼이 직접 제공하고, `CREW_PROJECT_ID`는 런타임 env allowlist에 없어 [빌드 시 esbuild `define`으로 주입](#sbp-플랫폼-배포)한다. `crew_private`를 PostgREST의 exposed schemas에 추가하지 않는다(`config.toml`의 `schemas`에 없음 = 노출 안 됨).
 
-## 원격 연동 순서
+## sbp 플랫폼 배포
 
-1. 실제 프로젝트 API URL/공개 키, 익명 Auth 허용 여부, Edge runtime 배포 경로, 내부 DB 연결과 WebSocket 접근을 확보한다.
-2. 개발용 DB에서 migration을 검토·적용한다. 운영 DB 적용은 별도 배포 작업으로 진행한다. `supabase migration new`로 파일은 생성했지만 `db push`나 원격 SQL은 실행하지 않았다.
-3. `CrewRepository`를 Postgres 트랜잭션으로 구현한다. [API 계약](./API.ko.md)의 원자적 처리 순서를 따른다. `PendingRepository`를 교체하고 구현된 미션 ID 및 rulesetVersion을 capabilities에 명시한다.
-4. 셀프호스팅 runtime에 `supabase/functions` 전체를 배포한다. `crew-api/index.ts`만 복사하면 `_shared`를 찾지 못한다. `deno.json`의 npm 버전 매핑도 포함한다. 현재 config.toml은 로컬 CLI 설정이며 원격 Docker의 Auth/게이트웨이 설정을 자동 변경하지 않는다.
-5. 게이트웨이 JWT 검증과 함수 내 `auth.getUser(token)`을 실제 익명 사용자 토큰으로 검증한다. 익명 계정은 로그인 후 `authenticated` 역할을 사용한다. 함수에서 닉네임·request playerId·JWT user_metadata를 권한 근거로 사용하지 않는다.
-6. `public.room_versions`만 `supabase_realtime` publication에 포함한다. migration은 해당 publication이 있으면 추가한다. 없는 스택은 publication을 먼저 제공한 뒤 이 테이블을 등록한다.
-7. CORS에 실제 Vercel Origin을 넣고 HTTPS REST/WebSocket을 검사한다. 서로 다른 브라우저/계정 3개로 초대·준비·동시 카드·중복 요청·재접속을 검증한다.
-8. `VITE_BACKEND_MODE=supabase`로 프론트를 빌드한다. 서버가 ready=false이면 방 생성 버튼이 잠긴다. 저장소를 구현하지 않은 채 ready 플래그만 바꾸지 않는다.
+**전제**: 아래는 로컬 빌드·검증 절차다. 원격 배포(`sbp` 명령, SSH, 실제 DB 적용)는 운영자가 직접 실행한다.
 
-sbp 0.1.0 조사에서는 임의 migration, 게임 Edge Function 배포 및 익명 Auth 설정을 모두 완료하는 운영 경로가 확인되지 않았다. 기존 [조사 결과](./RESEARCH.ko.md)를 유지하며, 일반 Supabase CLI 명령을 sbp 명령처럼 취급하지 않는다.
+1. **DB 표 생성**: `supabase/sbp/001-schema.sql`부터 `019-grant_sequences_service.sql`까지 **번호 순서대로 한 파일씩** `sbp db sql`로 적용한다. 각 파일은 이미 문장 하나이며 `$`·`--`·`/* */`·문장 중간 `;`이 없다. 실패 시 그 파일만 재시도하고 이후 파일은 이전 파일이 성공해야 진행한다(뒤 파일이 앞 파일의 표/컬럼을 참조).
+2. **권한 확인**: 마지막 두 파일(`017`~`019`)이 끝나면 `service_role`이 `crew_private`의 모든 표에 select/insert/update/delete를 가졌는지, `anon`/`authenticated`는 권한이 없는지 확인한다(`has_table_privilege`).
+3. **함수 빌드**: `CREW_PROJECT_ID=<실제 프로젝트 UUID> npm run build:edge`. 네트워크로 `postgres@3.4.9`를 받아 Buffer/process/setImmediate 배너를 주입해 번들링하고, `supabase/functions/crew-api/sbp-entry.ts`(핸들러+저장소+엔진+contracts+missions+zod+postgres.js)를 esbuild로 단일 `dist-edge/crew-api/index.ts`(1개 파일, 약 0.57MB)로 묶는다. 실패하면 빌드를 중단한다(`CREW_PROJECT_ID` 누락 등).
+4. **배포 입력 구성**: `dist-edge/crew-api/files.json`(`[{path:"index.ts", base64}]`)을 아래 manifest의 `source.files`에 넣는다.
+   ```json
+   {
+     "project_id": "<프로젝트 UUID>",
+     "expected_revision": "<현재 함수 리비전>",
+     "manifest": {
+       "schema_version": 1,
+       "project_id": "<프로젝트 UUID>",
+       "revision": "<새 리비전>",
+       "platform_lock_sha256": "<플랫폼이 요구하는 잠금 해시>",
+       "functions": [
+         {
+           "name": "crew-api",
+           "revision": "<새 리비전>",
+           "source": { "schema_version": 1, "files": "<files.json 내용>" },
+           "auth_mode": "app_jwt",
+           "limits": { "memory_mb": 128, "timeout_ms": 10000, "request_bytes": 65536, "response_bytes": 262144 },
+           "secret_bindings": []
+         }
+       ]
+     }
+   }
+   ```
+   `sbp functions deploy`로 전달하는 정확한 CLI 인자·인증은 운영자의 sbp 원장 절차를 따른다(이 저장소는 그 명령을 실행하지 않는다).
+5. **Realtime**: 추가 설정 없음 - private broadcast는 플랫폼의 `own-user-v1` 규칙(topic = `sbp:<프로젝트>:<auth uid>`)만 사용하며 `supabase_realtime` publication에 아무것도 등록하지 않는다.
+6. **익명 로그인 허용**: 프로젝트의 Auth 설정에서 익명 로그인이 켜져 있어야 한다(`enable_anonymous_sign_ins`).
+7. **프론트 빌드**: 위 "연결 환경 변수"의 `VITE_*` 값(`VITE_SUPABASE_PROJECT_ID` 포함)으로 `npm run build`.
+8. **검증**: 서로 다른 브라우저/계정 3개로 초대·준비·동시 카드·중복 요청·재접속·트릭 자동 넘김을 확인한다. `claudedocs/SUPABASE-BPRIME-PROBE.ko.md`의 동시성 결과(동시 3~4 요청에서 멈춤 가능성)를 감안해 준비 단계처럼 전원이 동시에 누르는 지점을 특히 확인한다.
+
+## 표준 Supabase CLI로 배포하는 경우 (sbp가 아닌 스택)
+
+sbp 플랫폼이 아니라 표준 `supabase` CLI(Docker self-host 또는 Supabase Cloud)를 쓰는 스택도 **`supabase/sbp/*.sql`을 그대로**(001부터 순서대로) 적용한다 - sbp 전용 문법이 아니라 그냥 유효한 SQL을 파일 하나당 한 문장으로 쪼갠 것뿐이라 `psql`/`supabase db push` 어디서나 동작한다. `service_role`은 Supabase가 기본 제공하는 역할이라 별도 생성이 필요 없다. `supabase/functions/crew-api/index.ts`(`npm:postgres` import, `deno.json` import map)를 배포한다 - `index.ts`만 복사하면 `_shared`를 찾지 못하니 `supabase/functions` 전체를 배포한다. 이 경로는 `npx deno check`로 타입만 확인했고, sbp 절만큼 로컬 SQL 테스트(PGlite)로 실측하지 않았다.
+
+`supabase/migrations/*.sql`(DO 블록, 별도 `players`/`invites` 표, `crew_server` 역할을 쓰는 이전 스키마)은 **현재 `PostgresRepository`와 호환되지 않는다.** 삭제하지 않고 참고용으로만 보존한다 - 다시 쓰려면 저장소 코드를 그 스키마에 맞게 다시 작성해야 한다.
 
 ## Vercel
 
@@ -105,7 +141,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-단위/계약 테스트는 카드 분배, 선도색, 로켓, 교신, 목표 소유/순서, 랜덤/재시도, idempotency, revision/attempt 충돌, 재접속, Edge 인증/CORS/501을 확인한다. PGlite의 실제 SQL 실행으로 migration과 RLS를 검사한다. 이는 셀프호스팅 전체 스택의 E2E 검증을 대체하지 않는다. Playwright는 데스크톱 및 모바일 크기에서 로컬 임무 완주, 새로고침 복구, 50개 선택과 카드 41장 로딩을 확인한다.
+단위/계약 테스트는 카드 분배, 선도색, 로켓, 교신, 목표 소유/순서, 랜덤/재시도, idempotency, revision/attempt 충돌, 재접속, Edge 인증/CORS/501을 확인한다. PGlite의 실제 SQL 실행으로 `supabase/migrations`(레거시)의 RLS와 `supabase/sbp`(현재) 위의 `PostgresRepository`를 각각 검사한다(`tests/schema.test.ts`, `tests/server/postgres-repository.test.ts`). 이는 셀프호스팅 전체 스택의 E2E 검증을 대체하지 않는다. Playwright는 데스크톱 및 모바일 크기에서 로컬 임무 완주, 새로고침 복구, 50개 선택과 카드 41장 로딩을 확인한다.
 
 ## 공식 기술 참고
 

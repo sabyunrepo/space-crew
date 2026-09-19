@@ -19,6 +19,12 @@ interface SetupState {
   originalTokens: (TaskToken | null)[];
 }
 export type State = Omit<Snapshot, "me"> & { hands: Record<string, CardId[]>; setup?: SetupState };
+/** Commands that must apply against the latest state instead of bouncing a
+ * stale expectedRevision: they are actor-idempotent (re-applying the same
+ * value is a no-op) so a lobby/briefing race between players shouldn't force
+ * a client to retry. Every other command keeps the strict revision check.
+ * Shared by every backend storage (Node RoomStore, Postgres repository). */
+export const REVISION_BYPASS_COMMANDS = new Set(["set_ready", "briefing_ready"]);
 const freshProgress = (): NonNullable<Snapshot["missionProgress"]> => ({
   selectedPlayerId: null, secondaryPlayerId: null, silentPlayerId: null, blackNineHolderId: null,
   oneWins: 0, ninesPlayed: 0, rocketsWon: [], blackCardsWon: 0, transferApplied: false, distressUsed: false, distressActive: false,

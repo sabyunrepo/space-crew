@@ -23,13 +23,15 @@ npm run dev
 
 한국어 반응형 화면, 방 생성, 미션 1~50 시작 번호/랜덤 선택, 목표 선택, 교신, 카드 플레이, 성공/실패, 새로고침 복귀를 구현했습니다. 공유 엔진은 미션 **1~50**을 지원하며 특수 준비 절차와 성공·실패 판정을 포함합니다. 랜덤은 구현된 미션에서 중복 없이 선택하고 실패/복귀 시 같은 번호를 유지합니다.
 
-Node 서버 모드에서는 서로 다른 기기의 REST/WebSocket 실시간 플레이와 서버 저장·복귀를 지원합니다. Supabase 어댑터·SQL migration·Edge Function 골격을 준비했으며, 골격의 DB 작업은 미구현 상태를 `501`로 알립니다. Node 서비스는 기존 Cloudflare Tunnel 주소 `https://crew.bsh00.com`으로 배포합니다. Supabase DB/Edge Function 원격 적용은 아직 진행하지 않았습니다.
+Node 서버 모드에서는 서로 다른 기기의 REST/WebSocket 실시간 플레이와 서버 저장·복귀를 지원합니다. Node 서비스는 기존 Cloudflare Tunnel 주소 `https://crew.bsh00.com`으로 배포합니다.
+
+셀프호스팅 Supabase 모드는 방 잠금(`SELECT … FOR UPDATE`) + 영수증(idempotency) + 사람별 private broadcast(`sbp:<프로젝트>:<auth uid>`)로 동작하는 `PostgresRepository`를 구현했고 PGlite로 로컬 검증했습니다(`npm test`). 원격 sbp 프로젝트에 실제로 배포·검증하지는 않았습니다 - 배포 절차(SQL 적용 순서, `npm run build:edge`, 필요한 env)는 [프론트 인계 문서의 sbp 절](docs/FRONTEND-HANDOFF.ko.md#sbp-플랫폼-배포)을 따릅니다.
 
 - [Cloudflare Tunnel 운영·업데이트](docs/DEPLOYMENT.ko.md)
 - [프론트 실행·Supabase 연동 인계](docs/FRONTEND-HANDOFF.ko.md)
 - [API 및 트랜잭션 명세](docs/API.ko.md) · [OpenAPI 3.1](docs/openapi.json)
-- [DB migration](supabase/migrations/20260909044625_crew_contract_v1.sql)
-- [Edge Function 진입점](supabase/functions/crew-api/index.ts)
+- [sbp 플랫폼용 DB DDL](supabase/sbp/) · [레거시 CLI migration](supabase/migrations/20260909044625_crew_contract_v1.sql)(현재 저장소 구현과 비호환, 참고용)
+- [Edge Function 저장소 구현](supabase/functions/_shared/postgres-repository.ts) · [sbp 진입점](supabase/functions/crew-api/sbp-entry.ts) · [표준 CLI 진입점](supabase/functions/crew-api/index.ts)
 
 검증: `npm run build`, `npm test`, `npm run test:e2e` (최초 `npx playwright install chromium`).
 
