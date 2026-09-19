@@ -1,5 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// server-multiplayer.spec.ts의 시드 헬퍼가 이 값으로 Node 서버 전용 REST 시드
+// 대신 UI(방 생성 + 초대 링크 참가) 시드를 쓰도록 분기한다.
+process.env.E2E_BACKEND = "supabase";
+
 /**
  * Supabase 모드 통합 검증. 실제 셀프호스팅 Supabase 프로젝트(crew-api Edge
  * Function + private Broadcast)에 붙는 프런트를 빌드해 preview로 띄우고,
