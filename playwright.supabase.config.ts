@@ -12,15 +12,18 @@ process.env.E2E_BACKEND = "supabase";
  * 필요한 환경 변수(저장소에 저장하지 않는다): VITE_SUPABASE_URL,
  * VITE_SUPABASE_ANON_KEY, VITE_SUPABASE_PROJECT_ID.
  */
+// E2E_BASE_URL을 주면 이미 배포된 주소(예: https://crew.bsh00.com)를 그대로 검증한다.
+const deployed = process.env.E2E_BASE_URL;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   testMatch: "server-multiplayer.spec.ts",
   fullyParallel: false,
   workers: 1,
   timeout: 240_000,
-  use: { baseURL: "http://127.0.0.1:18082", trace: "retain-on-failure" },
+  use: { baseURL: deployed ?? "http://127.0.0.1:18082", trace: "retain-on-failure" },
   projects: [{ name: "supabase", use: { ...devices["Desktop Chrome"] } }],
-  webServer: {
+  webServer: deployed ? undefined : {
     command: "VITE_BACKEND_MODE=supabase npm run build && npx vite preview --host 127.0.0.1 --port 18082 --strictPort",
     url: "http://127.0.0.1:18082",
     reuseExistingServer: false,
