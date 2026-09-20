@@ -230,13 +230,21 @@ export class PostgresRepository implements CrewRepository {
     });
   }
 
+  /** Every subscribed client repeats this every few seconds to cover a missed
+   * broadcast, so it is the most frequent call by far. Existence, membership
+   * and the state come back in one statement instead of three inside a
+   * transaction: one round trip rather than five, holding a pooled connection
+   * for that much less. */
   async snapshot(actorAuthId: string, roomId: string): Promise<Snapshot> {
-    return this.pool.begin(async (tx) => {
-      await this.requireRoom(tx, roomId);
-      await this.requireMember(tx, roomId, actorAuthId);
-      const [row] = await tx.query<Row>(`select state from public.crew_game_states where room_id = $1::uuid`, [roomId]);
-      return project(asObject<State>(row.state), actorAuthId);
-    });
+    const [row] = await this.pool.query<Row>(
+      `select (select 1 from public.crew_rooms where id = $1::uuid) as room,
+              (select 1 from public.crew_room_members where room_id = $1::uuid and user_id = $2::uuid) as member,
+              (select state from public.crew_game_states where room_id = $1::uuid) as state`,
+      [roomId, actorAuthId],
+    );
+    if (!row?.room) fail("ROOM_NOT_FOUND", "존재하지 않는 방입니다.", 404);
+    if (!row.member) fail("NOT_MEMBER", "이 방의 대원이 아닙니다.", 403);
+    return project(asObject<State>(row.state), actorAuthId);
   }
 
   async command(actorAuthId: string, roomId: string, input: Envelope): Promise<Snapshot> {

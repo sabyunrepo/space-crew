@@ -49,6 +49,14 @@ const pool: DbPool = {
       throw e;
     }
   },
+  async query(text, params = []) {
+    try {
+      return await getSql().unsafe(text, params as never[]) as never;
+    } catch (e) {
+      if (isConnectionError(e)) sql = null;
+      throw e;
+    }
+  },
 };
 
 Deno.serve(

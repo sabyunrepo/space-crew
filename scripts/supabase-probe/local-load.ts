@@ -31,6 +31,10 @@ const pool: DbPool = {
     roundTrips += 2;
     return await sql.begin((tx) => fn({ query: (text, params = []) => { roundTrips++; return tx.unsafe(text, params); } }));
   },
+  async query(text, params = []) {
+    roundTrips++;
+    return await sql.unsafe(text, params as never[]) as never;
+  },
 };
 const repo = new PostgresRepository(pool, projectId);
 

@@ -15,6 +15,9 @@ function makePool(db: PGlite): DbPool {
     async begin<T>(fn: (tx: DbTx) => Promise<T>): Promise<T> {
       return db.transaction(async (tx) => fn({ query: async (text, params = []) => (await tx.query(text, params as unknown[])).rows as never }));
     },
+    async query(text, params = []) {
+      return (await db.query(text, params as unknown[])).rows as never;
+    },
   };
 }
 
