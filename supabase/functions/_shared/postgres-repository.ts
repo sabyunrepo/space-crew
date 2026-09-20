@@ -85,13 +85,19 @@ export class PostgresRepository implements CrewRepository {
     );
   }
 
+  /** One round trip for the whole room. This runs while the room row is locked,
+   * so a per-member loop made the serialized window grow with the player count. */
   private async broadcast(tx: DbTx, state: State): Promise<void> {
     const members = [...state.players, ...(state.waitingPlayers ?? [])];
-    for (const member of members) {
-      const payload = JSON.stringify(project(state, member.id));
-      const topic = `sbp:${this.projectId}:${member.id}`;
-      await tx.query(`select realtime.send($1::text::jsonb, 'snapshot', $2::text, true)`, [payload, topic]);
-    }
+    if (!members.length) return;
+    await tx.query(
+      `select realtime.send(m.payload::jsonb, 'snapshot', m.topic, true)
+         from unnest($1::text[], $2::text[]) as m(payload, topic)`,
+      [
+        members.map((member) => JSON.stringify(project(state, member.id))),
+        members.map((member) => `sbp:${this.projectId}:${member.id}`),
+      ],
+    );
   }
 
   private async recordEvent(tx: DbTx, roomId: string, revision: number, actor: string, type: string, payload: unknown): Promise<void> {

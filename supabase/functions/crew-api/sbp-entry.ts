@@ -25,10 +25,15 @@ if (!dbUrl) throw new Error("SUPABASE_DB_URL required");
 // request). A connection error drops the reference so the next request builds
 // a fresh pool. Must also work correctly when the platform still creates a
 // fresh worker per request (forceCreate:true) - see the probe report.
+// max is the whole project's database concurrency, because worker reuse means
+// there is exactly one worker for this one function. At 3 it was narrower than
+// the router's 16-request admission: 32 transactions of 40 ms queued to p90
+// 453 ms, against 170 ms at 8 (scripts/supabase-probe/local-load.ts). 8 keeps
+// a modest share of the shared Postgres, which every other service also uses.
 let sql: ReturnType<typeof postgres> | null = null;
 function getSql() {
   if (!sql)
-    sql = postgres(dbUrl!, { max: 3, prepare: false, idle_timeout: 20, connect_timeout: 5, ssl: false, max_lifetime: 300 });
+    sql = postgres(dbUrl!, { max: 8, prepare: false, idle_timeout: 20, connect_timeout: 5, ssl: false, max_lifetime: 300 });
   return sql;
 }
 function isConnectionError(e: unknown): boolean {

@@ -19,10 +19,11 @@ if (!projectId) throw new Error("CREW_PROJECT_ID required");
 // concurrent requests: the pool is created lazily once per isolate and never
 // sql.end()ed after a request. A connection error drops the pool reference so
 // the next request builds a fresh one (see claudedocs/SUPABASE-BPRIME-PROBE.ko.md).
+// max mirrors sbp-entry.ts - see the note there for why it is 8.
 let sql: ReturnType<typeof postgres> | null = null;
 function getSql() {
   if (!sql)
-    sql = postgres(dbUrl!, { max: 3, prepare: false, idle_timeout: 20, connect_timeout: 5, ssl: false, max_lifetime: 300 });
+    sql = postgres(dbUrl!, { max: 8, prepare: false, idle_timeout: 20, connect_timeout: 5, ssl: false, max_lifetime: 300 });
   return sql;
 }
 function isConnectionError(e: unknown): boolean {
