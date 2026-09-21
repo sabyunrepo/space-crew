@@ -163,5 +163,6 @@ describe("Edge HTTP boundary", () => {
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
       "http://localhost:5173",
     );
+    expect(response.headers.get("Access-Control-Max-Age")).toBe("86400");
   });
 });

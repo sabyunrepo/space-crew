@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -47,7 +49,9 @@ import { characterFor } from "../shared/characters.ts";
 import { ThemePicker } from "./components/ThemePicker.tsx";
 import { CharacterPicker } from "./components/CharacterPicker.tsx";
 import { GameTable } from "./components/table/GameTable.tsx";
-import { GuidePage } from "./pages/GuidePage.tsx";
+const GuidePage = lazy(() =>
+  import("./pages/GuidePage.tsx").then((m) => ({ default: m.GuidePage })),
+);
 import { ToastViewport, type ToastItem } from "./components/ToastViewport.tsx";
 /** service.mode는 향후 "server"도 값으로 가질 수 있어 문자열 비교로 안전하게 처리한다. */
 function modeLabel(mode: string | undefined) {
@@ -431,11 +435,13 @@ export function App() {
   );
   if (path === "/guide")
     return (
-      <GuidePage
-        onBack={() =>
-          navigate(guideReturnPath.current === "/guide" ? "/" : guideReturnPath.current)
-        }
-      />
+      <Suspense fallback={null}>
+        <GuidePage
+          onBack={() =>
+            navigate(guideReturnPath.current === "/guide" ? "/" : guideReturnPath.current)
+          }
+        />
+      </Suspense>
     );
   return (
     <div className={`app-shell ${fixedLayout ? "gameplay-fixed" : ""}`}>

@@ -80,6 +80,19 @@ export class PendingRepository implements CrewRepository {
     return this.unavailable();
   }
 }
+/** The self-hosted (sbp) platform router only admits /functions/v1/<name>,
+ * so clients send the API path as ?route=; plain sub-paths still work on a
+ * standard Supabase runtime. Exported so callers that must pre-check a
+ * request against the same route the handler will dispatch on (e.g. the
+ * Node crew-api's per-route rate limiter) never drift from this. */
+export function normalizeRoute(raw: string): string {
+  return (
+    raw
+      .replace(/^\/functions\/v1\/crew-api(?=\/|$)/, "")
+      .replace(/^\/crew-api(?=\/|$)/, "")
+      .replace(/\/$/, "") || "/"
+  );
+}
 async function jsonBody(request: Request) {
   if (!request.headers.get("content-type")?.includes("application/json"))
     throw new ApiError(
@@ -139,6 +152,7 @@ export function createHandler(options: {
         "authorization, apikey, content-type, x-client-info",
       );
       headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      headers.set("Access-Control-Max-Age", "86400");
     }
     const reply = (body: unknown, status = 200) =>
       new Response(JSON.stringify(body), { status, headers });
@@ -163,15 +177,8 @@ export function createHandler(options: {
           "유효한 로그인 세션이 아닙니다.",
           401,
         );
-      // The self-hosted (sbp) platform router only admits /functions/v1/<name>,
-      // so clients send the API path as ?route=; plain sub-paths still work on
-      // a standard Supabase runtime.
       const url = new URL(request.url);
-      const path =
-        (url.searchParams.get("route") ?? url.pathname)
-          .replace(/^\/functions\/v1\/crew-api(?=\/|$)/, "")
-          .replace(/^\/crew-api(?=\/|$)/, "")
-          .replace(/\/$/, "") || "/";
+      const path = normalizeRoute(url.searchParams.get("route") ?? url.pathname);
       const repo = options.repository;
       if (path === "/capabilities" && request.method === "GET")
         return reply(
