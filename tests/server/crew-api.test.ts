@@ -196,6 +196,143 @@ describe("createApp DB mode (createCrewApi over PGlite)", () => {
     });
   });
 
+  // Root cause: postgres-repository.ts/engine.ts throw ApiError from the root
+  // shared/contracts.ts, but handler.ts's catch-all checked
+  // `instanceof ApiError` against ITS OWN duplicate
+  // supabase/functions/_shared/contracts.ts class - a structurally identical
+  // but distinct class, so every ApiError from the repository/engine (leave's
+  // LAST_MEMBER and NOT_MEMBER included) fell through to the generic 500
+  // instead of its real status.
+  it("rejects the last member's leave with 409 LAST_MEMBER, not 500, and leaves the room unchanged", async () => {
+    await withTempDirs(async (dirs) => {
+      const { port } = await bootApp(dirs);
+      const host = randomUUID();
+      const guest = randomUUID();
+      await insertUser(host);
+      await insertUser(guest);
+      const hostToken = signToken(host);
+
+      const createRes = await fetch(apiUrl(port, "/rooms"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${hostToken}` },
+        body: JSON.stringify(createRoomInput()),
+      });
+      const created = await createRes.json();
+      const roomId = created.snapshot.roomId as string;
+      const inviteToken = created.inviteToken as string;
+
+      const guestToken = signToken(guest);
+      await fetch(apiUrl(port, "/rooms/join"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${guestToken}` },
+        body: JSON.stringify({ commandId: randomUUID(), nickname: "대원", inviteToken }),
+      });
+
+      const guestLeaveRes = await fetch(apiUrl(port, `/rooms/${roomId}/leave`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${guestToken}` },
+      });
+      expect(guestLeaveRes.status).toBe(200);
+
+      const hostLeaveRes = await fetch(apiUrl(port, `/rooms/${roomId}/leave`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${hostToken}` },
+      });
+      expect(hostLeaveRes.status).toBe(409);
+      const hostLeaveBody = await hostLeaveRes.json();
+      expect(hostLeaveBody.error.code).toBe("LAST_MEMBER");
+
+      // The rejected leave must not have mutated the room.
+      const snapRes = await fetch(apiUrl(port, `/rooms/${roomId}`), {
+        headers: { Authorization: `Bearer ${hostToken}` },
+      });
+      expect(snapRes.status).toBe(200);
+      const snap = await snapRes.json();
+      expect(snap.players).toHaveLength(1);
+    });
+  });
+
+  it("rejects a second leave from the same actor with 403 NOT_MEMBER, not 500", async () => {
+    await withTempDirs(async (dirs) => {
+      const { port } = await bootApp(dirs);
+      const host = randomUUID();
+      const guest = randomUUID();
+      await insertUser(host);
+      await insertUser(guest);
+      const hostToken = signToken(host);
+
+      const createRes = await fetch(apiUrl(port, "/rooms"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${hostToken}` },
+        body: JSON.stringify(createRoomInput()),
+      });
+      const created = await createRes.json();
+      const roomId = created.snapshot.roomId as string;
+      const inviteToken = created.inviteToken as string;
+
+      const guestToken = signToken(guest);
+      await fetch(apiUrl(port, "/rooms/join"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${guestToken}` },
+        body: JSON.stringify({ commandId: randomUUID(), nickname: "대원", inviteToken }),
+      });
+
+      const firstLeave = await fetch(apiUrl(port, `/rooms/${roomId}/leave`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${guestToken}` },
+      });
+      expect(firstLeave.status).toBe(200);
+
+      const secondLeave = await fetch(apiUrl(port, `/rooms/${roomId}/leave`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${guestToken}` },
+      });
+      expect(secondLeave.status).toBe(403);
+      const secondLeaveBody = await secondLeave.json();
+      expect(secondLeaveBody.error.code).toBe("NOT_MEMBER");
+    });
+  });
+
+  it("transfers host to the next player when the host leaves and others remain", async () => {
+    await withTempDirs(async (dirs) => {
+      const { port } = await bootApp(dirs);
+      const host = randomUUID();
+      const guest = randomUUID();
+      await insertUser(host);
+      await insertUser(guest);
+      const hostToken = signToken(host);
+
+      const createRes = await fetch(apiUrl(port, "/rooms"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${hostToken}` },
+        body: JSON.stringify(createRoomInput()),
+      });
+      const created = await createRes.json();
+      const roomId = created.snapshot.roomId as string;
+      const inviteToken = created.inviteToken as string;
+
+      const guestToken = signToken(guest);
+      await fetch(apiUrl(port, "/rooms/join"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${guestToken}` },
+        body: JSON.stringify({ commandId: randomUUID(), nickname: "대원", inviteToken }),
+      });
+
+      const hostLeaveRes = await fetch(apiUrl(port, `/rooms/${roomId}/leave`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${hostToken}` },
+      });
+      expect(hostLeaveRes.status).toBe(200);
+
+      const snapRes = await fetch(apiUrl(port, `/rooms/${roomId}`), {
+        headers: { Authorization: `Bearer ${guestToken}` },
+      });
+      const snap = await snapRes.json();
+      expect(snap.players).toHaveLength(1);
+      expect(snap.hostId).toBe(guest);
+    });
+  });
+
   it("returns 401 without a token and with a forged token", async () => {
     await withTempDirs(async (dirs) => {
       const { port } = await bootApp(dirs);
