@@ -6,7 +6,7 @@
 - 애플리케이션 UUID: `wwdeemugv7lqzozohddwtvlx`, 프로젝트 `space-crew`, 환경 `production`, 소스 `sabyunrepo/space-crew`, Dockerfile 빌드.
 - **운영 배포 브랜치는 `main`이다(2026-09-21 전환).** `main`에 push하면 GitHub 웹훅(push 이벤트, 수동 웹훅 방식)이 Coolify에 도착하고 Coolify는 `git_branch`와 정확히 같은 브랜치의 push에만 반응해 자동 배포한다. `feat/realtime-prototype` 등 다른 브랜치로의 push는 더 이상 운영을 바꾸지 않는다. 되돌리려면 Coolify 앱의 Source 탭에서 Branch를 되돌린다(값만 바꾸면 재배포는 일어나지 않는다).
 - 프론트 모드는 빌드 시점 변수로 정한다: `VITE_BACKEND_MODE=supabase`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_PROJECT_ID`. Supabase 프로젝트는 `spacecrew2`(`https://sb-spacecrew2.bsh00.com`)다. 선택 변수 `VITE_CREW_API_URL`: 비어 있으면 화면은 Edge Function `crew-api`를 직접 호출하고, `/api/crew`로 주면 같은 주소의 Node 서버를 호출한다.
-- Node 서버의 두 가지 동작(2026-09-21 배포 커밋 `06de7df`부터): 실행 환경변수 `CREW_DB_URL`이 **없으면** 지금까지와 같다(정적 파일, `/healthz`, 파일 저장 방식의 `/api`·`/ws`). `CREW_DB_URL`이 **있으면** `/api/crew`에서 Edge Function과 같은 핸들러로 Postgres에 직접 붙고, 옛 `/api/*`는 404, `/ws`는 거부되며 `/data` 볼륨이 필요 없다. 이때 `CREW_JWT_SECRET`, `CREW_PROJECT_ID`, `CREW_ALLOWED_ORIGINS`가 모두 필요하고 하나라도 없으면 부팅 시 종료한다. 2026-09-21 현재 운영에는 `CREW_DB_URL`이 설정되어 있지 않다(DB 사설 경로는 플랫폼 이슈 sabyunrepo/supabase-selfhost-platform#62 진행 중).
+- Node 서버의 두 가지 동작(2026-09-21 배포 커밋 `06de7df`부터): 실행 환경변수 `CREW_DB_URL`이 **없으면** 지금까지와 같다(정적 파일, `/healthz`, 파일 저장 방식의 `/api`·`/ws`). `CREW_DB_URL`이 **있으면** `/api/crew`에서 Edge Function과 같은 핸들러로 Postgres에 직접 붙고, 옛 `/api/*`는 404, `/ws`는 거부되며 `/data` 볼륨이 필요 없다. 이때 `CREW_JWT_SECRET`, `CREW_PROJECT_ID`, `CREW_ALLOWED_ORIGINS`가 모두 필요하고 하나라도 없으면 부팅 시 종료한다. 2026-09-21 오후부터 운영은 DB 직접 연결 모드다. Coolify 실행 환경변수 `CREW_DB_URL`, `CREW_JWT_SECRET`(둘 다 화면에서 다시 볼 수 없게 잠김), `CREW_PROJECT_ID`, `CREW_ALLOWED_ORIGINS`와 빌드 변수 `VITE_CREW_API_URL=/api/crew`가 설정돼 있고, 화면은 같은 주소의 `/api/crew`를 부른다. 옛 `/api/*`는 404, `/ws`는 거부된다. Edge Function `crew-api`는 되돌리기용으로 그대로 있다.
 - 정적 캐시: `/assets/*`는 1년 immutable, `index.html`은 `no-cache`, `/cards/`·`/characters/`는 하루.
 - 배포 중 502의 원인과 조치: Coolify의 교체 순서는 정상이었고, Traefik에 활성 헬스체크가 없어 새 컨테이너가 8080을 열기 전에 트래픽을 받던 것이 원인이었다. 2026-09-21 애플리케이션 custom labels에 `traefik.http.services.http-0-wwdeemugv7lqzozohddwtvlx.loadbalancer.healthcheck.{path=/healthz,port=8080,interval=2s,timeout=1s}` 4줄을 추가했다. 원래 값 백업: Coolify VM `/home/ubuntu/coolify-backups/wwdeemug-custom_labels-before-20260921.b64`. 주의: Coolify 화면에서 이 앱의 도메인이나 Basic Auth를 바꾸면 라벨이 기본값으로 재생성되어 이 4줄이 사라진다. 첫 적용 배포(`06de7df`)에서는 502 0건, 404가 약 2초 관측됐다.
 - 되돌리려면 `VITE_BACKEND_MODE=server`로 바꾸고 재배포한다. `/data` 볼륨(`wwdeemugv7lqzozohddwtvlx-space-crew-data`)이 아직 연결되어 있으므로 그러면 기존 방이 다시 보인다.
@@ -214,3 +214,15 @@ Aside 연결이 안 되면 먼저 복구하고, 해결되지 않는 경우 상�
 - 캐시된 스냅샷은 3초까지만 그대로 쓴다.
 
 재검증: 4인·5인 각각 2회 전부 통과(4인 52~53초). 전환 전 실패 때는 2.5분 만에 시간 초과였다.
+
+## 2026-09-21 Node 서버 DB 직접 연결 전환
+
+- 경로: 게임 컨테이너(coolify-d1-01, 172.25.0.175) → KT 사설망 → `172.25.0.154:18022`(Supabase 프로젝트 `spacecrew2`의 Postgres, 플랫폼 이슈 sabyunrepo/supabase-selfhost-platform#62의 opt-in 사설 DB 출입구). 그 포트는 사설 주소에만 열려 있고, Supabase 서버의 DOCKER-USER 방화벽 규칙(systemd `sbp-private-db-firewall.service`)이 출발지를 172.25.0.175 하나로 제한한다. 공인 주소 두 곳에서의 접속은 시간 초과로 확인했다.
+- DB 역할 `sbp_app_runtime`: 로그인 가능, BYPASSRLS, 동시 연결 12개 제한, `public.crew_*` 6개 표와 `crew_events_id_seq`만 권한. `auth.users`·`storage.objects` 조회는 "permission denied"로 확인. 비밀번호는 저장하지 않고 프로젝트 JWT 비밀키에서 계산한다.
+- 전환 순서와 시각: 방화벽 먼저 → `spacecrew2` 일시정지 → 허락 명단 제자리 수정 → 설정 재생성 → 시작(약 53초 중단, 11단계 전부 성공) → 역할 권한 부여 → Coolify 환경변수 → 강제 재빌드 배포(15:56 KST, `/api/crew` 응답이 404에서 401로 한 번에 바뀜).
+- 배포 커밋: `main` = `38d8b1a` (코드 커밋 `dc6fac1`, `d062c47`). 비밀값은 이미지에 없다(`docker history`에서 `CREW_` 0건).
+- 검증: 운영 주소 다인 E2E 20개 중 19개 통과(28.1분). 실패 1개는 "AI 대원" 시나리오로, AI 차례 자동 진행은 서버 모드 전용이라 Supabase 방식 저장소에서는 옛 경로에서도 지원되지 않는다(지난 기준선도 이 시나리오를 빼고 19/19였다). 실행 명령에는 `VITE_SUPABASE_URL`·`VITE_SUPABASE_ANON_KEY`·`VITE_SUPABASE_PROJECT_ID` 환경변수가 필요하다. 빠뜨리면 미션 시나리오가 전부 `Unexpected token '<'`로 실패한다.
+- 속도(이 맥북에서, 옛 경로와 새 경로를 번갈아 각 195회, 실패 0건): 조회 p50 304ms→306ms, 명령 p50 340ms→316ms, 3명 동시 p50 366ms→331ms, 명령 최댓값 1046ms→640ms, 빈 요청 기준선 326ms(양쪽 동일). 서버 안 처리는 명령 1건 7.5ms(제한된 역할, 시험용 프로젝트 실측), 컨테이너에 직접 호출하면 0.6~0.8ms. 기준선 326ms의 원인: 이 맥북의 요청이 Cloudflare LAX(미국) 거점으로 들어가고(`cf-ray …-LAX`, 거점까지 ping 140~270ms) 터널은 서울(icn)에 붙어 있다. 즉 남은 지연의 대부분은 앱이 아니라 Cloudflare 경로다. 다른 통신사에서의 거점은 재 보지 않았다. 브라우저의 CORS 사전 확인이 사라진 이득은 Node 스크립트 측정에 포함되지 않으며 브라우저에서 따로 재지 않았다.
+- 배포 중 끊김: Traefik 헬스체크 라벨 적용 후 502는 0건. 다만 라벨이 같은 상태의 배포 3회 중 측정한 2회 모두 컨테이너 교체 순간에 요청 1건이 연결 실패(000)로 끊겼다. 원인 후보는 `server/app.ts`의 `close()`가 처리 중인 연결을 기다리지 않고 닫는 것(독립 리뷰의 Low 지적). 미수정, 후속 과제.
+- 알려진 기존 버그(이번 변경과 무관, 옛 경로에서도 동일 재현): 방의 마지막 참가자가 나가면 `/rooms/{id}/leave`가 500을 돌려준다. 손님이 나가는 경우는 200.
+- 되돌리기: Coolify에서 위 5개 환경변수 키(미리보기 짝 포함 10행)를 지우고 강제 재빌드하면 화면이 다시 Edge Function을 부른다. DB 출입구를 닫으려면 플랫폼 저장소의 #62 문서 절차(일시정지 → 허락 명단에서 제거 → 재생성 → 시작)를 따른다. 운영 기록: `~/.sbp/crew-private-db-20260921/ledger.txt`.
