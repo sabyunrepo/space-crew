@@ -80,7 +80,7 @@ function resetToLobby(state: State) {
 export function removePlayer(input: State, playerId: string, random = Math.random): State {
   const state = structuredClone(input);
   normalize(state);
-  if (state.players.length <= 1 && state.players.some((p) => p.id === playerId))
+  if (state.players.length <= 1 && !(state.waitingPlayers ?? []).length && state.players.some((p) => p.id === playerId))
     fail("LAST_MEMBER", "마지막 대원은 방을 나갈 수 없습니다.");
   const waitingIndex = (state.waitingPlayers ?? []).findIndex((p) => p.id === playerId);
   if (waitingIndex >= 0) {

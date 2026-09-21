@@ -92,6 +92,19 @@ describe("mock service persistence and command contract", () => {
       }),
     ).rejects.toMatchObject({ code: "ATTEMPT_MISMATCH" });
   });
+
+  it("deletes a local demo room when its last member leaves", async () => {
+    const storage = new MemoryStorage();
+    const service = new MockService(storage);
+    const entry = await service.createRoom(createInput());
+
+    await service.leaveRoom(entry.snapshot.roomId);
+
+    await expect(service.snapshot(entry.snapshot.roomId)).rejects.toMatchObject({
+      code: "ROOM_NOT_FOUND",
+      status: 404,
+    });
+  });
 });
 describe("Edge HTTP boundary", () => {
   const actor = crypto.randomUUID();

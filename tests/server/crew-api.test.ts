@@ -196,14 +196,7 @@ describe("createApp DB mode (createCrewApi over PGlite)", () => {
     });
   });
 
-  // Root cause: postgres-repository.ts/engine.ts throw ApiError from the root
-  // shared/contracts.ts, but handler.ts's catch-all checked
-  // `instanceof ApiError` against ITS OWN duplicate
-  // supabase/functions/_shared/contracts.ts class - a structurally identical
-  // but distinct class, so every ApiError from the repository/engine (leave's
-  // LAST_MEMBER and NOT_MEMBER included) fell through to the generic 500
-  // instead of its real status.
-  it("rejects the last member's leave with 409 LAST_MEMBER, not 500, and leaves the room unchanged", async () => {
+  it("deletes the room when the last member leaves", async () => {
     await withTempDirs(async (dirs) => {
       const { port } = await bootApp(dirs);
       const host = randomUUID();
@@ -238,17 +231,14 @@ describe("createApp DB mode (createCrewApi over PGlite)", () => {
         method: "POST",
         headers: { Authorization: `Bearer ${hostToken}` },
       });
-      expect(hostLeaveRes.status).toBe(409);
-      const hostLeaveBody = await hostLeaveRes.json();
-      expect(hostLeaveBody.error.code).toBe("LAST_MEMBER");
+      expect(hostLeaveRes.status).toBe(200);
 
-      // The rejected leave must not have mutated the room.
       const snapRes = await fetch(apiUrl(port, `/rooms/${roomId}`), {
         headers: { Authorization: `Bearer ${hostToken}` },
       });
-      expect(snapRes.status).toBe(200);
-      const snap = await snapRes.json();
-      expect(snap.players).toHaveLength(1);
+      expect(snapRes.status).toBe(404);
+      const snapBody = await snapRes.json();
+      expect(snapBody.error.code).toBe("ROOM_NOT_FOUND");
     });
   });
 

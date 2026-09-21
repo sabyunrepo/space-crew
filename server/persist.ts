@@ -75,6 +75,13 @@ export async function writeRoomFile(
   }
 }
 
+export async function deleteRoomFile(
+  dataDir: string,
+  roomId: string,
+): Promise<void> {
+  await rm(roomFile(dataDir, roomId), { force: true });
+}
+
 export async function listRoomIds(dataDir: string): Promise<string[]> {
   try {
     const files = await readdir(roomsDir(dataDir));

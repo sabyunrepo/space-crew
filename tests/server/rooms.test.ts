@@ -164,6 +164,34 @@ describe("RoomStore", () => {
     });
   });
 
+  it("deletes the room when its last member leaves", async () => {
+    await withTempDir(async (dataDir) => {
+      const store = new RoomStore({ dataDir, demoDelayMs: 0 });
+      const host = await store.createRoom(createInput());
+      const invite = await store.invite(host.snapshot.roomId, host.playerToken);
+      const guest = await store.joinRoom({
+        commandId: crypto.randomUUID(),
+        nickname: "대원",
+        inviteToken: invite,
+      });
+
+      await store.leaveRoom(host.snapshot.roomId, guest.playerToken);
+      await store.leaveRoom(host.snapshot.roomId, host.playerToken);
+
+      await expect(
+        store.snapshot(host.snapshot.roomId, host.playerToken),
+      ).rejects.toMatchObject({ code: "ROOM_NOT_FOUND", status: 404 });
+      await expect(
+        store.joinRoom({
+          commandId: crypto.randomUUID(),
+          nickname: "새 대원",
+          inviteToken: invite,
+        }),
+      ).rejects.toMatchObject({ code: "INVITE_NOT_FOUND", status: 404 });
+      store.shutdown();
+    });
+  });
+
   it("invites, joins 3 players, starts the mission, and never leaks other hands or tokens", async () => {
     await withTempDir(async (dataDir) => {
       const store = new RoomStore({ dataDir, demoDelayMs: 0 });

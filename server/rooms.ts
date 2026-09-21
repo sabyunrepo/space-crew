@@ -19,6 +19,7 @@ import {
 import { pendingDemoActor, demoCommand } from "../src/game/demo.ts";
 import {
   listRoomIds,
+  deleteRoomFile,
   pruneStaleRoomFiles,
   readRoomFile,
   roomFileExists,
@@ -459,6 +460,19 @@ export class RoomStore {
       const trickTimer = this.trickTimers.get(roomId);
       if (trickTimer) clearTimeout(trickTimer);
       this.trickTimers.delete(roomId);
+
+      const memberCount = record.state.players.length + (record.state.waitingPlayers?.length ?? 0);
+      if (memberCount <= 1) {
+        await deleteRoomFile(this.dataDir, roomId);
+        this.rooms.delete(roomId);
+        this.lastAccessed.delete(roomId);
+        if (this.inviteIndexReady) this.inviteIndex.delete(record.inviteToken);
+        else this.pendingInviteInserts = this.pendingInviteInserts.filter(
+          (entry) => entry.roomId !== roomId,
+        );
+        return;
+      }
+
       const nextState = removePlayer(record.state, actor);
       const tokens = { ...record.tokens };
       for (const [hash, playerId] of Object.entries(tokens)) if (playerId === actor) delete tokens[hash];

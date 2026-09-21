@@ -185,7 +185,7 @@ describe("PostgresRepository (PGlite)", () => {
     void started;
   });
 
-  it("removes a member on leave, and the last member cannot leave", async () => {
+  it("removes a member on leave, and deletes the room when the last member leaves", async () => {
     const { snapshot: created, inviteToken } = await repo.create(host, { commandId: uid(700), nickname: "선장", settings });
     const roomId = created.roomId;
     await repo.join(guest, { commandId: uid(701), nickname: "대원1", inviteToken: inviteToken! });
@@ -193,7 +193,9 @@ describe("PostgresRepository (PGlite)", () => {
     const afterLeave = await repo.snapshot(host, roomId);
     expect(afterLeave.players).toHaveLength(1);
     await expect(repo.snapshot(guest, roomId)).rejects.toMatchObject({ code: "NOT_MEMBER" });
-    await expect(repo.leave(host, roomId)).rejects.toMatchObject({ code: "LAST_MEMBER" });
+    await repo.leave(host, roomId);
+    await expect(repo.snapshot(host, roomId)).rejects.toMatchObject({ code: "ROOM_NOT_FOUND", status: 404 });
+    await expect(repo.leave(host, roomId)).rejects.toMatchObject({ code: "ROOM_NOT_FOUND", status: 404 });
   });
 
   it("rejects a second leave from the same actor with NOT_MEMBER, not a crash", async () => {

@@ -120,7 +120,8 @@ snapshot은 roomId/revision/settings/phase/missionId/attemptId/시도 수/이미
 - 401: 세션 누락/만료/유효하지 않은 JWT
 - 403: 다른 방 접근, 방장 권한 없음, CORS Origin 거부, 이미 나간 대원의 재퇴장(`NOT_MEMBER`)
 - 404: 방/초대 없음(`ROOM_NOT_FOUND`, 비멤버에게 방 정보 노출 최소화)
-- 409: revision/attempt/idempotency 충돌, 현재 단계에서 불가능한 행동, 마지막 대원의 퇴장(`LAST_MEMBER`)
+- 409: revision/attempt/idempotency 충돌, 현재 단계에서 불가능한 행동
+- 마지막 대원이 퇴장하면 방과 하위 저장 데이터가 함께 삭제되며, 이후 조회·재퇴장은 `ROOM_NOT_FOUND`(404)다.
 - 413/415: 큰 본문/잘못된 Content-Type
 - 422: 구현하지 않은 미션
 - 429: 과도한 생성/초대/명령. 플랫폼 라우터가 프로젝트 전체 동시 4요청을 넘기면 5번째부터 자체적으로 429를 반환한다(실측: `claudedocs/SUPABASE-BPRIME-PROBE.ko.md`)

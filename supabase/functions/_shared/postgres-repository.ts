@@ -308,6 +308,14 @@ export class PostgresRepository implements CrewRepository {
     await this.pool.begin(async (tx) => {
       await this.requireRoom(tx, roomId, true);
       await this.requireMember(tx, roomId, actorAuthId);
+      const [memberCount] = await tx.query<Row>(
+        `select count(*)::integer as count from public.crew_room_members where room_id = $1::uuid`,
+        [roomId],
+      );
+      if (Number(memberCount?.count ?? 0) <= 1) {
+        await tx.query(`delete from public.crew_rooms where id = $1::uuid`, [roomId]);
+        return;
+      }
       const [row] = await tx.query<Row>(`select state from public.crew_game_states where room_id = $1::uuid`, [roomId]);
       const state = asObject<State>(row.state);
       const nextState = removePlayer(state, actorAuthId);

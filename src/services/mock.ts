@@ -59,7 +59,7 @@ export class MockService implements GameService {
   }
   private async locked<T>(key: string, fn: () => T): Promise<T> {
     if (typeof navigator !== "undefined" && navigator.locks)
-      return navigator.locks.request(PREFIX + key, fn);
+      return navigator.locks.request(PREFIX + key, async () => fn());
     return fn();
   }
   async capabilities() {
@@ -154,6 +154,11 @@ export class MockService implements GameService {
   async leaveRoom(id: string): Promise<void> {
     return this.locked(id, () => {
       const record = this.read(id);
+      const memberCount = record.state.players.length + (record.state.waitingPlayers?.length ?? 0);
+      if (memberCount <= 1) {
+        this.storage.removeItem(PREFIX + id);
+        return;
+      }
       const next = removePlayer(record.state, this.actor);
       record.state = next;
       this.save(record);
