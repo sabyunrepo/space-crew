@@ -2,13 +2,14 @@
 
 ## 연결 및 배포 대상
 
-- 공개 주소: https://crew.bsh00.com
-- Cloudflare Tunnel → 홈 서버의 `coolify-proxy` → Coolify `space-crew` 애플리케이션 → Node 8080.
-- 애플리케이션 UUID: `wwdeemugv7lqzozohddwtvlx`, 프로젝트 `space-crew`, 환경 `production`.
-- 소스: `sabyunrepo/space-crew`, 브랜치 `feat/realtime-prototype`, Dockerfile 빌드, 배포할 커밋 SHA 지정.
-- 프론트는 Coolify의 빌드 시점 변수로 모드를 정한다(2026-09-20부터 `VITE_BACKEND_MODE=supabase`). Dockerfile이 `VITE_BACKEND_MODE`·`VITE_SUPABASE_URL`·`VITE_SUPABASE_ANON_KEY`·`VITE_SUPABASE_PROJECT_ID`를 `ARG`로 받는다.
-- Supabase 모드에서 컨테이너의 Node 서버는 **정적 파일과 `/healthz`만 제공한다**. 게임 요청은 브라우저에서 `https://sb-spacecrew.bsh00.com`의 `crew-api` Edge Function으로 직접 간다. 컨테이너의 `/api`·`/ws`와 `/data` 볼륨은 남아 있지만 화면이 쓰지 않는다.
-- 되돌리려면 `VITE_BACKEND_MODE=server`로 바꾸고 재배포한다. 그러면 `/data`의 기존 방이 다시 보인다.
+- 공개 주소: https://crew.bsh00.com. 경로: Cloudflare Tunnel → KT Cloud VM `coolify-d1-01`(사설 172.25.0.175)의 `coolify-proxy`(Traefik) → Coolify `space-crew` 애플리케이션 → Node 8080.
+- 애플리케이션 UUID: `wwdeemugv7lqzozohddwtvlx`, 프로젝트 `space-crew`, 환경 `production`, 소스 `sabyunrepo/space-crew`, Dockerfile 빌드.
+- **운영 배포 브랜치는 `main`이다(2026-09-21 전환).** `main`에 push하면 GitHub 웹훅(push 이벤트, 수동 웹훅 방식)이 Coolify에 도착하고 Coolify는 `git_branch`와 정확히 같은 브랜치의 push에만 반응해 자동 배포한다. `feat/realtime-prototype` 등 다른 브랜치로의 push는 더 이상 운영을 바꾸지 않는다. 되돌리려면 Coolify 앱의 Source 탭에서 Branch를 되돌린다(값만 바꾸면 재배포는 일어나지 않는다).
+- 프론트 모드는 빌드 시점 변수로 정한다: `VITE_BACKEND_MODE=supabase`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_PROJECT_ID`. Supabase 프로젝트는 `spacecrew2`(`https://sb-spacecrew2.bsh00.com`)다. 선택 변수 `VITE_CREW_API_URL`: 비어 있으면 화면은 Edge Function `crew-api`를 직접 호출하고, `/api/crew`로 주면 같은 주소의 Node 서버를 호출한다.
+- Node 서버의 두 가지 동작(2026-09-21 배포 커밋 `06de7df`부터): 실행 환경변수 `CREW_DB_URL`이 **없으면** 지금까지와 같다(정적 파일, `/healthz`, 파일 저장 방식의 `/api`·`/ws`). `CREW_DB_URL`이 **있으면** `/api/crew`에서 Edge Function과 같은 핸들러로 Postgres에 직접 붙고, 옛 `/api/*`는 404, `/ws`는 거부되며 `/data` 볼륨이 필요 없다. 이때 `CREW_JWT_SECRET`, `CREW_PROJECT_ID`, `CREW_ALLOWED_ORIGINS`가 모두 필요하고 하나라도 없으면 부팅 시 종료한다. 2026-09-21 현재 운영에는 `CREW_DB_URL`이 설정되어 있지 않다(DB 사설 경로는 플랫폼 이슈 sabyunrepo/supabase-selfhost-platform#62 진행 중).
+- 정적 캐시: `/assets/*`는 1년 immutable, `index.html`은 `no-cache`, `/cards/`·`/characters/`는 하루.
+- 배포 중 502의 원인과 조치: Coolify의 교체 순서는 정상이었고, Traefik에 활성 헬스체크가 없어 새 컨테이너가 8080을 열기 전에 트래픽을 받던 것이 원인이었다. 2026-09-21 애플리케이션 custom labels에 `traefik.http.services.http-0-wwdeemugv7lqzozohddwtvlx.loadbalancer.healthcheck.{path=/healthz,port=8080,interval=2s,timeout=1s}` 4줄을 추가했다. 원래 값 백업: Coolify VM `/home/ubuntu/coolify-backups/wwdeemug-custom_labels-before-20260921.b64`. 주의: Coolify 화면에서 이 앱의 도메인이나 Basic Auth를 바꾸면 라벨이 기본값으로 재생성되어 이 4줄이 사라진다. 첫 적용 배포(`06de7df`)에서는 502 0건, 404가 약 2초 관측됐다.
+- 되돌리려면 `VITE_BACKEND_MODE=server`로 바꾸고 재배포한다. `/data` 볼륨(`wwdeemugv7lqzozohddwtvlx-space-crew-data`)이 아직 연결되어 있으므로 그러면 기존 방이 다시 보인다.
 
 ## 저장 및 업데이트
 
