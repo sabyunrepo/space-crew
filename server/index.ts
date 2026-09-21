@@ -9,7 +9,13 @@ const DATA_DIR = process.env.DATA_DIR ?? "/data";
 const STATIC_DIR =
   process.env.STATIC_DIR ?? fileURLToPath(new URL("../dist", import.meta.url));
 const STALE_ROOM_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
-const SHUTDOWN_GRACE_MS = 5000;
+// Drain sequence for server/app.ts's close(): ~2 health-check intervals
+// (Traefik polls /healthz every 2s) before we stop accepting new
+// connections, an 8s hard cap on the whole sequence, and a final
+// belt-and-suspenders exit comfortably inside Docker's default ~10s SIGKILL.
+const SHUTDOWN_DRAIN_MS = 4000;
+const SHUTDOWN_DEADLINE_MS = 8000;
+const SHUTDOWN_GRACE_MS = 9000;
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -56,6 +62,8 @@ async function main() {
     jwtSecret,
     allowedOrigins,
     closePool,
+    shutdownDrainMs: SHUTDOWN_DRAIN_MS,
+    shutdownDeadlineMs: SHUTDOWN_DEADLINE_MS,
   });
 
   if (dbPool) {
