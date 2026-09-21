@@ -23,6 +23,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const WS_MAX_PAYLOAD_BYTES = 4096;
 const DEFAULT_AUTH_TIMEOUT_MS = 5000;
 const DEFAULT_HEARTBEAT_INTERVAL_MS = 30_000;
+/** Defaults to 0 (today's immediate-close behaviour) so every existing
+ * caller/test that does not pass these is unaffected; server/index.ts is the
+ * only caller that opts into a real drain for production deploys. */
+const DEFAULT_SHUTDOWN_DRAIN_MS = 0;
+const DEFAULT_SHUTDOWN_DEADLINE_MS = 8000;
 /** Room creation / join: 10 req/min per IP, burst 5. */
 const ROOM_RATE_LIMIT_CAPACITY = 5;
 const ROOM_RATE_LIMIT_PER_MINUTE = 10;
@@ -120,6 +125,13 @@ export function createApp(options: {
   demoDelayMs?: number;
   authTimeoutMs?: number;
   heartbeatIntervalMs?: number;
+  /** How long after close() is called /healthz answers 503 (taking this
+   * container out of the load balancer's rotation) before the server stops
+   * accepting new connections. In-flight requests are never cut by this. */
+  shutdownDrainMs?: number;
+  /** Hard cap on the whole close() sequence; past this everything is force-
+   * closed and close() resolves regardless of in-flight or pool state. */
+  shutdownDeadlineMs?: number;
   /** DB mode switch: when set, /api/crew is mounted against this pool and
    * the legacy file-backed /api/* routes and /ws upgrade are disabled. */
   dbPool?: DbPool;
@@ -146,6 +158,15 @@ export function createApp(options: {
   const authTimeoutMs = options.authTimeoutMs ?? DEFAULT_AUTH_TIMEOUT_MS;
   const heartbeatIntervalMs =
     options.heartbeatIntervalMs ?? DEFAULT_HEARTBEAT_INTERVAL_MS;
+  const shutdownDrainMs = options.shutdownDrainMs ?? DEFAULT_SHUTDOWN_DRAIN_MS;
+  const shutdownDeadlineMs =
+    options.shutdownDeadlineMs ?? DEFAULT_SHUTDOWN_DEADLINE_MS;
+  // Flips at the start of close() so /healthz starts failing immediately -
+  // before anything else in the shutdown sequence - so a load balancer with
+  // an active health check takes this container out of rotation at its very
+  // next probe, while every other route keeps being served normally.
+  let shuttingDown = false;
+  let httpCloseStarted = false;
   const wss = new WebSocketServer({
     noServer: true,
     maxPayload: WS_MAX_PAYLOAD_BYTES,
@@ -335,7 +356,9 @@ export function createApp(options: {
     };
 
     if (pathname === "/healthz" && req.method === "GET") {
-      sendJson(200, { ok: true });
+      // Liveness only, still no DB ping - but during shutdown this must go
+      // unhealthy immediately so the load balancer stops routing here.
+      sendJson(shuttingDown ? 503 : 200, { ok: !shuttingDown });
       return;
     }
 
@@ -503,21 +526,67 @@ export function createApp(options: {
 
   function close(): Promise<void> {
     return new Promise((resolveClose) => {
-      if (heartbeatTimer) clearInterval(heartbeatTimer);
-      store.shutdown();
-      for (const ws of wss.clients) {
-        try {
-          ws.close(1012, "server shutting down");
-        } catch {
-          // ignore - the socket may already be closing
+      let resolved = false;
+      const finish = () => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(deadlineTimer);
+        clearTimeout(drainTimer);
+        resolveClose();
+      };
+
+      // (a) Immediately: /healthz starts answering 503, every other route
+      // keeps working normally until the drain window below.
+      shuttingDown = true;
+
+      // (d) Hard deadline on the whole sequence: force everything closed and
+      // resolve/exit regardless of in-flight requests or a slow DB pool
+      // drain, so the container always beats Docker's SIGKILL.
+      const deadlineTimer = setTimeout(() => {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        store.shutdown();
+        for (const ws of wss.clients) {
+          try {
+            ws.terminate();
+          } catch {
+            // ignore - the socket may already be closing
+          }
         }
-      }
-      if (typeof server.closeAllConnections === "function")
-        server.closeAllConnections();
-      server.close(() => {
-        if (crewApi) crewApi.close().finally(() => resolveClose());
-        else resolveClose();
-      });
+        if (typeof server.closeAllConnections === "function")
+          server.closeAllConnections();
+        if (!httpCloseStarted) {
+          httpCloseStarted = true;
+          server.close();
+        }
+        if (crewApi) void crewApi.close().catch(() => {});
+        finish();
+      }, shutdownDeadlineMs);
+      if (typeof deadlineTimer.unref === "function") deadlineTimer.unref();
+
+      // (b) After the drain window: stop accepting new connections and give
+      // WS clients a real close frame, but let in-flight HTTP requests
+      // finish - closeIdleConnections() only drops connections with no
+      // request in progress.
+      const drainTimer = setTimeout(() => {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        store.shutdown();
+        for (const ws of wss.clients) {
+          try {
+            ws.close(1012, "server shutting down");
+          } catch {
+            // ignore - the socket may already be closing
+          }
+        }
+        if (typeof server.closeIdleConnections === "function")
+          server.closeIdleConnections();
+        httpCloseStarted = true;
+        server.close(() => {
+          // (c) Only after the HTTP server has actually finished closing.
+          if (crewApi) crewApi.close().finally(finish);
+          else finish();
+        });
+      }, shutdownDrainMs);
+      if (typeof drainTimer.unref === "function") drainTimer.unref();
     });
   }
 

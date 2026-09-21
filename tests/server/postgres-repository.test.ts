@@ -195,6 +195,24 @@ describe("PostgresRepository (PGlite)", () => {
     await expect(repo.snapshot(guest, roomId)).rejects.toMatchObject({ code: "NOT_MEMBER" });
     await expect(repo.leave(host, roomId)).rejects.toMatchObject({ code: "LAST_MEMBER" });
   });
+
+  it("rejects a second leave from the same actor with NOT_MEMBER, not a crash", async () => {
+    const { snapshot: created, inviteToken } = await repo.create(host, { commandId: uid(800), nickname: "선장", settings });
+    const roomId = created.roomId;
+    await repo.join(guest, { commandId: uid(801), nickname: "대원1", inviteToken: inviteToken! });
+    await repo.leave(guest, roomId);
+    await expect(repo.leave(guest, roomId)).rejects.toMatchObject({ code: "NOT_MEMBER", status: 403 });
+  });
+
+  it("transfers host to the next player when the host leaves and others remain", async () => {
+    const { snapshot: created, inviteToken } = await repo.create(host, { commandId: uid(802), nickname: "선장", settings });
+    const roomId = created.roomId;
+    await repo.join(guest, { commandId: uid(803), nickname: "대원1", inviteToken: inviteToken! });
+    await repo.leave(host, roomId);
+    const afterLeave = await repo.snapshot(guest, roomId);
+    expect(afterLeave.players).toHaveLength(1);
+    expect(afterLeave.hostId).toBe(guest);
+  });
 });
 
 describe("postgres.js parameter typing", () => {

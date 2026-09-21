@@ -93,6 +93,17 @@ export function normalizeRoute(raw: string): string {
       .replace(/\/$/, "") || "/"
   );
 }
+/** Duck-types an ApiError instance from any module (see the catch block
+ * below for why instanceof alone is not enough). */
+function isApiErrorShape(
+  e: unknown,
+): e is { code: string; message: string; status: number; currentRevision?: number } {
+  return (
+    e instanceof Error &&
+    typeof (e as { code?: unknown }).code === "string" &&
+    typeof (e as { status?: unknown }).status === "number"
+  );
+}
 async function jsonBody(request: Request) {
   if (!request.headers.get("content-type")?.includes("application/json"))
     throw new ApiError(
@@ -260,19 +271,31 @@ export function createHandler(options: {
           },
           400,
         );
-      if (error instanceof ApiError)
+      // The repository (supabase/functions/_shared/postgres-repository.ts)
+      // and the shared engine (src/game/engine.ts) throw ApiError from the
+      // root shared/contracts.ts, not this file's own duplicate contracts.ts
+      // - a structurally identical but distinct class, so `instanceof
+      // ApiError` alone missed every one of them and fell through to the
+      // generic 500 below. Shape-check instead of relying on the class.
+      const apiError =
+        error instanceof ApiError
+          ? error
+          : isApiErrorShape(error)
+            ? error
+            : null;
+      if (apiError)
         return reply(
           {
             error: {
-              code: error.code,
-              message: error.message,
+              code: apiError.code,
+              message: apiError.message,
               requestId,
-              ...(error.currentRevision === undefined
+              ...(apiError.currentRevision === undefined
                 ? {}
-                : { currentRevision: error.currentRevision }),
+                : { currentRevision: apiError.currentRevision }),
             },
           },
-          error.status,
+          apiError.status,
         );
       // Never log JWTs, invite tokens or private hands. The sbp runtime keeps no
       // function logs, so a database error's SQLSTATE and message (no tokens or
