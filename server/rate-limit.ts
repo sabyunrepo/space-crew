@@ -1,3 +1,19 @@
+import type { IncomingMessage } from "node:http";
+
+/** CF-Connecting-IP (Cloudflare Tunnel) -> first X-Forwarded-For hop -> raw
+ * socket address. Used only to key per-IP rate limits, never trusted for
+ * authorization. */
+export function clientIp(req: IncomingMessage): string {
+  const cf = req.headers["cf-connecting-ip"];
+  if (typeof cf === "string" && cf) return cf;
+  const xff = req.headers["x-forwarded-for"];
+  if (typeof xff === "string" && xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return req.socket.remoteAddress ?? "unknown";
+}
+
 /**
  * Minimal in-memory token bucket, used to throttle abuse-prone endpoints
  * (room creation, joins, WS auth attempts) without a new dependency.

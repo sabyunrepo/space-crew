@@ -14,7 +14,9 @@ import {
 } from "../shared/contracts.ts";
 import missions from "../shared/missions.json" with { type: "json" };
 import { RoomStore } from "./rooms.ts";
-import { IpRateLimiter } from "./rate-limit.ts";
+import { IpRateLimiter, clientIp } from "./rate-limit.ts";
+import { createCrewApi } from "./crew-api.ts";
+import type { DbPool } from "../supabase/functions/_shared/db.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -105,20 +107,6 @@ function bearerToken(req: IncomingMessage): string {
   return match[1];
 }
 
-/** CF-Connecting-IP (Cloudflare Tunnel) -> first X-Forwarded-For hop -> raw
- * socket address. Used only to key per-IP rate limits, never trusted for
- * authorization. */
-function clientIp(req: IncomingMessage): string {
-  const cf = req.headers["cf-connecting-ip"];
-  if (typeof cf === "string" && cf) return cf;
-  const xff = req.headers["x-forwarded-for"];
-  if (typeof xff === "string" && xff) {
-    const first = xff.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  return req.socket.remoteAddress ?? "unknown";
-}
-
 type WsConnState = {
   alive: boolean;
   authenticated: boolean;
@@ -132,11 +120,28 @@ export function createApp(options: {
   demoDelayMs?: number;
   authTimeoutMs?: number;
   heartbeatIntervalMs?: number;
+  /** DB mode switch: when set, /api/crew is mounted against this pool and
+   * the legacy file-backed /api/* routes and /ws upgrade are disabled. */
+  dbPool?: DbPool;
+  projectId?: string;
+  jwtSecret?: string;
+  allowedOrigins?: string[];
+  closePool?: () => Promise<void>;
 }): { server: Server; store: RoomStore; close: () => Promise<void> } {
   const store = new RoomStore({
     dataDir: options.dataDir,
     demoDelayMs: options.demoDelayMs,
   });
+  const dbMode = options.dbPool !== undefined;
+  const crewApi = options.dbPool
+    ? createCrewApi({
+        pool: options.dbPool,
+        projectId: options.projectId!,
+        jwtSecret: options.jwtSecret!,
+        allowedOrigins: options.allowedOrigins ?? [],
+        closePool: options.closePool,
+      })
+    : null;
   const staticRoot = resolve(options.staticDir);
   const authTimeoutMs = options.authTimeoutMs ?? DEFAULT_AUTH_TIMEOUT_MS;
   const heartbeatIntervalMs =
@@ -284,9 +289,18 @@ export function createApp(options: {
     if (!info || !info.isFile()) return null;
     const body = await readFile(candidate);
     const ext = extname(candidate);
-    const cacheControl = decoded.startsWith("/cards/")
-      ? "public, max-age=86400"
-      : undefined;
+    // /assets/* is Vite's hashed build output - safe to cache for a year.
+    // index.html (direct hit or the SPA fallback above) must always be
+    // revalidated, or a cached one would keep pointing at stale hashed
+    // assets. /cards/ and /characters/ have no hash in their names, so a day
+    // is as long as it is safe to go without a check.
+    const cacheControl = decoded.startsWith("/assets/")
+      ? "public, max-age=31536000, immutable"
+      : decoded.startsWith("/cards/") || decoded.startsWith("/characters/")
+        ? "public, max-age=86400"
+        : candidate === resolve(staticRoot, "index.html")
+          ? "no-cache"
+          : undefined;
     return {
       body,
       contentType: MIME_TYPES[ext] ?? "application/octet-stream",
@@ -337,7 +351,16 @@ export function createApp(options: {
       return;
     }
 
-    if (pathname.startsWith("/api/")) {
+    if (dbMode) {
+      if (pathname === "/api/crew" || pathname.startsWith("/api/crew/")) {
+        await crewApi!.handle(req, res);
+        return;
+      }
+      if (pathname.startsWith("/api/")) {
+        sendJson(404, errorBody("NOT_FOUND", "요청 경로가 없습니다."));
+        return;
+      }
+    } else if (pathname.startsWith("/api/")) {
       try {
         await handleApi(req, pathname, url, sendJson);
       } catch (error) {
@@ -452,6 +475,10 @@ export function createApp(options: {
     // A raw socket that errors before the WS handshake completes (e.g. the
     // client vanishes mid-handshake) must not crash the process either.
     socket.on("error", () => {});
+    if (dbMode) {
+      socket.destroy();
+      return;
+    }
     let url: URL;
     try {
       url = new URL(req.url ?? "/", "http://internal");
@@ -487,7 +514,10 @@ export function createApp(options: {
       }
       if (typeof server.closeAllConnections === "function")
         server.closeAllConnections();
-      server.close(() => resolveClose());
+      server.close(() => {
+        if (crewApi) crewApi.close().finally(() => resolveClose());
+        else resolveClose();
+      });
     });
   }
 
