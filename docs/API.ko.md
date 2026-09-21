@@ -2,7 +2,7 @@
 
 기계 판독 계약: [openapi.json](./openapi.json). 타입 및 검증 원본: [shared/contracts.ts](../shared/contracts.ts). 모든 경로는 프로젝트의 `/functions/v1/crew-api` 아래다.
 
-Supabase Edge 경로는 `PostgresRepository`(`supabase/functions/_shared/postgres-repository.ts`)로 구현했다. `GET /capabilities`는 `backendReady: true`이며 실제 구현된 미션 ID를 `playable`로 표시한다. PGlite로 로컬 검증했고(`tests/server/postgres-repository.test.ts`), 원격 프로젝트에 배포·실사용 검증은 아직 하지 않았다. 배포 절차는 [프론트 인계 문서의 sbp 절](FRONTEND-HANDOFF.ko.md#sbp-플랫폼-배포)을 따른다.
+이 계약은 `PostgresRepository`(`supabase/functions/_shared/postgres-repository.ts`)로 구현했으며 Supabase Edge Function과 Node 서버가 함께 쓴다. `GET /capabilities`는 `backendReady: true`이며 실제 구현된 미션 ID를 `playable`로 표시한다. PGlite로 로컬 검증했다(`tests/server/postgres-repository.test.ts`). **운영 주소(`https://crew.bsh00.com`)는 2026-09-21부터 같은 origin의 `/api/crew?route=…`로 이 계약을 호출하며**, Edge Function `crew-api`(`/functions/v1/crew-api?route=…`)는 되돌리기용 경로로 남아 있다. Edge Function을 sbp 플랫폼에 새로 배포하는 절차는 [프론트 인계 문서의 sbp 절](FRONTEND-HANDOFF.ko.md#sbp-플랫폼-배포)을 따른다.
 
 ## Node 실시간 서버
 
@@ -19,7 +19,7 @@ Supabase Edge 경로는 `PostgresRepository`(`supabase/functions/_shared/postgre
 | POST | `/rooms/join` | commandId, nickname, inviteToken | 기존 자리 복귀 또는 신규 자리 snapshot; inviteToken은 null 가능 |
 | GET | `/rooms/{roomId}` | 없음 | 요청자 손패만 포함한 최신 snapshot |
 | POST | `/rooms/{roomId}/commands` | 아래 명령 envelope | 행동 반영 snapshot |
-| POST | `/rooms/{roomId}/leave` | Bearer playerToken | `{ ok: true }`; 마지막 대원은 퇴장할 수 없음 |
+| POST | `/rooms/{roomId}/leave` | Bearer playerToken | `{ ok: true }`; 마지막 대원은 퇴장할 수 없음(409 `LAST_MEMBER`), 이미 나간 사람은 403 `NOT_MEMBER` |
 | POST | `/rooms/{roomId}/invites` | commandId | 201: 새 inviteToken; 방장만 가능 |
 
 초대 링크는 `/join#<token>`. fragment를 요청 본문으로 보내고 성공 후 URL에서 제거한다. 신규 초대 토큰은 최소 256비트 암호학적 난수로 만들고 DB `invites`에는 SHA-256 해시만 저장한다. 재전송용 응답에 토큰이 필요한 경우 private receipts의 접근/보존을 제한한다. 만료·회전은 신규 입장만 막으며 기존 멤버 snapshot 복귀는 토큰 없이 인증으로 처리한다.
@@ -118,9 +118,9 @@ snapshot은 roomId/revision/settings/phase/missionId/attemptId/시도 수/이미
 
 - 400: 잘못된 입력, 카드/행동 필드 형식
 - 401: 세션 누락/만료/유효하지 않은 JWT
-- 403: 다른 방 접근, 방장 권한 없음, CORS Origin 거부
-- 404: 방/초대 없음 (비멤버에게 방 정보 노출 최소화)
-- 409: revision/attempt/idempotency 충돌 또는 현재 단계에서 불가능한 행동
+- 403: 다른 방 접근, 방장 권한 없음, CORS Origin 거부, 이미 나간 대원의 재퇴장(`NOT_MEMBER`)
+- 404: 방/초대 없음(`ROOM_NOT_FOUND`, 비멤버에게 방 정보 노출 최소화)
+- 409: revision/attempt/idempotency 충돌, 현재 단계에서 불가능한 행동, 마지막 대원의 퇴장(`LAST_MEMBER`)
 - 413/415: 큰 본문/잘못된 Content-Type
 - 422: 구현하지 않은 미션
 - 429: 과도한 생성/초대/명령. 플랫폼 라우터가 프로젝트 전체 동시 4요청을 넘기면 5번째부터 자체적으로 429를 반환한다(실측: `claudedocs/SUPABASE-BPRIME-PROBE.ko.md`)
