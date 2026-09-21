@@ -25,7 +25,7 @@ npm run dev
 
 Node 서버 모드에서는 서로 다른 기기의 REST/WebSocket 실시간 플레이와 서버 저장·복귀를 지원합니다. Node 서비스는 기존 Cloudflare Tunnel 주소 `https://crew.bsh00.com`으로 배포합니다.
 
-셀프호스팅 Supabase 모드는 방 잠금(`SELECT … FOR UPDATE`) + 영수증(idempotency) + 사람별 private broadcast(`sbp:<프로젝트>:<auth uid>`)로 동작하는 `PostgresRepository`를 구현했고 PGlite로 로컬 검증했습니다(`npm test`). 원격 sbp 프로젝트에 실제로 배포·검증하지는 않았습니다 - 배포 절차(SQL 적용 순서, `npm run build:edge`, 필요한 env)는 [프론트 인계 문서의 sbp 절](docs/FRONTEND-HANDOFF.ko.md#sbp-플랫폼-배포)을 따릅니다.
+셀프호스팅 Supabase 모드는 방 잠금(`SELECT … FOR UPDATE`) + 영수증(idempotency) + 사람별 private broadcast(`sbp:<프로젝트>:<auth uid>`)로 동작하는 `PostgresRepository`를 구현했고 PGlite로 로컬 검증했습니다(`npm test`). **2026-09-21부터 운영 주소는 이 저장소를 Node 서버가 sbp 프로젝트 `spacecrew2`의 Postgres에 직접 연결해 사용합니다**(Edge Function `crew-api`는 되돌리기용으로만 남아 있음). 상세는 [운영 문서](docs/DEPLOYMENT.ko.md)와 [최신 인수인계](claudedocs/HANDOFF-20260921.ko.md)를, sbp 플랫폼 자체에 새로 배포하는 절차(SQL 적용 순서, `npm run build:edge`, 필요한 env)는 [프론트 인계 문서의 sbp 절](docs/FRONTEND-HANDOFF.ko.md#sbp-플랫폼-배포)을 따릅니다.
 
 - [Cloudflare Tunnel 운영·업데이트](docs/DEPLOYMENT.ko.md)
 - [프론트 실행·Supabase 연동 인계](docs/FRONTEND-HANDOFF.ko.md)

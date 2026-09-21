@@ -1,6 +1,6 @@
 # 프론트 구현 및 셀프호스팅 연동 인계
 
-갱신: 2026-09-19. 프론트와 로컬 규칙 데모는 실행 가능하다. Edge Function의 게임 트랜잭션 저장소(`PostgresRepository`)는 구현했고 PGlite로 로컬 검증했다(`tests/server/postgres-repository.test.ts`). 원격 Supabase/sbp 프로젝트에 실제로 배포하거나 원격 DB에 SQL을 적용한 적은 아직 없다 - 배포 절차는 [sbp 플랫폼 배포](#sbp-플랫폼-배포)를 따른다.
+갱신: 2026-09-21. 프론트와 로컬 규칙 데모는 실행 가능하다. Edge Function과 Node 서버가 공유하는 게임 트랜잭션 저장소(`PostgresRepository`)는 구현했고 PGlite로 로컬 검증했다(`tests/server/postgres-repository.test.ts`). **2026-09-21부터 운영 주소는 Node 서버가 이 저장소로 sbp 프로젝트 `spacecrew2`의 Postgres에 직접 연결한다**(상세: [운영 문서](DEPLOYMENT.ko.md), [최신 인수인계](../claudedocs/HANDOFF-20260921.ko.md)). Edge Function 자체를 sbp 플랫폼에 새로 배포하는 절차는 [sbp 플랫폼 배포](#sbp-플랫폼-배포)를 따른다.
 
 ## 바로 실행
 
@@ -36,7 +36,7 @@ npm run dev
 | DB | `supabase/sbp/*.sql`(sbp 플랫폼용, 표+RLS+권한만, 한 파일 한 문장) / `supabase/migrations/*`(표준 Supabase CLI용, 이 플랫폼에는 적용 불가) |
 | Edge Function | JWT payload 디코드(라우터가 이미 검증), Origin 제한, JSON/Zod 검증, CORS, 경로, 오류 응답 |
 | Supabase 게임 저장소 | `PostgresRepository` 구현 완료. PGlite로 로컬 검증(`tests/server/postgres-repository.test.ts`); 원격 배포·실사용은 미검증 |
-| 배포 | 기존 Cloudflare Tunnel + 홈 서버 Coolify의 crew.bsh00.com. Node 프론트/API/WS 통합 서비스. [운영 문서](DEPLOYMENT.ko.md) |
+| 배포 | Cloudflare Tunnel + KT Cloud VM(`coolify-d1-01`) Coolify의 crew.bsh00.com. Node 서버가 정적 프론트/`/healthz`/`/api/crew`(sbp 프로젝트 `spacecrew2` Postgres 직접 연결)를 함께 제공. [운영 문서](DEPLOYMENT.ko.md) |
 
 미션 1~50은 공통 엔진과 Node 저장소·`PostgresRepository`에 동일하게 적용했다. 원격 Supabase/sbp 프로젝트에서의 실제 다중 기기 동시 사용, 운영 환경 인증/Realtime, 기기를 바꿨을 때의 자리 복구는 다음 검증 단계다(로컬 PGlite 테스트는 셀프호스팅 전체 스택의 E2E 검증을 대체하지 않는다). 현재 브라우저 저장소가 지워지거나 시크릿 창을 바꾸면 기존 익명 식별자로 복귀하지 못한다. 초대 토큰은 기존 대원의 자리 복구 비밀로 사용하지 않는다.
 

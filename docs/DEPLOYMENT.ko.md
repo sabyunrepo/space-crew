@@ -23,7 +23,7 @@
 
 ## 가용성
 
-홈 서버와 Cloudflare Tunnel이 실행 중이어야 접속 가능하다. 개발 중인 맥북의 localhost 서버와는 별개다. 배포 시 WebSocket이 다시 연결될 수 있으며, 동일 브라우저·도메인의 저장된 참가 인증으로 기존 방에 복귀한다.
+KT Cloud VM(`coolify-d1-01`)과 Cloudflare Tunnel이 실행 중이어야 접속 가능하다. 개발 중인 맥북의 localhost 서버와는 별개다. 배포 시 WebSocket이 다시 연결될 수 있으며, 동일 브라우저·도메인의 저장된 참가 인증으로 기존 방에 복귀한다.
 
 ## 2026-09-14 업데이트 결과
 
