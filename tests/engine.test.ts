@@ -64,6 +64,25 @@ describe("authoritative demo rules", () => {
     state.players[1].ready = false;
     expect(() => start(state)).toThrow("준비");
   });
+  it("keeps a player in the current mission but moves them to spectator at the next mission", () => {
+    const state = createState(host, "별빛", { name: "관전", capacity: 4, startMission: 1, missionMode: "sequential" });
+    const fourth = "10000000-0000-4000-8000-000000000004";
+    state.players.push(newPlayer(second, "루나", 1), newPlayer(third, "코멧", 2), newPlayer(fourth, "노바", 3));
+    state.phase = "playing";
+    state.missionId = 1;
+    state.attemptId = crypto.randomUUID();
+    state.attemptNumber = 1;
+    state.drawnMissionIds = [1];
+    const marked = applyCommand(state, second, { type: "become_spectator" });
+    expect(marked.players).toHaveLength(4);
+    expect(marked.players.find((p) => p.id === second)?.spectateNextMission).toBe(true);
+    marked.phase = "success";
+    const next = applyCommand(marked, host, { type: "next_mission" });
+    expect(next.missionId).toBe(2);
+    expect(next.players.some((p) => p.id === second)).toBe(false);
+    expect(next.spectators?.some((p) => p.id === second)).toBe(true);
+    expect(next.players).toHaveLength(3);
+  });
   it("follows the led suit, treats rockets as a suit, and rejects out-of-turn moves", () => {
     const state = playing();
     state.turnPlayerId = host;

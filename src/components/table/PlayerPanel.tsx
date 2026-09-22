@@ -17,9 +17,11 @@ const markers = {
 export function PlayerPanel({
   snapshot,
   mineId,
+  onViewPlayer,
 }: {
   snapshot: Snapshot;
   mineId: string | undefined;
+  onViewPlayer?: (playerId: string) => void;
 }) {
   return (
     <aside className="crew-panel" aria-label="탑승 대원">
@@ -32,7 +34,11 @@ export function PlayerPanel({
         return (
           <div
             key={i}
-            className={`crew-member ${p?.id === snapshot.turnPlayerId ? "on-turn" : ""}`}
+            className={`crew-member ${p?.id === snapshot.turnPlayerId ? "on-turn" : ""} ${p && onViewPlayer ? "crew-member--viewable" : ""}`}
+            onClick={p && onViewPlayer ? () => onViewPlayer(p.id) : undefined}
+            onKeyDown={p && onViewPlayer ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onViewPlayer(p.id); } } : undefined}
+            tabIndex={p && onViewPlayer ? 0 : undefined}
+            role={p && onViewPlayer ? "button" : undefined}
           >
             <div className={`avatar avatar-${i}`}>
               {p ? <img src={characterImage(p.characterId)} alt={characterFor(p.characterId).name} /> : "+"}

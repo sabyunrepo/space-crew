@@ -4,6 +4,7 @@ import { useRef } from "react";
 import type { Mission, Snapshot } from "../../../shared/contracts.ts";
 import { cardImage, cardLabel } from "../../../shared/cards.ts";
 import { characterFor, characterImage } from "../../../shared/characters.ts";
+import { TaskCard } from "./TaskCard.tsx";
 
 /** Compact status summary; full conditions and public roles live in the details dialog. */
 export function MissionPanel({ snapshot, currentMission }: {
@@ -13,6 +14,9 @@ export function MissionPanel({ snapshot, currentMission }: {
   const rules = missionRules(snapshot.missionId ?? 1);
   const historyRef = useRef<HTMLDialogElement>(null);
   const done = snapshot.tasks.filter((t) => t.status === "success").length;
+  const publicTasks = rules.assignment === "distribution"
+    ? snapshot.tasks.filter((task) => task.id === snapshot.preparation?.activeTaskId || !!task.ownerId)
+    : [];
   const specialProgress = (() => {
     const progress = snapshot.missionProgress;
     if (!progress) return null;
@@ -67,6 +71,10 @@ export function MissionPanel({ snapshot, currentMission }: {
     {progress?.blackNineHolderId && <p className="mission-panel-hint">검은 9 보유자: {nick(progress.blackNineHolderId)} · 왼쪽 대원이 검은 카드 9장을 모두 획득</p>}
     {progress?.distressActive && <small className="mission-modifier">구조 신호 활성 · 이번 시도 교환 {progress.distressUsed ? "완료" : "미사용"}</small>}
       <MissionTaskInfo snapshot={snapshot} />
+      {publicTasks.length > 0 && <div className="mission-public-tasks" aria-label="공개된 목표">
+        <span>공개된 목표</span>
+        {publicTasks.map(task => <TaskCard key={task.id} task={task} priority={task.id === snapshot.preparation?.activeTaskId} />)}
+      </div>}
       <p>{currentMission?.summary}</p>
       {snapshot.rulesetVersion === "crew-p9-50-4" && <p className="helper">이 웹 버전: 목표 색상 분산 추첨 · 진행 중 내 차례 밖에서도 교신 가능 (미션별 제한 유지)</p>}
       <ul>{currentMission?.modifiers.map(m => <li key={m}>{m}</li>)}</ul>

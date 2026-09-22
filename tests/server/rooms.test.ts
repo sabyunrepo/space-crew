@@ -113,6 +113,55 @@ const readyCommand = (revision: number): Envelope => ({
 });
 
 describe("RoomStore", () => {
+  it("admits a full-room invite as a spectator, exposes a selected player's hand only to that spectator, and lets them claim a freed seat", async () => {
+    await withTempDir(async (dataDir) => {
+      const store = new RoomStore({ dataDir, demoDelayMs: 0, trickAdvanceDelayMs: 60_000 });
+      try {
+        const host = await store.createRoom(createInput());
+        const invite = await store.invite(host.snapshot.roomId, host.playerToken);
+        const b = await store.joinRoom({ commandId: crypto.randomUUID(), nickname: "코멧", inviteToken: invite });
+        const c = await store.joinRoom({ commandId: crypto.randomUUID(), nickname: "노바", inviteToken: invite });
+        const spectator = await store.joinRoom({ commandId: crypto.randomUUID(), nickname: "관전자", inviteToken: invite });
+        expect(spectator.snapshot.me.role).toBe("spectator");
+        expect(spectator.snapshot.spectators).toHaveLength(1);
+        expect(spectator.snapshot.players).toHaveLength(3);
+        await expect(store.command(spectator.snapshot.roomId, spectator.playerToken, {
+          commandId: crypto.randomUUID(), expectedRevision: spectator.snapshot.revision, attemptId: null,
+          command: { type: "set_ready", ready: true },
+        })).rejects.toMatchObject({ code: "SPECTATOR_ONLY" });
+
+        let snap = await store.command(host.snapshot.roomId, host.playerToken, readyCommand(spectator.snapshot.revision));
+        snap = await store.command(snap.roomId, b.playerToken, readyCommand(snap.revision));
+        snap = await store.command(snap.roomId, c.playerToken, readyCommand(snap.revision));
+        snap = await store.command(snap.roomId, host.playerToken, {
+          commandId: crypto.randomUUID(), expectedRevision: snap.revision, attemptId: null,
+          command: { type: "start_mission" },
+        });
+        const viewed = await store.command(snap.roomId, spectator.playerToken, {
+          commandId: crypto.randomUUID(), expectedRevision: snap.revision, attemptId: snap.attemptId,
+          command: { type: "view_player", playerId: host.snapshot.me.playerId },
+        });
+        expect(viewed.me.role).toBe("spectator");
+        expect(viewed.me.viewingPlayerId).toBe(host.snapshot.me.playerId);
+        expect(viewed.me.hand.length).toBeGreaterThan(0);
+        const hostView = await store.snapshot(snap.roomId, host.playerToken);
+        expect(viewed.me.hand).toEqual(hostView.me.hand);
+        expect(JSON.stringify(viewed)).not.toContain('"hands"');
+
+        await store.leaveRoom(snap.roomId, host.playerToken);
+        const afterLeave = await store.snapshot(snap.roomId, spectator.playerToken);
+        expect(afterLeave.phase).toBe("lobby");
+        const joined = await store.command(afterLeave.roomId, spectator.playerToken, {
+          commandId: crypto.randomUUID(), expectedRevision: afterLeave.revision, attemptId: null,
+          command: { type: "join_as_player" },
+        });
+        expect(joined.me.role).toBe("player");
+        expect(joined.players.some((p) => p.id === spectator.snapshot.me.playerId)).toBe(true);
+        expect(joined.spectators ?? []).toHaveLength(0);
+      } finally { store.shutdown(); }
+    });
+  });
+
   it("lets a replacement join after an in-game departure and lets the host restart with them", async () => {
     await withTempDir(async (dataDir) => {
       const store = new RoomStore({ dataDir, trickAdvanceDelayMs: 60_000 });

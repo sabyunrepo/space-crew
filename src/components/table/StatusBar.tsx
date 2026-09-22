@@ -93,7 +93,7 @@ export function StatusBar({
             <span className="status-invite-label">초대 링크</span>
           </button>
         )}
-        {onRestart && <button type="button" className="secondary status-restart" disabled={restartDisabled} onClick={onRestart}><RotateCcw size={16} /><span>게임 포기 · 재시작</span></button>}
+        {onRestart && <button type="button" className="secondary status-restart" aria-label="게임 포기 · 재시작" disabled={restartDisabled} onClick={onRestart}><RotateCcw size={16} /><span>게임 포기 · 재시작</span></button>}
         {action && (
           <button
             type="button"

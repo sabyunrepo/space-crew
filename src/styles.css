@@ -864,6 +864,28 @@ footer {
 }
 .waiting-join-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
+.spectator-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 420px);
+  margin: 18px auto 0;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--accent));
+  text-align: center;
+}
+.spectator-card span { color: var(--muted); font-size: 13px; }
+.spectator-card button { margin-top: 6px; }
+.spectator-card--inline { position: absolute; z-index: 4; left: 50%; bottom: 12px; transform: translateX(-50%); margin: 0; width: min(92%, 440px); }
+.player-seat--viewable, .crew-member--viewable { cursor: pointer; }
+.player-seat--viewable:focus-visible, .crew-member--viewable:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.spectator-hand { padding: 12px 18px 18px; border-top: 1px solid var(--line); background: var(--panel); }
+.spectator-hand-cards { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; }
+.spectator-hand-cards .card { width: clamp(54px, 7vw, 84px); flex: 0 0 auto; }
+
 /* --- 게임 테이블 본문(미션/중앙/플레이어) --- */
 .game-table-body {
   display: flex;
@@ -1013,6 +1035,12 @@ footer {
   color: #a3b08c;
   margin-left: 6px;
   font-weight: 400;
+}
+.spectator-toggle {
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 10px;
+  white-space: nowrap;
 }
 .hand-comm-toggle,
 .hand-comm-cancel {

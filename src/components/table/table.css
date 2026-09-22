@@ -240,6 +240,7 @@
 .app-shell.gameplay-fixed .status-actions .connection { order: 1; }
 .app-shell.gameplay-fixed .status-invite { order: 2; }
 .app-shell.gameplay-fixed .status-restart { order: 3; }
+.app-shell.gameplay-fixed .status-actions .status-restart { min-height: 44px; }
 .app-shell.gameplay-fixed .status-primary { order: 4; }
 
 @media (max-width: 1280px) and (min-width: 761px) {
@@ -265,7 +266,7 @@
   .app-shell.gameplay-fixed .status-bar {
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas: "back overview toggle" "actions actions actions";
-    grid-template-rows: auto auto;
+    grid-template-rows: minmax(38px, auto) minmax(44px, auto);
     min-height: 84px;
     padding: 5px 8px 4px;
     gap: 3px 6px;
@@ -304,6 +305,8 @@
     display: inline-flex;
     grid-area: toggle;
     align-self: start;
+    position: relative;
+    z-index: 3;
     min-width: 30px;
     min-height: 30px;
     padding: 0;
@@ -311,13 +314,14 @@
   .app-shell.gameplay-fixed .status-actions {
     grid-area: actions;
     width: 100%;
+    min-height: 44px;
     justify-content: flex-end;
     overflow-x: auto;
     scrollbar-width: none;
     gap: 4px;
   }
   .app-shell.gameplay-fixed .status-actions::-webkit-scrollbar { display: none; }
-  .app-shell.gameplay-fixed .status-actions button { min-height: 32px; padding-inline: 8px; font-size: 9px; }
+  .app-shell.gameplay-fixed .status-actions button { min-height: 44px; padding-inline: 8px; font-size: 9px; }
   .app-shell.gameplay-fixed .status-actions .connection { font-size: 8px; }
   .app-shell.gameplay-fixed .status-leave-label,
   .app-shell.gameplay-fixed .status-restart span { display: none; }
@@ -690,10 +694,8 @@
      Opponent seats may use the compact suit/rank face when their cards are
      tiny, but the shared trick and the viewer's goals should match the hand
      cards and retain their artwork. */
-  .central-trick .compact-card-art,
-  .own-seat-dock .seat-task .compact-card-art { visibility: visible; }
-  .central-trick .compact-card-face,
-  .own-seat-dock .seat-task .compact-card-face { display: none; }
+  .central-trick .compact-card-art { visibility: visible; }
+  .central-trick .compact-card-face { display: none; }
 }
 .player-seat { position: relative; min-width: min(140px, 100%); }
 .seat-submission, .seat-missions .no-tasks { display: none; }

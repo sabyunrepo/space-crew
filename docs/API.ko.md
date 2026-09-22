@@ -6,7 +6,7 @@
 
 ## Node 실시간 서버
 
-현재 동작하는 Node 서버는 `/api`를 사용한다. 방 생성은 `POST /api/rooms`, 입장은 `POST /api/join`이며 `{ entry: { snapshot, inviteToken }, playerToken }`을 반환한다. 이후 조회·명령은 서버가 발급한 `playerToken`을 Bearer 인증으로 보낸다. 초대 조회는 `GET /api/rooms/{roomId}/invite`다. `POST /api/rooms/{roomId}/leave`로 현재 토큰의 대원을 원자적으로 퇴장시킬 수 있다. 진행 중 퇴장으로 3명 이상이 남으면 같은 미션의 새 시도가 즉시 시작되고, 3명 미만이면 대기실로 돌아간다. 진행 중 새 입장은 `waitingPlayers`로 대기하며 방장이 `resolve_waiting` 명령으로 즉시 재시작 또는 현재 미션 후 합류를 선택한다. `/ws?roomId=…` 연결 후 첫 메시지 `{ type: "auth", token }`으로 인증하면 revision 알림을 받는다. 클라이언트는 개인 snapshot을 다시 조회한다. 이 인증·저장 방식과 아래 Supabase JWT·Postgres 계약은 별개의 어댑터이며 혼용하지 않는다.
+현재 동작하는 Node 서버는 `/api`를 사용한다. 방 생성은 `POST /api/rooms`, 입장은 `POST /api/join`이며 `{ entry: { snapshot, inviteToken }, playerToken }`을 반환한다. 이후 조회·명령은 서버가 발급한 `playerToken`을 Bearer 인증으로 보낸다. 초대 조회는 `GET /api/rooms/{roomId}/invite`다. 정원이 찬 방에 입장하면 좌석 대신 `spectators`로 등록되며, 빈 좌석이 생긴 뒤 `join_as_player` 명령으로 참가를 요청할 수 있다. 진행 중 입장은 `waitingPlayers`로 대기하며 방장이 `resolve_waiting` 명령으로 즉시 재시작 또는 현재 미션 후 합류를 선택한다. 참가자가 `become_spectator`를 진행 중에 누르면 현재 시도는 유지하고 다음 미션 시작 때 관전자로 전환한다. 관전자는 `view_player`로 특정 대원의 관점과 손패를 선택해 본인에게만 조회할 수 있다. `POST /api/rooms/{roomId}/leave`로 현재 토큰의 대원을 원자적으로 퇴장시킬 수 있다. 진행 중 퇴장으로 3명 이상이 남으면 같은 미션의 새 시도가 즉시 시작되고, 3명 미만이면 대기실로 돌아간다. `/ws?roomId=…` 연결 후 첫 메시지 `{ type: "auth", token }`으로 인증하면 revision 알림을 받는다. 클라이언트는 개인 snapshot을 다시 조회한다. 이 인증·저장 방식과 아래 Supabase JWT·Postgres 계약은 별개의 어댑터이며 혼용하지 않는다.
 
 ## 인증과 기본 형식 (Supabase)
 
@@ -16,7 +16,7 @@
 | --- | --- | --- | --- |
 | GET | `/capabilities` | 없음 | API 버전, 서버 준비 여부, rulesetVersion, 50개 미션과 각 playable |
 | POST | `/rooms` | commandId, nickname, settings | 201: 개인 snapshot, inviteToken |
-| POST | `/rooms/join` | commandId, nickname, inviteToken | 기존 자리 복귀 또는 신규 자리 snapshot; inviteToken은 null 가능 |
+| POST | `/rooms/join` | commandId, nickname, inviteToken | 기존 자리 복귀, 신규 좌석 또는 정원 초과 시 관전자 snapshot; inviteToken은 null 가능 |
 | GET | `/rooms/{roomId}` | 없음 | 요청자 손패만 포함한 최신 snapshot |
 | POST | `/rooms/{roomId}/commands` | 아래 명령 envelope | 행동 반영 snapshot |
 | POST | `/rooms/{roomId}/leave` | Bearer playerToken | `{ ok: true }`; 마지막 대원은 퇴장할 수 없음(409 `LAST_MEMBER`), 이미 나간 사람은 403 `NOT_MEMBER` |
@@ -67,6 +67,9 @@ capacity는 3/4/5. startMission은 1~50. random 모드에서는 startMission을 
 | retry_mission | 없음 | failure / 방장, 같은 미션 새 시도 |
 | next_mission | 없음 | success / 방장, 순차 다음 번호 또는 미추첨 랜덤 |
 | resolve_waiting | mode: restart_now/after_mission | 진행 중 대기 대원 / 방장; 즉시 새 시도에 합류하거나 현재 미션 종료 후 합류 |
+| become_spectator | 없음 | 참가 대원; 로비에서는 즉시, 진행 중에는 다음 미션부터 관전 전환. 다시 보내면 예약 취소 |
+| join_as_player | 없음 | 관전자; 빈 좌석이 있을 때 로비 즉시 참가, 진행 중에는 다음 시도 합류 대기 |
+| view_player | playerId: UUID/null | 관전자; 선택 대원의 공개 보드와 손패를 해당 관전자 snapshot에만 투영 |
 
 새 시도의 규칙 버전은 `crew-p9-50-3`이다. 진행 중인 v2 시도는 5·33번 담당자 범위와 17번 종료 판정을 유지하며 재도전·다음 미션에서 v3으로 전환한다. 변경 근거는 [원작 재대조](./ORIGINAL-MISSION-AUDIT.ko.md)를 따른다. 아래 명령은 공유 엔진·Node 서버·로컬 데모·Supabase `PostgresRepository`에 동일하게 적용된다.
 
@@ -91,7 +94,7 @@ capacity는 3/4/5. startMission은 1~50. random 모드에서는 startMission을 
 
 ## Snapshot의 공개 경계
 
-snapshot은 roomId/revision/settings/phase/missionId/attemptId/시도 수/이미 추첨한 임무/플레이어 닉네임·좌석·남은 장수/공개 목표/교신/현재 트릭/직전 트릭/결과를 포함한다.
+snapshot은 roomId/revision/settings/phase/missionId/attemptId/시도 수/이미 추첨한 임무/플레이어 닉네임·좌석·남은 장수/공개 목표/교신/현재 트릭/직전 트릭/결과를 포함한다. 정원 밖 입장자는 `spectators`로 표시되고 `me.role`은 `spectator`가 된다. 관전자가 대원을 선택하면 `me.viewingPlayerId`와 `me.hand`에 선택한 대원의 관점이 담기며, 이 손패는 해당 관전자 snapshot에만 포함된다.
 
 `me`에는 **현재 인증된 사용자의** playerId, hand, legalCardIds, canCommunicate만 담는다. 다른 사람의 손패, 분배 순서, 난수 seed, invite hash, 전체 이벤트 이력은 포함하지 않는다. 플레이한 카드의 공개 사실과 다른 사람의 남은 장수는 허용된다. `lastTrick`은 직전 트릭 하나만 제공한다.
 
@@ -121,7 +124,7 @@ snapshot은 roomId/revision/settings/phase/missionId/attemptId/시도 수/이미
 - 403: 다른 방 접근, 방장 권한 없음, CORS Origin 거부, 이미 나간 대원의 재퇴장(`NOT_MEMBER`)
 - 404: 방/초대 없음(`ROOM_NOT_FOUND`, 비멤버에게 방 정보 노출 최소화)
 - 409: revision/attempt/idempotency 충돌, 현재 단계에서 불가능한 행동
-- 마지막 대원이 퇴장하면 방과 하위 저장 데이터가 함께 삭제되며, 이후 조회·재퇴장은 `ROOM_NOT_FOUND`(404)다.
+- 마지막 멤버(참가자·대기 대원·관전자)가 퇴장하면 방과 하위 저장 데이터가 함께 삭제되며, 이후 조회·재퇴장은 `ROOM_NOT_FOUND`(404)다.
 - 413/415: 큰 본문/잘못된 Content-Type
 - 422: 구현하지 않은 미션
 - 429: 과도한 생성/초대/명령. 플랫폼 라우터가 프로젝트 전체 동시 4요청을 넘기면 5번째부터 자체적으로 429를 반환한다(실측: `claudedocs/SUPABASE-BPRIME-PROBE.ko.md`)

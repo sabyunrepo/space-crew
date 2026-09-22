@@ -11,6 +11,8 @@ import {
   createState,
   fail,
   newPlayer,
+  newSpectator,
+  normalize,
   removePlayer,
   project,
   REVISION_BYPASS_COMMANDS,
@@ -416,17 +418,18 @@ export class RoomStore {
     if (!roomId)
       fail("INVITE_NOT_FOUND", "초대 링크를 찾을 수 없습니다.", 404);
     const result = await this.withRoom(roomId, async (record) => {
+      normalize(record.state);
       const occupied = record.state.players.length + (record.state.waitingPlayers?.length ?? 0);
-      if (occupied >= record.state.settings.capacity)
-        fail("ROOM_FULL", "입장 가능한 좌석이 없습니다.");
       const playerId = crypto.randomUUID();
       const { token, hash } = issueToken();
       const player = newPlayer(playerId, input.nickname, occupied, false, input.characterId);
+      const spectator = newSpectator(playerId, input.nickname, input.characterId);
       const nextState: State = {
         ...record.state,
-        players: record.state.phase === "lobby" ? [...record.state.players, player] : record.state.players,
-        waitingPlayers: record.state.phase === "lobby" ? (record.state.waitingPlayers ?? []) : [...(record.state.waitingPlayers ?? []), player],
-        waitingPolicy: record.state.phase === "lobby" ? null : "prompt",
+        players: occupied < record.state.settings.capacity && record.state.phase === "lobby" ? [...record.state.players, player] : record.state.players,
+        waitingPlayers: occupied < record.state.settings.capacity && record.state.phase !== "lobby" ? [...(record.state.waitingPlayers ?? []), player] : (record.state.waitingPlayers ?? []),
+        spectators: occupied >= record.state.settings.capacity ? [...(record.state.spectators ?? []), spectator] : (record.state.spectators ?? []),
+        waitingPolicy: occupied < record.state.settings.capacity && record.state.phase !== "lobby" ? "prompt" : record.state.waitingPolicy,
         hands: { ...record.state.hands, [playerId]: [] },
         revision: record.state.revision + 1,
         updatedAt: new Date().toISOString(),
@@ -461,7 +464,7 @@ export class RoomStore {
       if (trickTimer) clearTimeout(trickTimer);
       this.trickTimers.delete(roomId);
 
-      const memberCount = record.state.players.length + (record.state.waitingPlayers?.length ?? 0);
+      const memberCount = record.state.players.length + (record.state.waitingPlayers?.length ?? 0) + (record.state.spectators?.length ?? 0);
       if (memberCount <= 1) {
         await deleteRoomFile(this.dataDir, roomId);
         this.rooms.delete(roomId);

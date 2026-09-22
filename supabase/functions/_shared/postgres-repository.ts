@@ -10,6 +10,8 @@ import {
   createState,
   fail,
   newPlayer,
+  newSpectator,
+  normalize,
   removePlayer,
   project,
   REVISION_BYPASS_COMMANDS,
@@ -88,7 +90,7 @@ export class PostgresRepository implements CrewRepository {
   /** One round trip for the whole room. This runs while the room row is locked,
    * so a per-member loop made the serialized window grow with the player count. */
   private async broadcast(tx: DbTx, state: State): Promise<void> {
-    const members = [...state.players, ...(state.waitingPlayers ?? [])];
+    const members = [...state.players, ...(state.waitingPlayers ?? []), ...(state.spectators ?? [])];
     if (!members.length) return;
     await tx.query(
       `select realtime.send(m.payload::jsonb, 'snapshot', m.topic, true)
@@ -195,20 +197,22 @@ export class PostgresRepository implements CrewRepository {
       await tx.query(`select 1 from public.crew_rooms where id = $1::uuid for update`, [roomId]);
       const [row] = await tx.query<Row>(`select state from public.crew_game_states where room_id = $1::uuid`, [roomId]);
       const state = asObject<State>(row.state);
-      const isMember = state.players.some((p) => p.id === actorAuthId) || (state.waitingPlayers ?? []).some((p) => p.id === actorAuthId);
+      normalize(state);
+      const isMember = state.players.some((p) => p.id === actorAuthId) || (state.waitingPlayers ?? []).some((p) => p.id === actorAuthId) || (state.spectators ?? []).some((p) => p.id === actorAuthId);
       let result: { snapshot: Snapshot; inviteToken: string | null };
       let committedRevision = state.revision;
       if (isMember) {
         result = { snapshot: project(state, actorAuthId), inviteToken: null };
       } else {
         const occupied = state.players.length + (state.waitingPlayers ?? []).length;
-        if (occupied >= state.settings.capacity) fail("ROOM_FULL", "입장 가능한 좌석이 없습니다.");
+        const spectator = newSpectator(actorAuthId, input.nickname, input.characterId);
         const player = newPlayer(actorAuthId, input.nickname, occupied, false, input.characterId);
         const nextState: State = {
           ...state,
-          players: state.phase === "lobby" ? [...state.players, player] : state.players,
-          waitingPlayers: state.phase === "lobby" ? (state.waitingPlayers ?? []) : [...(state.waitingPlayers ?? []), player],
-          waitingPolicy: state.phase === "lobby" ? null : "prompt",
+          players: occupied < state.settings.capacity && state.phase === "lobby" ? [...state.players, player] : state.players,
+          waitingPlayers: occupied < state.settings.capacity && state.phase !== "lobby" ? [...(state.waitingPlayers ?? []), player] : (state.waitingPlayers ?? []),
+          spectators: occupied >= state.settings.capacity ? [...(state.spectators ?? []), spectator] : (state.spectators ?? []),
+          waitingPolicy: occupied < state.settings.capacity && state.phase !== "lobby" ? "prompt" : state.waitingPolicy,
           hands: { ...state.hands, [actorAuthId]: [] },
           revision: state.revision + 1,
           updatedAt: new Date().toISOString(),

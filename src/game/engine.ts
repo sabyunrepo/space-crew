@@ -18,7 +18,7 @@ interface SetupState {
   distressCards: Record<string, CardId>; distressEverUsed: boolean;
   originalTokens: (TaskToken | null)[];
 }
-export type State = Omit<Snapshot, "me"> & { hands: Record<string, CardId[]>; setup?: SetupState };
+export type State = Omit<Snapshot, "me"> & { hands: Record<string, CardId[]>; setup?: SetupState; spectatorViews?: Record<string, string | null> };
 /** Commands that must apply against the latest state instead of bouncing a
  * stale expectedRevision: they are actor-idempotent (re-applying the same
  * value is a no-op) so a lobby/briefing race between players shouldn't force
@@ -31,11 +31,14 @@ const freshProgress = (): NonNullable<Snapshot["missionProgress"]> => ({
 });
 const freshSetup = (): SetupState => ({ roleDone: false, tokensDone: false, assignmentDone: false,
   transferDone: false, distressDirection: null, distressResolved: false, distressCards: {}, distressEverUsed: false, originalTokens: [] });
-function normalize(state: State) {
+export function normalize(state: State) {
   state.missionProgress ??= freshProgress();
   state.preparation ??= null;
   state.waitingPlayers ??= [];
+  state.spectators ??= [];
+  state.spectatorViews ??= {};
   state.waitingPolicy ??= null;
+  state.players.forEach((player) => { player.spectateNextMission ??= false; });
   // Old saves contain only missions 1–4 and no setup state.
   state.setup ??= { ...freshSetup(), assignmentDone: state.tasks.length > 0 && state.tasks.every(t => t.ownerId !== null) };
 }
@@ -43,6 +46,37 @@ function normalize(state: State) {
 function compactSeats(state: State) {
   state.players = [...state.players].sort((a, b) => a.seat - b.seat).map((p, seat) => ({ ...p, seat }));
   state.waitingPlayers = [...(state.waitingPlayers ?? [])].map((p, i) => ({ ...p, seat: state.players.length + i }));
+}
+
+function hostCandidates(state: State): string[] {
+  return [
+    ...state.players.map((p) => p.id),
+    ...(state.waitingPlayers ?? []).map((p) => p.id),
+    ...(state.spectators ?? []).map((p) => p.id),
+  ];
+}
+
+function movePlayerToSpectators(state: State, playerId: string) {
+  const player = state.players.find((p) => p.id === playerId);
+  if (!player) return;
+  state.players = state.players.filter((p) => p.id !== playerId);
+  state.spectators ??= [];
+  if (!state.spectators.some((p) => p.id === playerId)) {
+    state.spectators.push({ id: player.id, nickname: player.nickname, characterId: player.characterId });
+  }
+  delete state.spectatorViews?.[playerId];
+  delete state.hands[playerId];
+  Object.entries(state.spectatorViews ?? {}).forEach(([viewerId, viewedId]) => {
+    if (viewedId === playerId) state.spectatorViews![viewerId] = null;
+  });
+  compactSeats(state);
+  if (state.hostId === playerId) state.hostId = hostCandidates(state).find((id) => id !== playerId) ?? playerId;
+}
+
+function applyScheduledSpectators(state: State) {
+  const ids = state.players.filter((p) => p.spectateNextMission).map((p) => p.id);
+  ids.forEach((id) => movePlayerToSpectators(state, id));
+  state.players.forEach((p) => { p.spectateNextMission = false; });
 }
 
 function promoteWaiting(state: State) {
@@ -80,19 +114,28 @@ function resetToLobby(state: State) {
 export function removePlayer(input: State, playerId: string, random = Math.random): State {
   const state = structuredClone(input);
   normalize(state);
-  if (state.players.length <= 1 && !(state.waitingPlayers ?? []).length && state.players.some((p) => p.id === playerId))
+  if (state.players.length <= 1 && !(state.waitingPlayers ?? []).length && !(state.spectators ?? []).length && state.players.some((p) => p.id === playerId))
     fail("LAST_MEMBER", "마지막 대원은 방을 나갈 수 없습니다.");
   const waitingIndex = (state.waitingPlayers ?? []).findIndex((p) => p.id === playerId);
   if (waitingIndex >= 0) {
     state.waitingPlayers = (state.waitingPlayers ?? []).filter((_, i) => i !== waitingIndex);
     delete state.hands[playerId];
   } else {
+    const spectatorIndex = (state.spectators ?? []).findIndex((p) => p.id === playerId);
+    if (spectatorIndex >= 0) {
+      state.spectators = (state.spectators ?? []).filter((_, i) => i !== spectatorIndex);
+      delete state.spectatorViews?.[playerId];
+      if (state.hostId === playerId) state.hostId = hostCandidates(state).find((id) => id !== playerId) ?? playerId;
+      state.revision += 1;
+      state.updatedAt = new Date().toISOString();
+      return state;
+    }
     const leaving = state.players.find((p) => p.id === playerId);
     if (!leaving) fail("NOT_MEMBER", "이 방의 대원이 아닙니다.", 403);
     state.players = state.players.filter((p) => p.id !== playerId);
     delete state.hands[playerId];
     compactSeats(state);
-    if (state.hostId === playerId) state.hostId = state.players[0].id;
+    if (state.hostId === playerId) state.hostId = hostCandidates(state).find((id) => id !== playerId) ?? playerId;
     state.restartVote = null;
     if (state.phase !== "lobby") {
       const playable = state.missionId !== null && missions.some((m) => m.id === state.missionId && m.playable);
@@ -142,12 +185,20 @@ export function newPlayer(
     characterId,
     seat,
     isDemo,
+    spectateNextMission: false,
     ready: isDemo,
     briefingReady: false,
     cardCount: 0,
     tricksWon: 0,
     communication: null,
   };
+}
+export function newSpectator(
+  id: string,
+  nickname: string,
+  characterId?: CharacterId,
+): NonNullable<Snapshot["spectators"]>[number] {
+  return { id, nickname, ...(characterId ? { characterId } : {}) };
 }
 export function createState(
   id: string,
@@ -171,6 +222,8 @@ export function createState(
     turnPlayerId: null,
     players: [newPlayer(id, nickname, 0, false, characterId)],
     waitingPlayers: [],
+    spectators: [],
+    spectatorViews: {},
     waitingPolicy: null,
     hands: { [id]: [] },
     tasks: [],
@@ -207,19 +260,22 @@ export function project(state: State, playerId: string): Snapshot {
   normalize(state);
   const activeMember = state.players.some((p) => p.id === playerId);
   const waitingMember = (state.waitingPlayers ?? []).some((p) => p.id === playerId);
-  if (!activeMember && !waitingMember) fail("NOT_MEMBER", "이 방의 대원이 아닙니다.", 403);
-  const { hands, setup: _privateSetup, ...publicState } = structuredClone(state);
+  const spectatorMember = (state.spectators ?? []).some((p) => p.id === playerId);
+  if (!activeMember && !waitingMember && !spectatorMember) fail("NOT_MEMBER", "이 방의 대원이 아닙니다.", 403);
+  const { hands, setup: _privateSetup, spectatorViews: _privateSpectatorViews, ...publicState } = structuredClone(state);
   const rules = missionRules(state.missionId ?? 1);
   let tasks = publicState.tasks;
   if (rules.assignment === "decision" && !state.setup?.assignmentDone)
     tasks = [];
   if (rules.assignment === "distribution" && !state.setup?.assignmentDone)
     tasks = tasks.filter(t => t.ownerId || t.id === state.preparation?.activeTaskId);
+  const viewingPlayerId = spectatorMember ? state.spectatorViews?.[playerId] ?? null : null;
+  const handOwnerId = activeMember ? playerId : viewingPlayerId && state.players.some((p) => p.id === viewingPlayerId) ? viewingPlayerId : null;
   return {
     ...publicState, tasks, hiddenTaskCount: state.tasks.length - tasks.length,
     preparation: publicState.preparation ?? null,
     missionProgress: publicState.missionProgress ?? freshProgress(),
-    me: { playerId, hand: activeMember ? sortCards(hands[playerId] ?? []) : [], legalCardIds: activeMember ? legalCards(state, playerId) : [], canCommunicate: activeMember ? mayCommunicate(state, playerId) : false },
+    me: { playerId, role: activeMember ? "player" : waitingMember ? "waiting" : "spectator", viewingPlayerId, hand: handOwnerId ? sortCards(hands[handOwnerId] ?? []) : [], legalCardIds: activeMember ? legalCards(state, playerId) : [], canCommunicate: activeMember ? mayCommunicate(state, playerId) : false },
   };
 }
 function prepare(state: State, stage: NonNullable<Snapshot["preparation"]>["stage"], eligiblePlayerIds = state.players.map(p => p.id), activeTaskId: string | null = null) {
@@ -280,6 +336,8 @@ function advanceSetup(state: State) {
   startPlaying(state);
 }
 function begin(state: State, missionId: number, random: () => number) {
+  applyScheduledSpectators(state);
+  requireThat(state.players.length >= 3, "관전 전환 후에도 최소 3명의 대원이 필요합니다.");
   const mission = missions.find((m) => m.id === missionId && m.playable);
   if (!mission)
     fail(
@@ -458,7 +516,12 @@ export function applyCommand(
   const state = structuredClone(input);
   normalize(state);
   const me = state.players.find((p) => p.id === actor);
-  if (!me) fail("NOT_MEMBER", "이 방의 대원이 아닙니다.", 403);
+  const waiting = state.waitingPlayers?.some((p) => p.id === actor) ?? false;
+  const spectator = state.spectators?.find((p) => p.id === actor);
+  if (!me && !waiting && !spectator) fail("NOT_MEMBER", "이 방의 대원이 아닙니다.", 403);
+  const playerOnly = () => {
+    if (!me) fail("SPECTATOR_ONLY", "관전 중에는 게임 조작을 할 수 없습니다.");
+  };
   const host = () =>
     requireThat(state.hostId === actor, "방장만 진행할 수 있습니다.");
   const phase = (...values: State["phase"][]) =>
@@ -479,11 +542,43 @@ export function applyCommand(
   };
   requireThat(!state.restartVote || command.type === "vote_restart", "재시작 동의가 진행 중입니다.");
   switch (command.type) {
+    case "become_spectator":
+      playerOnly();
+      if (state.phase === "lobby") {
+        movePlayerToSpectators(state, actor);
+      } else {
+        me!.spectateNextMission = !me!.spectateNextMission;
+      }
+      break;
+    case "view_player":
+      requireThat(!!spectator, "관전자만 다른 대원의 화면을 볼 수 있습니다.");
+      requireThat(command.playerId === null || state.players.some((p) => p.id === command.playerId), "볼 수 없는 대원입니다.");
+      state.spectatorViews![actor] = command.playerId;
+      break;
+    case "join_as_player": {
+      requireThat(!!spectator, "현재 관전 중인 대원이 아닙니다.");
+      requireThat(state.players.length + (state.waitingPlayers ?? []).length < state.settings.capacity, "현재 빈 좌석이 없습니다.");
+      state.spectators = (state.spectators ?? []).filter((p) => p.id !== actor);
+      delete state.spectatorViews![actor];
+      const player = newPlayer(actor, spectator!.nickname, state.players.length, false, spectator!.characterId);
+      state.hands[actor] = [];
+      if (state.phase === "lobby") {
+        state.players.push(player);
+      } else {
+        state.waitingPlayers = [...(state.waitingPlayers ?? []), player];
+        state.waitingPolicy = "prompt";
+      }
+      if (!state.players.some((p) => p.id === state.hostId) && state.hostId === actor) state.hostId = actor;
+      compactSeats(state);
+      break;
+    }
     case "request_restart":
+      playerOnly();
       phase("briefing", "preparation", "task_selection", "playing", "trick_result");
       state.restartVote = { requestedBy: actor, approvals: [actor] };
       break;
     case "vote_restart":
+      playerOnly();
       requireThat(state.restartVote, "진행 중인 재시작 요청이 없습니다.");
       if (!command.agree) state.restartVote = null;
       else {
@@ -492,6 +587,7 @@ export function applyCommand(
       }
       break;
     case "update_settings":
+      playerOnly();
       host();
       phase("lobby");
       requireThat(
@@ -502,15 +598,18 @@ export function applyCommand(
       state.players.forEach((p) => (p.ready = p.isDemo));
       break;
     case "set_character":
+      playerOnly();
       phase("lobby");
-      me.characterId = command.characterId;
-      me.ready = false;
+      me!.characterId = command.characterId;
+      me!.ready = false;
       break;
     case "set_ready":
+      playerOnly();
       phase("lobby");
-      me.ready = command.ready;
+      me!.ready = command.ready;
       break;
     case "start_mission": {
+      playerOnly();
       host();
       phase("lobby");
       requireThat(
@@ -529,11 +628,13 @@ export function applyCommand(
       break;
     }
     case "briefing_ready":
+      playerOnly();
       phase("briefing");
-      me.briefingReady = true;
+      me!.briefingReady = true;
       if (state.players.every((p) => p.briefingReady)) advanceSetup(state);
       break;
     case "request_distress": {
+      playerOnly();
       host(); phase("briefing", "playing");
       requireThat(state.trickNumber === 1 && state.trick.length === 0 && state.players.every(p => !p.communication), "구조 신호는 첫 카드와 교신 전에 사용해야 합니다.");
       requireThat(!state.setup!.distressResolved && !state.setup!.distressDirection, "이번 시도의 구조 신호는 이미 결정했습니다.");
@@ -543,6 +644,7 @@ export function applyCommand(
       break;
     }
     case "preparation_response": {
+      playerOnly();
       const current = prep("role", "captain_decision", "captain_distribution", "distress_vote");
       requireThat(current.responses[actor] === undefined, "이미 응답했습니다.");
       requireThat(["distress_vote", "captain_decision", "captain_distribution"].includes(current.stage) || (current.stage === "role" && roleIncludesCommander(state.missionId!, state.rulesetVersion)) || actor !== state.commanderId, "지휘관은 대원들의 응답 후 결정합니다.");
@@ -558,6 +660,7 @@ export function applyCommand(
       break;
     }
     case "select_distress_card": {
+      playerOnly();
       const current = prep("distress_cards");
       requireThat(!state.setup!.distressCards[actor], "이미 교환할 카드를 선택했습니다.");
       requireThat(state.hands[actor].includes(command.cardId) && suitOf(command.cardId) !== "rocket", "손패의 일반 카드 한 장을 선택해 주세요.");
@@ -577,6 +680,7 @@ export function applyCommand(
       break;
     }
     case "select_crew": {
+      playerOnly();
       const current = prep("role", "captain_decision"); captain();
       if (state.missionId !== 11) answered();
       requireThat(current.eligiblePlayerIds.includes(command.playerId), "지정할 수 없는 대원입니다.");
@@ -596,6 +700,7 @@ export function applyCommand(
       break;
     }
     case "assign_task": {
+      playerOnly();
       const current = prep("captain_distribution"); captain(); answered();
       requireThat(current.eligiblePlayerIds.includes(command.playerId), "모든 목표를 나눈 뒤 목표 수 차이가 1 이하가 되도록 배분해 주세요.");
       state.tasks.find(t => t.id === current.activeTaskId)!.ownerId = command.playerId;
@@ -603,15 +708,18 @@ export function applyCommand(
       break;
     }
     case "edit_task_tokens": {
+      playerOnly();
       prep("token_edit"); captain();
       editTaskTokens(state, command.firstTaskId, command.secondTaskId);
       break;
     }
     case "reset_tokens":
+      playerOnly();
       prep("token_edit"); captain();
       state.tasks.forEach((task, i) => { task.token = state.setup!.originalTokens[i]; task.order = task.token?.kind === "absolute" ? task.token.value! : null; });
       break;
     case "confirm_tokens":
+      playerOnly();
       prep("token_edit"); captain();
       if (command.firstTaskId || command.secondTaskId) {
         requireThat(command.firstTaskId && command.secondTaskId, "서로 다른 목표 두 장을 선택해 주세요.");
@@ -619,14 +727,17 @@ export function applyCommand(
       }
       state.setup!.tokensDone = true; advanceSetup(state); break;
     case "transfer_task": {
+      playerOnly();
       prep("task_transfer");
       const task = state.tasks.find(t => t.id === command.taskId);
       requireThat(task?.ownerId === actor && command.playerId !== actor && state.players.some(p => p.id === command.playerId), "자신의 목표 한 장을 다른 대원에게 양도할 수 있습니다.");
       task!.ownerId = command.playerId; state.setup!.transferDone = true; advanceSetup(state); break;
     }
     case "skip_transfer":
+      playerOnly();
       prep("task_transfer"); captain(); state.setup!.transferDone = true; advanceSetup(state); break;
     case "choose_task": {
+      playerOnly();
       phase("task_selection");
       requireThat(
         state.turnPlayerId === actor,
@@ -645,6 +756,7 @@ export function applyCommand(
       break;
     }
     case "communicate":
+      playerOnly();
       phase("playing");
       requireThat(
         mayCommunicate(state, actor),
@@ -656,13 +768,14 @@ export function applyCommand(
           : communicationMarkers(state.hands[actor], command.cardId).includes(command.marker),
         "현재 손패와 일치하는 교신 표시를 선택해 주세요.",
       );
-      me.communication = {
+      me!.communication = {
         cardId: command.cardId,
         marker: missionRules(state.missionId!).communication.hidden ? "hidden" : command.marker,
         played: false,
       };
       break;
     case "play_card":
+      playerOnly();
       phase("playing");
       requireThat(
         legalCards(state, actor).includes(command.cardId),
@@ -671,20 +784,22 @@ export function applyCommand(
       state.hands[actor] = state.hands[actor].filter(
         (c) => c !== command.cardId,
       );
-      me.cardCount = state.hands[actor].length;
-      if (me.communication?.cardId === command.cardId)
-        me.communication.played = true;
+      me!.cardCount = state.hands[actor].length;
+      if (me!.communication?.cardId === command.cardId)
+        me!.communication.played = true;
       state.trick.push({ playerId: actor, cardId: command.cardId });
       state.turnPlayerId = nextSeat();
       if (state.trick.length === state.players.length) resolve(state, random);
       break;
     case "advance_trick":
+      playerOnly();
       phase("trick_result");
       state.trick = [];
       state.trickNumber += 1;
       state.phase = "playing";
       break;
     case "resolve_waiting":
+      playerOnly();
       host();
       requireThat((state.waitingPlayers ?? []).length > 0, "대기 중인 새 대원이 없습니다.");
       if (command.mode === "after_mission") {
@@ -700,12 +815,14 @@ export function applyCommand(
       }
       break;
     case "retry_mission":
+      playerOnly();
       host();
       phase("failure");
       promoteWaiting(state);
       begin(state, state.missionId!, random);
       break;
     case "next_mission": {
+      playerOnly();
       host();
       phase("success");
       let id: number | undefined;

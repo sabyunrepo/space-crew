@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   Check,
+  Eye,
   ChevronRight,
   Rocket,
   Users,
@@ -14,7 +15,7 @@ import type {
   Mission,
   Snapshot,
 } from "../../../shared/contracts.ts";
-import { cardLabel } from "../../../shared/cards.ts";
+import { cardImage, cardLabel } from "../../../shared/cards.ts";
 import { communicationMarkers } from "../../game/engine.ts";
 import { StatusBar } from "./StatusBar.tsx";
 import { PlayerPanel } from "./PlayerPanel.tsx";
@@ -38,6 +39,8 @@ function statusMessage(
   mineId: string | undefined,
   serviceMode: GameService["mode"],
 ): string {
+  if (snapshot.me.role === "spectator" || (!snapshot.players.some((p) => p.id === mineId) && (snapshot.spectators ?? []).some((p) => p.id === snapshot.me.playerId)))
+    return "관전 중 · 빈 좌석이 생기면 참가할 수 있습니다";
   if (!snapshot.players.some((p) => p.id === mineId) && (snapshot.waitingPlayers ?? []).some((p) => p.id === snapshot.me.playerId))
     return "입장 대기 중 · 방장이 합류 방식을 선택합니다";
   const nickOf = (id: string | null) =>
@@ -158,6 +161,9 @@ export function GameTable({
 
   const lobby = snapshot.phase === "lobby";
   const waitingForSeat = !mine && (snapshot.waitingPlayers ?? []).some((p) => p.id === snapshot.me.playerId);
+  const spectatorViewing = snapshot.me.role === "spectator" || (!mine && (snapshot.spectators ?? []).some((p) => p.id === snapshot.me.playerId));
+  const spectatorCanRequestSeat = spectatorViewing && snapshot.players.length + (snapshot.waitingPlayers ?? []).length < snapshot.settings.capacity;
+  const viewedPlayer = spectatorViewing && snapshot.me.viewingPlayerId ? snapshot.players.find((p) => p.id === snapshot.me.viewingPlayerId) : undefined;
   const nextPlayable = catalogue.find(
     (m) => m.id === snapshot.missionId! + 1,
   )?.playable;
@@ -238,9 +244,9 @@ export function GameTable({
                   ? "랜덤 미션 · 시작 시 자동 선택"
                   : `임무 ${String(snapshot.settings.startMission).padStart(2, "0")} · ${currentMission?.title}`}
               </p>
-              <CharacterPicker value={characterFor(mine?.characterId).id} disabled={locked}
-                onChange={(characterId) => onSend({ type: "set_character", characterId })} />
-              <div className="lobby-actions">
+              {!spectatorViewing && <CharacterPicker value={characterFor(mine?.characterId).id} disabled={locked}
+                onChange={(characterId) => onSend({ type: "set_character", characterId })} />}
+              {!spectatorViewing && <div className="lobby-actions">
                 <button
                   className={mine?.ready ? "secondary" : "primary"}
                   disabled={locked}
@@ -263,8 +269,9 @@ export function GameTable({
                       데모 대원 채우기
                     </button>
                   )}
-              </div>
-              {isHost && (
+              </div>}
+              {spectatorViewing && <div className="spectator-card"><Eye size={28} /><strong>현재 관전 중입니다</strong><span>빈 좌석이 생기면 참가자로 전환할 수 있습니다.</span>{spectatorCanRequestSeat && <button className="primary" disabled={locked} onClick={() => onSend({ type: "join_as_player" })}>참가자로 들어가기 <ArrowRight size={17} /></button>}</div>}
+              {isHost && !spectatorViewing && (
                 <button
                   className="primary full start-button"
                   disabled={
@@ -280,14 +287,14 @@ export function GameTable({
                   임무 시작 <ArrowRight size={18} />
                 </button>
               )}
-              {!currentMission?.playable &&
+              {!currentMission?.playable && !spectatorViewing &&
                 snapshot.settings.missionMode === "sequential" && (
                   <p className="helper warning">
                     미션 {currentMission?.id}의 특수 규칙은 구현 예정입니다.
                     서버가 지원하는 미션을 선택해 주세요.
                   </p>
                 )}
-              {isHost && snapshot.settings.missionMode !== "random" ? (
+              {isHost && !spectatorViewing && snapshot.settings.missionMode !== "random" ? (
                 <label className="lobby-mission">
                   시작 미션 변경
                   <select
@@ -314,16 +321,18 @@ export function GameTable({
                 </label>
               ) : null}
               <p className="helper lobby-helper">
-                데모 대원은 규칙 확인용입니다. 협력 전략을 판단하는 AI는
-                아닙니다.
+                {spectatorViewing ? "관전자는 공개된 보드와 대원 화면을 볼 수 있습니다." : "데모 대원은 규칙 확인용입니다. 협력 전략을 판단하는 AI는 아닙니다."}
               </p>
             </div>
           ) : (
-            <TrickArea snapshot={snapshot} mineId={mine?.id} />
+            <>
+              <TrickArea snapshot={snapshot} mineId={viewedPlayer?.id ?? mine?.id} onViewPlayer={spectatorViewing ? (playerId) => onSend({ type: "view_player", playerId }) : undefined} />
+              {spectatorViewing && <div className="spectator-card spectator-card--inline"><Eye size={25} /><strong>{snapshot.me.viewingPlayerId ? `${snapshot.players.find((p) => p.id === snapshot.me.viewingPlayerId)?.nickname ?? "대원"} 화면을 관전 중` : "대원 영역을 눌러 화면을 선택하세요"}</strong><span>선택한 대원의 공개 보드와 손패를 볼 수 있습니다.</span>{snapshot.me.viewingPlayerId && <button className="secondary" disabled={locked} onClick={() => onSend({ type: "view_player", playerId: null })}>선택 해제</button>}{spectatorCanRequestSeat && <button className="primary" disabled={locked} onClick={() => onSend({ type: "join_as_player" })}>참가 요청 <ArrowRight size={16} /></button>}</div>}
+            </>
           )}
           {!snapshot.restartVote && (!setupActive || !setupOpen) && demoStepButton}
         </div>
-        {lobby && <PlayerPanel snapshot={snapshot} mineId={mine?.id} />}
+        {lobby && <PlayerPanel snapshot={snapshot} mineId={mine?.id} onViewPlayer={spectatorViewing ? (playerId) => onSend({ type: "view_player", playerId }) : undefined} />}
       </div>
       {resultActive && <MissionResultModal snapshot={snapshot} open={dismissedResult !== resultKey}
         isHost={isHost} locked={locked} canContinue={snapshot.settings.missionMode === "random" || !!nextPlayable}
@@ -335,7 +344,7 @@ export function GameTable({
         markers={missionRules(snapshot.missionId ?? 1).communication.hidden ? ["hidden"] : markers}
         locked={locked} error={error} hasPending={hasPending} onSend={onSend} onDismiss={() => setSelected(null)} />}
       {(snapshot.waitingPlayers ?? []).length > 0 && <WaitingJoinModal snapshot={snapshot} isHost={isHost} locked={locked} onSend={onSend} />}
-      {!lobby && !waitingForSeat && (
+      {!lobby && !waitingForSeat && !spectatorViewing && (
       <div className="hand-dock">
         {mine && <OwnSeatDock snapshot={snapshot} player={mine} onCommunicate={toggleCommunication} communicationActive={communicateMode} locked={locked} />}
         <div className="hand-play-area">
@@ -343,6 +352,16 @@ export function GameTable({
           <h3>
             내 손패 <span>{snapshot.me.hand.length}장</span>
           </h3>
+          {mine && snapshot.phase === "playing" && (
+            <button
+              type="button"
+              className="secondary spectator-toggle"
+              disabled={locked || !!snapshot.restartVote}
+              onClick={() => onSend({ type: "become_spectator" })}
+            >
+              {mine.spectateNextMission ? "참가자로 유지" : "다음 임무부터 관전"}
+            </button>
+          )}
           {isHost &&
             (snapshot.phase === "briefing" || snapshot.phase === "playing") &&
             snapshot.trickNumber === 1 &&
@@ -402,6 +421,10 @@ export function GameTable({
       </div>
       </div>
       )}
+      {viewedPlayer && <section className="hand-dock spectator-hand" aria-label={`${viewedPlayer.nickname} 대원의 관전 화면`}>
+        <OwnSeatDock snapshot={snapshot} player={viewedPlayer} onCommunicate={() => {}} communicationActive={false} locked />
+        <div className="hand-play-area"><div className="hand-dock-head"><h3>{viewedPlayer.nickname} 손패 <span>{snapshot.me.hand.length}장 · 관전</span></h3></div><div className="spectator-hand-cards">{snapshot.me.hand.map((cardId) => <div className="card" key={cardId}><img src={cardImage(cardId)} alt={cardLabel(cardId)} draggable={false} /></div>)}</div></div>
+      </section>}
     </div>
   );
 }

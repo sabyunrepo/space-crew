@@ -6,7 +6,7 @@ import { CompactCardFace } from "./CompactCardFace.tsx";
 import { PlayerSeat } from "./PlayerSeat.tsx";
 import { arrangeSeats } from "./seatLayout.ts";
 
-export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: string }) {
+export function TrickArea({ snapshot, mineId, onViewPlayer }: { snapshot: Snapshot; mineId?: string; onViewPlayer?: (playerId: string) => void }) {
   const tableRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const table = tableRef.current;
@@ -133,14 +133,14 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
     <div className="table-orbit" />
     <div className={`seat-layout played-cards opponents-layout seats-${snapshot.players.length}`}>
       {seats.filter(({ player }) => player.id !== mineId).map(({ player, position }) =>
-        <PlayerSeat key={player.id} snapshot={snapshot} player={player} position={position} mineId={mineId} compactIdentity />)}
+        <PlayerSeat key={player.id} snapshot={snapshot} player={player} position={position} mineId={mineId} compactIdentity onViewPlayer={onViewPlayer ? () => onViewPlayer(player.id) : undefined} />)}
       <section className={`central-trick seats-${snapshot.players.length}`} data-sequential-order="true" aria-label="중앙 트릭">
         <header><strong>TRICK {snapshot.trickNumber}</strong><span>{led ? `${SUIT_META[suitOf(led)].color} 선도` : "대원들의 카드를 모아 봅니다"}</span></header>
         <div className="central-trick-cards">{trickOrder.map(({ player, position }) => {
           const play = snapshot.trick.find(card => card.playerId === player.id);
           const current = snapshot.phase === "playing" && snapshot.turnPlayerId === player.id;
           return <div className={`central-play played-slot from-${position} ${current ? "awaiting-card" : ""}`}
-            key={player.id} data-player-id={player.id} data-seat-index={player.seat} data-position={position} aria-label={`${player.nickname} 낸 카드`}>
+            key={player.id} data-player-id={player.id} data-seat-index={player.seat} data-position={position} aria-label={`${player.nickname} 낸 카드${onViewPlayer ? " · 관전 화면 보기" : ""}`} onClick={onViewPlayer ? () => onViewPlayer(player.id) : undefined}>
             <span className="central-player-name">{player.nickname}{player.id === mineId ? " · 나" : ""}</span>
             {play ? <div tabIndex={0} className={`card played-card compact-card-container ${led === play.cardId ? "lead-card" : ""}`} aria-label={`${cardLabel(play.cardId)}${led === play.cardId ? " · 선도 카드" : ""}`} key={play.cardId}>
               <img className="compact-card-art" src={cardImage(play.cardId)} alt={cardLabel(play.cardId)} draggable={false} />

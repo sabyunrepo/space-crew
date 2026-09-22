@@ -395,9 +395,9 @@ export function App() {
       const link = `${location.origin}/join#${token}`;
       try {
         await navigator.clipboard.writeText(link);
-        setNotice("초대 링크를 복사했습니다.");
+        pushToast("초대 링크를 복사했습니다.", "notice");
       } catch {
-        setNotice(`초대 링크: ${link}`);
+        pushToast(`초대 링크를 복사하지 못했습니다. 링크를 확인하세요: ${link}`, "notice");
       }
     });
   }

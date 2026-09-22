@@ -1167,7 +1167,6 @@
                 ]
               },
               "players": {
-                "minItems": 1,
                 "maxItems": 5,
                 "type": "array",
                 "items": {
@@ -1225,6 +1224,9 @@
                       "maximum": 9007199254740991
                     },
                     "isDemo": {
+                      "type": "boolean"
+                    },
+                    "spectateNextMission": {
                       "type": "boolean"
                     },
                     "communication": {
@@ -1336,6 +1338,9 @@
                     "isDemo": {
                       "type": "boolean"
                     },
+                    "spectateNextMission": {
+                      "type": "boolean"
+                    },
                     "communication": {
                       "anyOf": [
                         {
@@ -1385,6 +1390,50 @@
                   "additionalProperties": false
                 }
               },
+              "spectators": {
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "nickname": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 16
+                    },
+                    "characterId": {
+                      "type": "string",
+                      "enum": [
+                        "otter",
+                        "gary",
+                        "moby-dick",
+                        "spongebob",
+                        "green-dino",
+                        "coral",
+                        "komodo",
+                        "hangyodon",
+                        "pingu",
+                        "ilu",
+                        "snow",
+                        "tamama",
+                        "sun",
+                        "tree",
+                        "bay"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nickname"
+                  ],
+                  "additionalProperties": false
+                }
+              },
               "waitingPolicy": {
                 "anyOf": [
                   {
@@ -1406,6 +1455,26 @@
                     "type": "string",
                     "format": "uuid",
                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "player",
+                      "waiting",
+                      "spectator"
+                    ]
+                  },
+                  "viewingPlayerId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "hand": {
                     "type": "array",
@@ -1954,6 +2023,58 @@
                 "required": [
                   "type",
                   "characterId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "become_spectator"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "join_as_player"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "view_player"
+                  },
+                  "playerId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "playerId"
                 ],
                 "additionalProperties": false
               },
@@ -2590,7 +2711,6 @@
             ]
           },
           "players": {
-            "minItems": 1,
             "maxItems": 5,
             "type": "array",
             "items": {
@@ -2648,6 +2768,9 @@
                   "maximum": 9007199254740991
                 },
                 "isDemo": {
+                  "type": "boolean"
+                },
+                "spectateNextMission": {
                   "type": "boolean"
                 },
                 "communication": {
@@ -2759,6 +2882,9 @@
                 "isDemo": {
                   "type": "boolean"
                 },
+                "spectateNextMission": {
+                  "type": "boolean"
+                },
                 "communication": {
                   "anyOf": [
                     {
@@ -2808,6 +2934,50 @@
               "additionalProperties": false
             }
           },
+          "spectators": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "nickname": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16
+                },
+                "characterId": {
+                  "type": "string",
+                  "enum": [
+                    "otter",
+                    "gary",
+                    "moby-dick",
+                    "spongebob",
+                    "green-dino",
+                    "coral",
+                    "komodo",
+                    "hangyodon",
+                    "pingu",
+                    "ilu",
+                    "snow",
+                    "tamama",
+                    "sun",
+                    "tree",
+                    "bay"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "nickname"
+              ],
+              "additionalProperties": false
+            }
+          },
           "waitingPolicy": {
             "anyOf": [
               {
@@ -2829,6 +2999,26 @@
                 "type": "string",
                 "format": "uuid",
                 "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "player",
+                  "waiting",
+                  "spectator"
+                ]
+              },
+              "viewingPlayerId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "hand": {
                 "type": "array",

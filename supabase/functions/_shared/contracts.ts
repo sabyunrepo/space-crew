@@ -76,6 +76,9 @@ export const CommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("request_restart") }).strict(),
   z.object({ type: z.literal("vote_restart"), agree: z.boolean() }).strict(),
   z.object({ type: z.literal("set_character"), characterId: CharacterIdSchema }).strict(),
+  z.object({ type: z.literal("become_spectator") }).strict(),
+  z.object({ type: z.literal("join_as_player") }).strict(),
+  z.object({ type: z.literal("view_player"), playerId: z.uuid().nullable() }).strict(),
   z
     .object({
       type: z.literal("update_settings"),
@@ -147,6 +150,8 @@ export const PlayerSchema = z.object({
   cardCount: z.number().int().nonnegative(),
   tricksWon: z.number().int().nonnegative(),
   isDemo: z.boolean(),
+  /** During an active mission this is a request for the next mission only. */
+  spectateNextMission: z.boolean().optional(),
   communication: z
     .object({
       cardId: CardIdSchema,
@@ -154,6 +159,11 @@ export const PlayerSchema = z.object({
       played: z.boolean(),
     })
     .nullable(),
+});
+export const SpectatorSchema = z.object({
+  id: z.uuid(),
+  nickname: NicknameSchema,
+  characterId: CharacterIdSchema.optional(),
 });
 export const TaskSchema = z.object({
   id: z.uuid(),
@@ -190,11 +200,14 @@ export const SnapshotSchema = z.object({
   hostId: z.uuid(),
   commanderId: z.uuid().nullable(),
   turnPlayerId: z.uuid().nullable(),
-  players: z.array(PlayerSchema).min(1).max(5),
+  players: z.array(PlayerSchema).max(5),
   waitingPlayers: z.array(PlayerSchema).max(5).optional(),
+  spectators: z.array(SpectatorSchema).max(50).optional(),
   waitingPolicy: z.enum(["prompt", "after_mission"]).nullable().optional(),
   me: z.object({
     playerId: z.uuid(),
+    role: z.enum(["player", "waiting", "spectator"]).optional(),
+    viewingPlayerId: z.uuid().nullable().optional(),
     hand: z.array(CardIdSchema),
     legalCardIds: z.array(CardIdSchema),
     canCommunicate: z.boolean(),

@@ -29,10 +29,10 @@ npm run dev
 | 카드 | v3 앞면 40장 + 뒷면 1종, 스폰지밥 7번 포함, 카드 도감 |
 | 미션 | 50개 조건 데이터와 시작 번호 선택; 공유 엔진 1~50 및 특수 준비 단계 |
 | 랜덤 | 실행 가능한 미션 1~50 중 선택, 성공 후 미추첨 미션, 실패/복귀 시 같은 번호 |
-| 방 복귀 | 같은 브라우저의 저장된 익명/로컬 식별자 사용; 닉네임으로 자리를 찾지 않음 |
+| 방 복귀 | 같은 브라우저의 저장된 익명/로컬 식별자 사용; 닉네임으로 자리를 찾지 않음; 정원 초과 입장은 관전자 유지 |
 | 데이터 계층 | `GameService`를 공유하는 MockService / ServerService / SupabaseService |
 | 실시간 어댑터 | private broadcast(`sbp:<프로젝트>:<uid>`) 구독, 캐시된 snapshot 반환, 재연결 시 재동기화 |
-| 명령 | commandId, expectedRevision, attemptId; 충돌 시 재조회; 503/504/네트워크오류/429는 지터 재전송(최대 5회) |
+| 명령 | commandId, expectedRevision, attemptId; 충돌 시 재조회; 관전 전환·좌석 참가·대원 화면 선택 포함; 503/504/네트워크오류/429는 지터 재전송(최대 5회) |
 | DB | `supabase/sbp/*.sql`(sbp 플랫폼용, 표+RLS+권한만, 한 파일 한 문장) / `supabase/migrations/*`(표준 Supabase CLI용, 이 플랫폼에는 적용 불가) |
 | Edge Function | JWT payload 디코드(라우터가 이미 검증), Origin 제한, JSON/Zod 검증, CORS, 경로, 오류 응답 |
 | Supabase 게임 저장소 | `PostgresRepository` 구현 완료. PGlite로 로컬 검증(`tests/server/postgres-repository.test.ts`); 원격 배포·실사용은 미검증 |
@@ -58,6 +58,10 @@ npm run dev
 - `supabase/functions/crew-api/sbp-entry.ts`: sbp 플랫폼 배포용 진입점. `scripts/build-crew-api.mjs`가 이 파일만 번들링한다(직접 배포하지 않음)
 - `scripts/build-crew-api.mjs`: postgres.js 동봉 + esbuild 번들 → `dist-edge/crew-api/{index.ts,files.json}` 생성(`npm run build:edge`)
 - `supabase/functions/_shared/contracts.ts`, `missions.ts`: 공유 원본에서 생성된 배포 복사본. 직접 수정하지 않음
+
+### 관전·좌석 전환
+
+정원이 찬 초대 링크 입장은 `snapshot.me.role === "spectator"`로 표시된다. 관전자는 공개 테이블의 캐릭터/대원 영역을 눌러 `view_player`를 보내고, 해당 관전자 snapshot의 `me.viewingPlayerId`와 `me.hand`에서 선택한 대원의 관점을 확인한다. 손패 투영은 요청한 관전자에게만 반환한다. 빈 좌석에서 `join_as_player`를 보내면 로비에서는 즉시 참가하고, 진행 중에는 `waitingPlayers`로 들어가 방장의 합류 결정을 기다린다. 참가자가 `become_spectator`를 진행 중에 보내면 현재 시도는 유지하고 다음 미션 시작부터 관전자로 전환하며 같은 명령으로 예약을 취소할 수 있다.
 
 ## 연결 환경 변수
 

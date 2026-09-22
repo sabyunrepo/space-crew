@@ -18,6 +18,7 @@ import {
   createState,
   fail,
   newPlayer,
+  newSpectator,
   removePlayer,
   project,
   type State,
@@ -132,15 +133,20 @@ export class MockService implements GameService {
       );
     return this.locked(found.state.roomId, () => {
       const record = this.read(found!.state.roomId);
+      record.state.spectators ??= [];
       if (!record.state.players.some((p) => p.id === this.actor)) {
-        if (
-          record.state.phase !== "lobby" ||
-          record.state.players.length >= record.state.settings.capacity
-        )
-          return fail("ROOM_FULL", "입장 가능한 좌석이 없습니다.");
-        record.state.players.push(
-          newPlayer(this.actor, input.nickname, record.state.players.length, false, input.characterId),
-        );
+        if (record.state.spectators.some((p) => p.id === this.actor) || (record.state.waitingPlayers ?? []).some((p) => p.id === this.actor))
+          return { snapshot: project(record.state, this.actor), inviteToken: null };
+        const occupied = record.state.players.length + (record.state.waitingPlayers?.length ?? 0);
+        const player = newPlayer(this.actor, input.nickname, occupied, false, input.characterId);
+        if (occupied >= record.state.settings.capacity) {
+          record.state.spectators.push(newSpectator(this.actor, input.nickname, input.characterId));
+        } else if (record.state.phase === "lobby") {
+          record.state.players.push(player);
+        } else {
+          record.state.waitingPlayers = [...(record.state.waitingPlayers ?? []), player];
+          record.state.waitingPolicy = "prompt";
+        }
         record.state.hands[this.actor] = [];
         record.state.revision++;
         this.save(record);
@@ -154,7 +160,7 @@ export class MockService implements GameService {
   async leaveRoom(id: string): Promise<void> {
     return this.locked(id, () => {
       const record = this.read(id);
-      const memberCount = record.state.players.length + (record.state.waitingPlayers?.length ?? 0);
+      const memberCount = record.state.players.length + (record.state.waitingPlayers?.length ?? 0) + (record.state.spectators?.length ?? 0);
       if (memberCount <= 1) {
         this.storage.removeItem(PREFIX + id);
         return;
