@@ -7,7 +7,7 @@ const tokenOf = (task: Task) => task.token === undefined
 
 /** Next priorities from public order/progress only, not a prediction of who can win.
  * Later ordered goals may still be captured together in the same trick. */
-export function priorityTaskIds(snapshot: Pick<Snapshot, "phase" | "tasks" | "missionId" | "players">): Set<string> {
+export function priorityTaskIds(snapshot: Pick<Snapshot, "phase" | "tasks" | "missionId" | "players" | "trickNumber">): Set<string> {
   if (!["playing", "trick_result"].includes(snapshot.phase) || snapshot.tasks.some(t => t.status === "failed")) return new Set();
   const pending = snapshot.tasks.filter(t => t.status === "pending" && t.ownerId);
   const nextOrder = snapshot.tasks.filter(t => t.status === "success").length + 1;
@@ -18,7 +18,10 @@ export function priorityTaskIds(snapshot: Pick<Snapshot, "phase" | "tasks" | "mi
     const token = tokenOf(t);
     if (!token) return true;
     if (token.kind === "relative") return token.value === relativeNext;
-    if (token.kind === "omega") return pending.length === 1 && (snapshot.missionId !== 48 || snapshot.players.every(p => p.cardCount <= 1));
+    if (token.kind === "omega") {
+      if (snapshot.missionId === 48) return snapshot.trickNumber === Math.floor(40 / snapshot.players.length);
+      return pending.length === 1;
+    }
     return false;
   }).map(t => t.id));
 }

@@ -49,8 +49,12 @@ export function TrickArea({ snapshot, mineId }: { snapshot: Snapshot; mineId?: s
       // Try every useful card arrangement and place its complete bounding box in
       // the largest free rectangle. This uses side/corner space that a fixed
       // center point misses, especially with four or five players.
+      // Keep every table size readable at a glance: the trick is one horizontal
+      // row for 3, 4, and 5 players. The surrounding seat layout already
+      // provides the vertical separation; stacking the trick cards creates an
+      // artificial off-center column and makes the active play harder to scan.
       const layouts = snapshot.players.length === 3 ? ["row-3"]
-        : snapshot.players.length === 4 ? ["row-4", "grid-2"] : ["row-5", "wide-5", "tall-5"];
+        : snapshot.players.length === 4 ? ["row-4"] : ["row-5"];
       const gap = mobile ? 3 : 6;
       center.style.transform = "none";
       center.style.bottom = "auto";

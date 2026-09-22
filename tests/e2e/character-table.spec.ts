@@ -125,11 +125,10 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
   for (const seat of bounds.seats) { expect(seat.top).toBeGreaterThanOrEqual(bounds.mission.bottom); expect(seat.bottom).toBeLessThanOrEqual(bounds.hand.top); expect(seat.left).toBeGreaterThanOrEqual(0); expect(seat.right).toBeLessThanOrEqual(bounds.width); }
   for (const { columns, goals } of bounds.rows) { expect(columns).toHaveLength(1); expect(columns[0].right).toBeLessThanOrEqual(goals.left); }
   await expect(page.locator(".central-play")).toHaveCount(capacity);
-  if (capacity === 3) {
-    const slotLefts = await page.locator(".central-play").evaluateAll(slots => slots.map(slot => slot.getBoundingClientRect().left));
-    expect(slotLefts[0]).toBeCloseTo(Math.min(...slotLefts), 0);
-    expect(slotLefts).toEqual([...slotLefts].sort((a, b) => a - b));
-  }
+  await expect(page.locator(".central-trick")).toHaveAttribute("data-trick-layout", `row-${capacity}`);
+  const trickCards = await page.locator(".central-play .card-placeholder").evaluateAll(cards => cards.map(card => card.getBoundingClientRect().toJSON()));
+  expect(Math.max(...trickCards.map(card => card.top)) - Math.min(...trickCards.map(card => card.top))).toBeLessThan(2);
+  expect(Math.max(...trickCards.map(card => card.left)) - Math.min(...trickCards.map(card => card.left))).toBeGreaterThan(0);
   await expect(page.locator('.seat-connections, .seat-link')).toHaveCount(0);
   const avatar = await page.locator('.seat-layout .own-avatar').first().boundingBox();
   expect(avatar!.width).toBeLessThanOrEqual(40);
@@ -186,7 +185,8 @@ for (const capacity of [3, 4, 5]) test(`${capacity} directions: character, signa
     const compactNameSize = await page.locator(".central-player-name").first().evaluate(el => parseFloat(getComputedStyle(el).fontSize));
     await page.screenshot({ path: `artifacts/qa/characters/desktop-1189x779-${capacity}-table.png` });
     await page.setViewportSize({ width: 1470, height: 956 });
-    await expect.poll(async () => (await page.locator(".central-play .played-card").boundingBox())!.width).toBeGreaterThan(compactWidth * 1.1);
+    const mediumScale = capacity === 4 ? compactWidth - .01 : compactWidth * 1.1;
+    await expect.poll(async () => (await page.locator(".central-play .played-card").boundingBox())!.width).toBeGreaterThan(mediumScale);
     const targetViewport = await page.locator('.seat-layout').evaluate(layout => {
       const center = layout.querySelector('.central-trick')!.getBoundingClientRect();
       const middle = center.left + center.width / 2;

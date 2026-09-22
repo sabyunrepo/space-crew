@@ -4,7 +4,7 @@ import { priorityTaskIds } from '../src/components/table/taskPriority.ts';
 import { taskTokenLabel } from '../src/components/table/taskToken.ts';
 type Task = Snapshot['tasks'][number];
 const task = (id: string, token: Task['token'] = null, status: Task['status'] = 'pending'): Task => ({ id, cardId: 'blue-1', ownerId: 'owner', order: null, token, status });
-const view = (tasks: Task[], overrides = {}) => ({ tasks, phase: 'playing' as const, missionId: 22, players: [{ cardCount: 4 }] as Snapshot['players'], ...overrides });
+const view = (tasks: Task[], overrides = {}) => ({ tasks, phase: 'playing' as const, missionId: 22, trickNumber: 1, players: [{ cardCount: 4 }] as Snapshot['players'], ...overrides });
 describe('public task priorities', () => {
   it('advances relative priority while keeping unordered goals available', () => {
     const tasks = [task('a', {kind:'relative',value:1}), task('b',{kind:'relative',value:2}), task('free')];
@@ -32,7 +32,7 @@ describe('public task priorities', () => {
     tasks[0].status='success';
     expect([...priorityTaskIds(view(tasks))]).toEqual(['omega']);
     expect([...priorityTaskIds(view(tasks,{missionId:48}))]).toEqual([]);
-    expect([...priorityTaskIds(view(tasks,{missionId:48,players:[{cardCount:0},{cardCount:1}]}))]).toEqual(['omega']);
+    expect([...priorityTaskIds(view(tasks,{missionId:48,trickNumber:13,players:[{cardCount:2},{cardCount:1},{cardCount:1}]}))]).toEqual(['omega']);
   });
   it('never highlights completed, unassigned, failed or preparation goals', () => {
     const tasks=[task('done',null,'success'),task('next'),{...task('unassigned'),ownerId:null}];

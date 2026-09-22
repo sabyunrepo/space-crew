@@ -351,6 +351,9 @@ export function winner(plays: Snapshot["trick"]): string {
 function taskToken(task: State["tasks"][number]): TaskToken | null {
   return task.token === undefined ? (task.order ? { kind: "absolute", value: task.order } : null) : task.token;
 }
+function isFinalTrick(state: State) {
+  return state.trickNumber === Math.floor(40 / state.players.length);
+}
 /** Captures within a trick are simultaneous. A valid ordering must exist within this set. */
 function badTaskOrder(state: State, caught: State["tasks"]) {
   const completed = state.tasks.filter(t => t.status === "success").length;
@@ -421,7 +424,7 @@ function resolve(state: State, random: () => number) {
     if (count && winnerId !== progress.selectedPlayerId) reason = "검은색 카드는 검정 9 보유자의 왼쪽 대원이 모두 획득해야 합니다.";
     else progress.blackCardsWon += count;
   }
-  if (id === 48 && caught.some(t => taskToken(t)?.kind === "omega") && !exhausted) reason = "Ω 목표는 마지막 트릭에서 획득해야 합니다.";
+  if (id === 48 && caught.some(t => taskToken(t)?.kind === "omega") && !isFinalTrick(state)) reason = "Ω 목표는 마지막 트릭에서 획득해야 합니다.";
   if (id === 33 && exhausted && state.players.find(p => p.id === progress.selectedPlayerId)?.tricksWon !== 1) reason = "지정 대원은 정확히 한 트릭을 승리해야 합니다.";
   const success = rules.ending === "tasks" ? state.tasks.length > 0 && state.tasks.every(t => t.status === "success") && (id !== 17 || state.rulesetVersion !== "crew-p9-50-2" || progress.ninesPlayed === 4 || exhausted)
     : rules.ending === "full_hand" ? exhausted
